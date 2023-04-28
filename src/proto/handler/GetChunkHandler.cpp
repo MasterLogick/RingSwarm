@@ -2,17 +2,17 @@
 #include "../ClientHandler.h"
 
 namespace RingSwarm::proto {
-    void ClientHandler::getChunk(
+    boost::asio::awaitable<void> ClientHandler::getChunk(
             core::Id &fileId,
             uint64_t chunkIndex,
             uint32_t offset,
             void *buffer,
             uint32_t length
     ) {
-
+        co_return;
     }
 
-    void ServerHandler::handleGetChunk(transport::Buffer &request) {
-        transport->sendEmptyResponse();
+    boost::asio::awaitable<void> ServerHandler::handleGetChunk(transport::Buffer &request) {
+        co_await transport->sendEmptyResponse();
     }
 }

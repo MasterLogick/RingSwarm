@@ -4,23 +4,24 @@
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
 namespace RingSwarm::proto {
-    std::vector<core::Node *> ClientHandler::getChunkSwarm(core::Id &fileId, uint64_t chunkIndex) {
+    boost::asio::awaitable<std::vector<core::Node *>>
+    ClientHandler::getChunkSwarm(core::Id &fileId, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
         req.writeId(fileId);
         req.writeUint64(chunkIndex);
         transport->sendRequest(9, req);
-        auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.readNodeList();
+        auto resp = co_await transport->readResponse(MAX_RESPONSE_SIZE);
+        co_return resp.readNodeList();
     }
 
-    void ServerHandler::handleGetChunkSwarm(transport::Buffer &request) {
+    boost::asio::awaitable<void> ServerHandler::handleGetChunkSwarm(transport::Buffer &request) {
         auto id = request.readId();
         auto chunkIndex = request.readUint64();
         auto chunkSwarm = storage::getHostedChunkSwarm(id, chunkIndex);
         if (chunkSwarm == nullptr) {
-            transport->sendError();
+            co_await transport->sendError();
         } else {
-            sendNodeListResponse(chunkSwarm->getSwarmNodes());
+            co_await sendNodeListResponse(chunkSwarm->getSwarmNodes());
         }
     }
 }
