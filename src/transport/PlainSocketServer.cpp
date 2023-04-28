@@ -1,31 +1,46 @@
-#include <boost/asio/use_awaitable.hpp>
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
-#include "BoostSocketServer.h"
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <thread>
+#include <boost/asio/ip/tcp.hpp>
+#include "PlainSocketServer.h"
+#include "PlainSocketTransport.h"
 #include "../proto/ServerHandler.h"
 #include "TransportBackendException.h"
 
 namespace RingSwarm::transport {
-    using namespace boost::asio;
-
-    BoostSocketServer::BoostSocketServer(int port) {
-        this->port = port;
+    PlainSocketServer::PlainSocketServer(std::string &hostname, int port, int backlog) {
+        sockFd = socket(AF_INET, SOCK_STREAM, 0);
+        sockaddr_in serv_addr{};
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(port);
+        bool d = true;
+        if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &d, sizeof(int)) != 0) {
+            throw TransportBackendException();
+        }
+        if (inet_pton(AF_INET, hostname.c_str(), &serv_addr.sin_addr) != 1) {
+            throw TransportBackendException();
+        }
+        if (bind(sockFd, reinterpret_cast<const sockaddr *>(&serv_addr), sizeof(serv_addr)) != 0) {
+            throw TransportBackendException();
+        }
+        if (::listen(sockFd, backlog) != 0) {
+            throw TransportBackendException();
+        }
     }
 
-    awaitable<void> BoostSocketServer::listen() {
-        auto executor = co_await boost::asio::this_coro::executor;
-        boost::asio::ip::tcp::acceptor acceptor(executor);
-        acceptor.open(boost::asio::ip::tcp::v4());
-        acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
-        acceptor.bind(endpoint);
+    void PlainSocketServer::listen() {
         while (true) {
-            ip::tcp::socket socket = co_await acceptor.async_accept(use_awaitable);
-            co_spawn(executor, [&socket]() -> awaitable<void> {
-                         proto::ServerHandler handler(std::move(socket));
-                         co_await handler.handleClientConnection();
-                     },
-                     detached);
+            sockaddr addr{};
+            socklen_t size;
+            int remoteFd = accept(sockFd, &addr, &size);
+            if (remoteFd == -1) {
+                throw TransportBackendException();
+            }
+            auto *handler =
+                    new proto::ServerHandler(new PlainSocketTransport(remoteFd));
+            std::thread th([&handler] { handler->handleClientConnection(); });
+            th.detach();
         }
     }
 }

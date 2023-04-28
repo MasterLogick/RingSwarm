@@ -1,23 +1,24 @@
 #include <thread>
 #include <iostream>
-#include "transport/BoostSocketServer.h"
+#include "transport/PlainSocketServer.h"
 #include "transport/Transport.h"
+#include "transport/PlainSocketTransport.h"
 #include "proto/ClientHandler.h"
 #include <coroutine>
 #include <boost/asio.hpp>
 
 int main() {
-//    boost::asio::io_context ioContext;
-//    std::string host("127.0.0.1");
-//    RingSwarm::transport::BoostSocketServer server(12345);
-//    std::thread serv([&server] { server.listen(); });
-//    RingSwarm::transport::PlainSocketTransport transport(host, 12345);
-//    RingSwarm::proto::ClientHandler client(&transport);
-//    RingSwarm::core::Id id{};
-//    client.unsubscribeOnChunkChange(id, 0);
-//    std::cout << "1" << std::endl;
-//    serv.join();
-//    boost::asio::io_context io;
+    boost::asio::io_context ioContext;
+    std::string host("127.0.0.1");
+    RingSwarm::transport::PlainSocketServer server(host, 12345, 8);
+    std::thread serv([&server] { server.listen(); });
+    RingSwarm::transport::PlainSocketTransport transport(host, 12345);
+    RingSwarm::proto::ClientHandler client(&transport);
+    RingSwarm::core::Id id{};
+    client.unsubscribeOnChunkChange(id, 0);
+    std::cout << "1" << std::endl;
+    serv.join();
+    boost::asio::io_context io;
 }
 //
 //#include <boost/asio/co_spawn.hpp>

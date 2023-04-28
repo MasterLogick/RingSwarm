@@ -3,8 +3,8 @@
 
 namespace RingSwarm::proto {
 
-    boost::asio::awaitable<void> ClientHandler::handshake() {
-        co_return;
+    void ClientHandler::handshake() {
+
     }
 
     void ServerHandler::handleHandshake() {

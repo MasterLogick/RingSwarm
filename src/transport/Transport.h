@@ -2,8 +2,6 @@
 #define RINGSWARM_TRANSPORT_H
 
 #include <cstdint>
-#include <experimental/coroutine>
-#include <boost/asio/awaitable.hpp>
 #include "Buffer.h"
 #include "ResponseBuffer.h"
 #include "RequestBuffer.h"
@@ -11,31 +9,30 @@
 
 namespace RingSwarm::transport {
     class Transport {
-        boost::asio::awaitable<uint32_t> readResponseLength(uint32_t maxResponseLength);
-
-        boost::asio::awaitable<proto::ResponseHeader> readResponseHeader();
-
-        virtual boost::asio::awaitable<void> rawWrite(void *data, uint32_t len) = 0;
-
-        virtual boost::asio::awaitable<void> rawRead(void *buff, uint32_t len) = 0;
-
     public:
+        void sendResponse(ResponseBuffer &resp);
 
-        boost::asio::awaitable<void> sendResponse(ResponseBuffer &resp);
+        void startLongResponse(uint32_t size);
 
-        boost::asio::awaitable<void> startLongResponse(uint32_t size);
+        void sendLongResponsePart(void *data, uint32_t len);
 
-        boost::asio::awaitable<void> sendLongResponsePart(void *data, uint32_t len);
+        virtual void rawWrite(void *data, uint32_t len) = 0;
 
-        boost::asio::awaitable<void> sendError();
+        virtual void rawRead(void *buff, uint32_t len) = 0;
 
-        boost::asio::awaitable<void> sendEmptyResponse();
+        virtual void close() = 0;
 
-        boost::asio::awaitable<void> sendRequest(uint16_t commandIndex, RingSwarm::transport::RequestBuffer &req);
+        void sendError();
 
-        boost::asio::awaitable<transport::Buffer> readResponse(uint32_t maxResponseLength);
+        void sendEmptyResponse();
 
-        virtual boost::asio::awaitable<void> close() = 0;
+        void sendRequest(uint16_t commandIndex, RingSwarm::transport::RequestBuffer &req);
+
+        proto::ResponseHeader readResponseHeader();
+
+        uint32_t readResponseLength(uint32_t maxResponseLength);
+
+        transport::Buffer readResponse(uint32_t maxResponseLength);
     };
 }
 

@@ -4,7 +4,7 @@
 
 #define MAX_RESPONSE_SIZE (0)
 namespace RingSwarm::proto {
-    boost::asio::awaitable<void> ClientHandler::dragIntoFileMetaSwarm(
+    void ClientHandler::dragIntoFileMetaSwarm(
             core::FileMeta *meta,
             std::vector<std::pair<std::shared_ptr<core::Node>, uint8_t>> &nodeList
     ) {
@@ -21,11 +21,11 @@ namespace RingSwarm::proto {
             nodes.push_back(item.first);
         }
         req.writeNodeList(nodes);
-        co_await transport->sendRequest(5, req);
-        co_await transport->readResponse(MAX_RESPONSE_SIZE);
+        transport->sendRequest(5, req);
+        transport->readResponse(MAX_RESPONSE_SIZE);
     }
 
-    boost::asio::awaitable<void> ServerHandler::handleDragIntoFileMetaSwarm(transport::Buffer &request) {
+    void ServerHandler::handleDragIntoFileMetaSwarm(transport::Buffer &request) {
         core::FileMeta *meta = request.readFileMeta();
         auto swarmSize = request.readUint8();
         uint8_t swarmIndexes[swarmSize];
@@ -37,13 +37,13 @@ namespace RingSwarm::proto {
         auto swarm = storage::getHostedFileMetaSwarm(meta->getId());
         if (swarm != nullptr) {
             //todo update node list
+            transport->sendEmptyResponse();
         } else {
             std::shared_ptr<core::FileMetaSwarm> newSwarm(
                     new core::FileMetaSwarm(meta, nodeList));
             storage::storeNewFileMetaSwarm(newSwarm);
             //todo handle file meta propagation
+            transport->sendEmptyResponse();
         }
-//        co_return;
-        co_await transport->sendEmptyResponse();
     }
 }
