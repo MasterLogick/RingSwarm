@@ -8,8 +8,4 @@ namespace RingSwarm::core {
     Id *FileMeta::getId() {
         return fileId;
     }
-
-    FileMeta::FileMeta() {
-
-    }
 } // core

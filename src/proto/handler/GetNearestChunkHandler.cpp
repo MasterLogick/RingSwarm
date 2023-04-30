@@ -14,7 +14,7 @@ namespace RingSwarm::proto {
     }
 
     void sendNearestChunkSwarm(transport::Transport *transport, uint64_t chunkIndex,
-                               std::map<uint64_t, std::vector<std::shared_ptr<core::Node>>> &connectedSwarms) {
+                               std::map<uint64_t, std::vector<core::Node *>> & connectedSwarms) {
         uint64_t nearestSwarm = connectedSwarms.begin()->first;
         for (const auto &chunkSwarm: connectedSwarms) {
             if (dist(chunkSwarm.first, chunkIndex) < dist(nearestSwarm, chunkIndex)) {
@@ -50,11 +50,11 @@ namespace RingSwarm::proto {
             if (chunkSwarm == nullptr) {
                 transport->sendError();
             } else {
-                auto &connectedSwarms = chunkSwarm->getRingConnections();
+                auto &connectedSwarms = chunkSwarm->ringConnections;
                 ::RingSwarm::proto::sendNearestChunkSwarm(transport, chunkIndex, connectedSwarms);
             }
         } else {
-            auto &connectedSwarms = fileMetaSwarm->getConnectedChunkSwarms();
+            auto &connectedSwarms = fileMetaSwarm->connectedChunkSwarms;
             ::RingSwarm::proto::sendNearestChunkSwarm(transport, chunkIndex, connectedSwarms);
         }
     }

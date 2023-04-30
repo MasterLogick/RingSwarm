@@ -21,7 +21,7 @@ namespace RingSwarm::proto {
             transport->sendError();
             return;
         }
-        auto &link = chunk->getChunkLink();
+        auto &link = chunk->link;
         transport::ResponseBuffer resp(link.getSerializedSize());
         resp.writeChunkLink(link);
         transport->sendResponse(resp);

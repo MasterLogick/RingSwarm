@@ -103,7 +103,7 @@ namespace RingSwarm::transport {
         return nullptr;
     }
 
-    void Buffer::writeNode(const std::shared_ptr<core::Node> node) {
+    void Buffer::writeNode(core::Node *node) {
 
     }
 

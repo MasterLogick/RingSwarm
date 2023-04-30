@@ -23,6 +23,7 @@ namespace RingSwarm::proto {
 
         void dragIntoFileMetaSwarm(
                 core::FileMeta *meta,
+                uint8_t index,
                 std::vector<std::pair<std::shared_ptr<core::Node>, uint8_t>> &nodeList);
 
         std::vector<core::Node *> noticeJoinedFileMetaSwarm(core::Id &fileId);

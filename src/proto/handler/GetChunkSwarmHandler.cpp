@@ -20,7 +20,7 @@ namespace RingSwarm::proto {
         if (chunkSwarm == nullptr) {
             transport->sendError();
         } else {
-            sendNodeListResponse(chunkSwarm->getSwarmNodes());
+            sendNodeListResponse(chunkSwarm->swarm);
         }
     }
 }

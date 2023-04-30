@@ -9,11 +9,11 @@
 namespace RingSwarm::proto {
     class ServerHandler {
         transport::Transport *transport;
-        std::shared_ptr<core::Node> remote;
+        core::Node *remote;
 
         void errorStop();
 
-        void sendNodeListResponse(std::vector<std::shared_ptr<core::Node>> &nodeList);
+        void sendNodeListResponse(std::vector<core::Node *> &nodeList);
 
         void handleHandshake();
 

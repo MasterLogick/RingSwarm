@@ -10,24 +10,13 @@
 #include "Swarm.h"
 
 namespace RingSwarm::core {
-    class ChunkSwarm : public Swarm {
-        std::string linkSign;
-        std::map<uint64_t, std::vector<std::shared_ptr<Node>>> ringConnections;
+    struct ChunkSwarm : public Swarm {
+        std::map<uint64_t, std::vector<Node *>> ringConnections;
         ChunkLink link;
-    public:
+
         const Id &getDataHash() {
             return link.dataHash;
         }
-
-        std::string &getLinkSign() {
-            return linkSign;
-        }
-
-        ChunkLink &getChunkLink();
-
-        std::map<uint64_t, std::vector<std::shared_ptr<Node>>> &getRingConnections();
-
-        const Id &getFileId();
     };
 }
 

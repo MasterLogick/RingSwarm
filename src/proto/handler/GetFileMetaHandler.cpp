@@ -35,7 +35,7 @@ namespace RingSwarm::proto {
             resp.writeNode(node);
             transport->sendResponse(resp);
         } else {
-            auto *fileMeta = fileSwarm->getFileMeta();
+            auto *fileMeta = fileSwarm->meta;
             transport::ResponseBuffer resp(1 + fileMeta->getSerializedSize());
             resp.writeUint8(1);
             resp.writeFileMeta(fileMeta);

@@ -8,15 +8,19 @@
 #include "Swarm.h"
 
 namespace RingSwarm::core {
-    class FileMetaSwarm : public Swarm {
+    struct FileMetaSwarm : public Swarm {
         core::FileMeta *meta;
-        std::map<uint64_t, std::vector<std::shared_ptr<Node>>> connectedChunkSwarms;
-    public:
-        FileMetaSwarm(core::FileMeta *meta, std::vector<Node *> swarm) {}
+        uint8_t index;
+        std::map<uint64_t, std::vector<Node *>> connectedChunkSwarms;
 
-        core::FileMeta *getFileMeta();
+        FileMetaSwarm(core::FileMeta *meta, uint8_t index) : meta(meta), index(index) {
 
-        std::map<uint64_t, std::vector<std::shared_ptr<Node>>> &getConnectedChunkSwarms();
+        }
+
+        FileMetaSwarm(core::FileMeta *meta, uint8_t index, std::vector<Node *> &swarm) :
+                meta(meta), index(index), Swarm(swarm) {
+
+        }
     };
 }
 

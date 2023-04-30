@@ -5,15 +5,13 @@ namespace RingSwarm::core {
         return 0;
     }
 
-    bool Node::operator==(Node &rhs) {
-        return getId() == rhs.getId();
+    bool Node::operator==(Node &rhs) const {
+        return *id == *rhs.id;
     }
 
-    bool Node::operator!=(Node &rhs) {
+    bool Node::operator!=(Node &rhs) const {
         return !(*this == rhs);
     }
 
-    Id &Node::getId() {
-        return id;
-    }
+    Node *Node::thisNode = nullptr;
 }

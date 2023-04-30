@@ -2,11 +2,12 @@
 #define RINGSWARM_FILEMETA_H
 
 #include <cstdint>
-#include <string>
+#include <vector>
 #include "Id.h"
 
 namespace RingSwarm::core {
-    class FileMeta {
+    struct FileMeta {
+        uint64_t internalStorageId;
         Id *author;
         uint64_t creationTimestamp;
         uint64_t chunksCount;
@@ -14,10 +15,8 @@ namespace RingSwarm::core {
         uint8_t minSwarmSize;
         uint8_t ringConnectivity;
         uint8_t optMeta[10];
-        std::string sign;
+        std::vector<char> sign;
         Id *fileId;
-    public:
-        FileMeta();
 
         int getSerializedSize();
 

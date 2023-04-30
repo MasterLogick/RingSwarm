@@ -54,7 +54,7 @@ namespace RingSwarm::transport {
 
         void writeFileMeta(core::FileMeta *meta);
 
-        void writeNode(std::shared_ptr<core::Node> node);
+        void writeNode(core::Node *node);
 
         void writeData(const char *data, uint32_t len);
 

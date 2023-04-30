@@ -2,19 +2,20 @@
 #define RINGSWARM_NODE_H
 
 #include "Id.h"
+#include <memory>
 
 namespace RingSwarm::core {
-    class Node {
-        Id id;
-    public:
+    struct Node {
+        uint64_t internalStorageId;
+        Id *id;
 
         int getSerializedSize();
 
-        Id &getId();
+        bool operator==(Node &rhs) const;
 
-        bool operator==(Node &rhs);
+        bool operator!=(Node &rhs) const;
 
-        bool operator!=(Node &rhs);
+        static Node *thisNode;
     };
 }
 

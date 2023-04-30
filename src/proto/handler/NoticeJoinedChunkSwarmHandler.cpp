@@ -20,7 +20,7 @@ namespace RingSwarm::proto {
         if (chunkSwarm == nullptr) {
             transport->sendError();
         } else {
-            auto nodeList = chunkSwarm->getSwarmNodes();
+            auto& nodeList = chunkSwarm->swarm;
             if (std::none_of(nodeList.begin(), nodeList.end(),
                              [&](auto node) -> bool { return node == remote; })) {
                 nodeList.push_back(remote);

@@ -18,7 +18,7 @@ namespace RingSwarm::proto {
         if (fileMetaSwarm == nullptr) {
             transport->sendError();
         } else {
-            auto nodeList = fileMetaSwarm->getSwarmNodes();
+            auto& nodeList = fileMetaSwarm->swarm;
             sendNodeListResponse(nodeList);
         }
     }

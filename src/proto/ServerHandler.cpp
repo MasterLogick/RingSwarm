@@ -24,9 +24,11 @@ namespace RingSwarm::proto {
                 if (requestHeader.method >= ServerHandler::MethodsCount) {
                     throw ProtocolException();
                 }
-                BOOST_LOG_TRIVIAL(trace) << "Executing " << ServerHandler::MethodNames[requestHeader.method] << " method handler";
+                BOOST_LOG_TRIVIAL(trace) << "Enter " << ServerHandler::MethodNames[requestHeader.method]
+                                         << " method handler";
                 (this->*ServerHandler::Methods[requestHeader.method])(buff);
-                BOOST_LOG_TRIVIAL(trace) << "Executed " << ServerHandler::MethodNames[requestHeader.method] << " method handler";
+                BOOST_LOG_TRIVIAL(trace) << "Executed " << ServerHandler::MethodNames[requestHeader.method]
+                                         << " method handler";
             }
         } catch (core::RingSwarmException &e) {
             BOOST_LOG_TRIVIAL(error) << e.what();
@@ -42,7 +44,7 @@ namespace RingSwarm::proto {
         transport->close();
     }
 
-    void ServerHandler::sendNodeListResponse(std::vector<std::shared_ptr<core::Node>> &nodeList) {
+    void ServerHandler::sendNodeListResponse(std::vector<core::Node *> &nodeList) {
         uint32_t nodeListSize = 0;
         for (const auto &node: nodeList) {
             nodeListSize += node->getSerializedSize();

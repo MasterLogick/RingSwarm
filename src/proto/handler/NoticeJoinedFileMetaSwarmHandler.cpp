@@ -18,9 +18,9 @@ namespace RingSwarm::proto {
         if (fileMetaSwarm == nullptr) {
             transport->sendError();
         } else {
-            auto nodeList = fileMetaSwarm->getSwarmNodes();
+            auto &nodeList = fileMetaSwarm->swarm;
             if (std::none_of(nodeList.begin(), nodeList.end(),
-                             [&](auto node) -> bool { return node == remote; })) {
+                             [&](auto node) -> bool { return *node == *remote; })) {
                 nodeList.push_back(remote);
             }
             sendNodeListResponse(nodeList);

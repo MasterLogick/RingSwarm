@@ -2,6 +2,8 @@
 #define RINGSWARM_ID_H
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace RingSwarm::core {
     struct Id {
@@ -10,6 +12,12 @@ namespace RingSwarm::core {
         bool operator==(const Id &rhs) const;
 
         bool operator!=(const Id &rhs) const;
+
+        std::string getHexRepresentation();
+
+        static Id *fromHexRepresentation(const char *hex);
+
+        static Id *fromBlob(std::vector<char> blob);
     };
 }
 
