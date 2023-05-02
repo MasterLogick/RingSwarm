@@ -6,10 +6,10 @@
 
 namespace RingSwarm::core {
     struct ChunkLink {
-        const Id &file;
-        const uint64_t index;
-        const Id &dataHash;
-        const std::string sign;
+        Id *const file;
+        const uint64_t chunkIndex;
+        Id *const dataHash;
+        const std::vector<char> sign;
 
         uint32_t getSerializedSize();
     };

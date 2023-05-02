@@ -6,7 +6,7 @@
 #define MAX_RESPONSE_LENGTH (1024 * 32)
 
 namespace RingSwarm::proto {
-    bool ClientHandler::getFileMeta(core::Id &fileId, uint8_t nodeIndex, core::FileMeta **meta, core::Node **node) {
+    bool ClientHandler::getFileMeta(core::Id *fileId, uint8_t nodeIndex, core::FileMeta **meta, core::Node **node) {
         transport::RequestBuffer req(33);
         req.writeId(fileId);
         req.writeUint8(nodeIndex);
@@ -27,7 +27,7 @@ namespace RingSwarm::proto {
     void ServerHandler::handleGetFileMeta(transport::Buffer &request) {
         auto fileId = request.readId();
         auto index = request.readUint8();
-        auto fileSwarm = storage::getHostedFileMetaSwarm(fileId);
+        auto fileSwarm = storage::getFileMetaSwarm(fileId);
         if (fileSwarm == nullptr) {
             auto node = storage::getPossibleFileMetaHost(fileId, index);
             transport::ResponseBuffer resp(1 + node->getSerializedSize());

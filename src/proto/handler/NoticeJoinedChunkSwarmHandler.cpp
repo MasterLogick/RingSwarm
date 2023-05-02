@@ -4,7 +4,7 @@
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
 namespace RingSwarm::proto {
-    std::vector<core::Node *> ClientHandler::noticeJoinedChunkSwarm(core::Id &fileId, uint64_t chunkIndex) {
+    std::vector<core::Node *> ClientHandler::noticeJoinedChunkSwarm(core::Id *fileId, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
         req.writeId(fileId);
         req.writeUint64(chunkIndex);
@@ -20,7 +20,7 @@ namespace RingSwarm::proto {
         if (chunkSwarm == nullptr) {
             transport->sendError();
         } else {
-            auto& nodeList = chunkSwarm->swarm;
+            auto &nodeList = (*chunkSwarm->ring)[chunkIndex];
             if (std::none_of(nodeList.begin(), nodeList.end(),
                              [&](auto node) -> bool { return node == remote; })) {
                 nodeList.push_back(remote);

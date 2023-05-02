@@ -5,8 +5,10 @@
 #include "../core/ChunkSwarm.h"
 
 namespace RingSwarm::storage {
-    core::ChunkSwarm *getHostedChunkSwarm(core::Id *id, uint64_t index);
+    core::ChunkSwarm *getHostedChunkSwarm(core::Id *fileId, uint64_t index);
 
-    core::ChunkSwarm *getNearestHostedChunkSwarm(core::Id *id, uint64_t index);
+    core::Node *getNearestChunkNode(core::Id *fileId, uint64_t chunkIndex, uint8_t *retSwarmIndex);
+
+    void storeChunkSwarm(core::ChunkSwarm *chunkSwarm);
 }
 #endif //RINGSWARM_CHUNKSWARMSTORAGE_H

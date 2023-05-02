@@ -4,7 +4,7 @@
 
 #define MAX_RESPONSE_LENGTH (1024 * 1024)
 namespace RingSwarm::proto {
-    core::ChunkLink *ClientHandler::getChunkLink(core::Id &id, uint64_t chunkIndex) {
+    core::ChunkLink *ClientHandler::getChunkLink(core::Id *id, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
         req.writeId(id);
         req.writeUint64(chunkIndex);
@@ -21,8 +21,8 @@ namespace RingSwarm::proto {
             transport->sendError();
             return;
         }
-        auto &link = chunk->link;
-        transport::ResponseBuffer resp(link.getSerializedSize());
+        auto *link = chunk->link;
+        transport::ResponseBuffer resp(link->getSerializedSize());
         resp.writeChunkLink(link);
         transport->sendResponse(resp);
     }

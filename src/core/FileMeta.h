@@ -7,20 +7,17 @@
 
 namespace RingSwarm::core {
     struct FileMeta {
-        uint64_t internalStorageId;
-        Id *author;
-        uint64_t creationTimestamp;
-        uint64_t chunksCount;
-        uint32_t chunkSize;
-        uint8_t minSwarmSize;
-        uint8_t ringConnectivity;
-        uint8_t optMeta[10];
-        std::vector<char> sign;
-        Id *fileId;
+        Id *const author;
+        const uint64_t creationTimestamp;
+        const uint64_t chunksCount;
+        const uint32_t chunkSize;
+        const uint8_t minSwarmSize;
+        const uint8_t ringConnectivity;
+        const uint8_t optMeta[10];
+        const std::vector<char> sign;
+        Id *const fileId;
 
         int getSerializedSize();
-
-        Id *getId();
     };
 }
 

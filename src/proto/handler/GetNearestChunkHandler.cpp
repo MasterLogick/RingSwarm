@@ -9,27 +9,7 @@
 #define MAX_RESPONSE_SIZE (1024*8)
 namespace RingSwarm::proto {
 
-    uint64_t dist(const uint64_t &lhs, const uint64_t &rhs) {
-        return lhs > rhs ? lhs - rhs : rhs - lhs;
-    }
-
-    void sendNearestChunkSwarm(transport::Transport *transport, uint64_t chunkIndex,
-                               std::map<uint64_t, std::vector<core::Node *>> & connectedSwarms) {
-        uint64_t nearestSwarm = connectedSwarms.begin()->first;
-        for (const auto &chunkSwarm: connectedSwarms) {
-            if (dist(chunkSwarm.first, chunkIndex) < dist(nearestSwarm, chunkIndex)) {
-                nearestSwarm = chunkSwarm.first;
-            }
-        }
-        auto &swarm = connectedSwarms[nearestSwarm];
-        auto &node = swarm[core::getRandom(swarm.size())];
-        transport::ResponseBuffer resp(8 + node->getSerializedSize());
-        resp.writeUint64(nearestSwarm);
-        resp.writeNode(node);
-        transport->sendResponse(resp);
-    }
-
-    uint64_t ClientHandler::getNearestChunk(core::Id &fileId, uint64_t chunkIndex, core::Node **node) {
+    uint64_t ClientHandler::getNearestChunk(core::Id *fileId, uint64_t chunkIndex, core::Node **node) {
         transport::RequestBuffer req(32 + 8);
         req.writeId(fileId);
         req.writeUint64(chunkIndex);
@@ -43,19 +23,15 @@ namespace RingSwarm::proto {
     void ServerHandler::handleGetNearestChunk(transport::Buffer &request) {
         auto fileId = request.readId();
         auto chunkIndex = request.readUint64();
-        auto fileMetaSwarm = storage::getHostedFileMetaSwarm(fileId);
-        //todo select best swarm from both cases if they exist
-        if (fileMetaSwarm == nullptr) {
-            auto chunkSwarm = storage::getNearestHostedChunkSwarm(fileId, chunkIndex);
-            if (chunkSwarm == nullptr) {
-                transport->sendError();
-            } else {
-                auto &connectedSwarms = chunkSwarm->ringConnections;
-                ::RingSwarm::proto::sendNearestChunkSwarm(transport, chunkIndex, connectedSwarms);
-            }
+        uint8_t chunk;
+        auto *node = storage::getNearestChunkNode(fileId, chunkIndex, &chunk);
+        if (node != nullptr) {
+            transport::ResponseBuffer resp(1 + node->getSerializedSize());
+            resp.writeUint8(chunk);
+            resp.writeNode(node);
+            transport->sendResponse(resp);
         } else {
-            auto &connectedSwarms = fileMetaSwarm->connectedChunkSwarms;
-            ::RingSwarm::proto::sendNearestChunkSwarm(transport, chunkIndex, connectedSwarms);
+            transport->sendError();
         }
     }
 }

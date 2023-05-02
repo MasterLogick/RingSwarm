@@ -5,11 +5,10 @@
 
 namespace RingSwarm::storage {
     Statement::Statement(sqlite3 *connection, const char *sql) {
-        int err;
-        if ((err = sqlite3_prepare_v2(connection, sql, -1, &statement, nullptr)) != SQLITE_OK) {
+        if ((sqlite3_prepare_v2(connection, sql, -1, &statement, nullptr)) != SQLITE_OK) {
 
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 \"" << sql << "\" prepare error: "
-                                     << sqlite3_errstr(err);
+                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }
@@ -24,9 +23,9 @@ namespace RingSwarm::storage {
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
             throw StorageException();
         }
-        int err;
-        if ((err = sqlite3_bind_text(statement, index, value.c_str(), value.length(), SQLITE_TRANSIENT)) != SQLITE_OK) {
-            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": " << sqlite3_errstr(err);
+        if ((sqlite3_bind_text(statement, index, value.c_str(), value.length(), SQLITE_TRANSIENT)) != SQLITE_OK) {
+            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
+                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }
@@ -37,9 +36,9 @@ namespace RingSwarm::storage {
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
             throw StorageException();
         }
-        int err;
-        if ((err = sqlite3_bind_int64(statement, index, value)) != SQLITE_OK) {
-            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": " << sqlite3_errstr(err);
+        if ((sqlite3_bind_int64(statement, index, value)) != SQLITE_OK) {
+            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
+                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }
@@ -50,9 +49,9 @@ namespace RingSwarm::storage {
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
             throw StorageException();
         }
-        int err;
-        if ((err = sqlite3_bind_int(statement, index, value)) != SQLITE_OK) {
-            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": " << sqlite3_errstr(err);
+        if ((sqlite3_bind_int(statement, index, value)) != SQLITE_OK) {
+            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
+                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }
@@ -63,9 +62,9 @@ namespace RingSwarm::storage {
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
             throw StorageException();
         }
-        int err;
-        if ((err = sqlite3_bind_blob(statement, index, blob, size, SQLITE_TRANSIENT)) != SQLITE_OK) {
-            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind blob \"" << label << "\": " << sqlite3_errstr(err);
+        if ((sqlite3_bind_blob(statement, index, blob, size, SQLITE_TRANSIENT)) != SQLITE_OK) {
+            BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind blob \"" << label << "\": "
+                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }
@@ -77,7 +76,7 @@ namespace RingSwarm::storage {
         } else if (err == SQLITE_DONE) {
             return false;
         } else {
-            BOOST_LOG_TRIVIAL(error) << "SQLITE3 step error: " << sqlite3_errstr(err);
+            BOOST_LOG_TRIVIAL(error) << "SQLITE3 step error: " << sqlite3_errmsg(sqlite3_db_handle(statement));
             throw StorageException();
         }
     }

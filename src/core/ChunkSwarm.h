@@ -7,16 +7,12 @@
 #include "Id.h"
 #include "ChunkLink.h"
 #include "Node.h"
-#include "Swarm.h"
+#include "ChunkRing.h"
 
 namespace RingSwarm::core {
-    struct ChunkSwarm : public Swarm {
-        std::map<uint64_t, std::vector<Node *>> ringConnections;
-        ChunkLink link;
-
-        const Id &getDataHash() {
-            return link.dataHash;
-        }
+    struct ChunkSwarm {
+        ChunkLink *link;
+        ChunkRing *ring;
     };
 }
 

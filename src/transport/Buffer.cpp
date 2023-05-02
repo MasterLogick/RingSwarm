@@ -51,11 +51,11 @@ namespace RingSwarm::transport {
         return d;
     }
 
-    void Buffer::writeId(core::Id id) {
+    void Buffer::writeId(core::Id *id) {
         if (len - offset < 32) {
             throw DataSerialisationException();
         }
-        std::memcpy(data + offset, &id.hash, 32);
+        std::memcpy(data + offset, &id->hash, 32);
         offset += 32;
     }
 
@@ -111,18 +111,18 @@ namespace RingSwarm::transport {
         return nullptr;
     }
 
-    void Buffer::writeChunkLink(core::ChunkLink &link) {
-        writeId(link.file);
-        writeUint64(link.index);
-        writeId(link.dataHash);
-        writeData(link.sign.c_str(), link.sign.length());
+    void Buffer::writeChunkLink(core::ChunkLink *link) {
+        writeId(link->file);
+        writeUint64(link->chunkIndex);
+        writeId(link->dataHash);
+        writeData(link->sign.data(), link->sign.size());
     }
 
     std::vector<core::Node *> Buffer::readNodeList() {
         return {};
     }
 
-    void Buffer::writeNodeList(std::vector<std::shared_ptr<core::Node>> nodeList) {
+    void Buffer::writeNodeList(std::vector<core::Node *> nodeList) {
 
     }
 }

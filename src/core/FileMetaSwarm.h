@@ -5,22 +5,13 @@
 #include <vector>
 #include "FileMeta.h"
 #include "Node.h"
-#include "Swarm.h"
+#include "ChunkRing.h"
 
 namespace RingSwarm::core {
-    struct FileMetaSwarm : public Swarm {
+    struct FileMetaSwarm {
         core::FileMeta *meta;
-        uint8_t index;
-        std::map<uint64_t, std::vector<Node *>> connectedChunkSwarms;
-
-        FileMetaSwarm(core::FileMeta *meta, uint8_t index) : meta(meta), index(index) {
-
-        }
-
-        FileMetaSwarm(core::FileMeta *meta, uint8_t index, std::vector<Node *> &swarm) :
-                meta(meta), index(index), Swarm(swarm) {
-
-        }
+        std::map<int, Node *> swarm;
+        ChunkRing *ring;
     };
 }
 

@@ -1,4 +1,4 @@
-#include "Swarm.h"
+#include "ConnectionInfo.h"
 
 namespace RingSwarm::core {
 }

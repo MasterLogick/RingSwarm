@@ -3,7 +3,7 @@
 
 namespace RingSwarm::proto {
     void ClientHandler::getChunk(
-            core::Id &fileId,
+            core::Id *fileId,
             uint64_t chunkIndex,
             uint32_t offset,
             void *buffer,

@@ -2,12 +2,14 @@
 #define RINGSWARM_NODE_H
 
 #include "Id.h"
+#include "ConnectionInfo.h"
 #include <memory>
 
 namespace RingSwarm::core {
     struct Node {
-        uint64_t internalStorageId;
         Id *id;
+        std::vector<char> publicKey;
+        ConnectionInfo connectionInfo;
 
         int getSerializedSize();
 

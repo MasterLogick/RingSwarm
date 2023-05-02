@@ -4,7 +4,7 @@
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
 namespace RingSwarm::proto {
-    std::vector<core::Node *> ClientHandler::getFileMetaSwarm(core::Id &fileId) {
+    std::vector<core::Node *> ClientHandler::getFileMetaSwarm(core::Id *fileId) {
         transport::RequestBuffer req(32);
         req.writeId(fileId);
         transport->sendRequest(8, req);
@@ -14,12 +14,13 @@ namespace RingSwarm::proto {
 
     void ServerHandler::handleGetFileMetaSwarm(transport::Buffer &request) {
         auto id = request.readId();
-        auto fileMetaSwarm = storage::getHostedFileMetaSwarm(id);
+        auto fileMetaSwarm = storage::getFileMetaSwarm(id);
         if (fileMetaSwarm == nullptr) {
             transport->sendError();
         } else {
             auto& nodeList = fileMetaSwarm->swarm;
-            sendNodeListResponse(nodeList);
+            //todo fix
+//            sendNodeListResponse(nodeList);
         }
     }
 }

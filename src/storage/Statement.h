@@ -33,6 +33,10 @@ namespace RingSwarm::storage {
 
         bool nextRow();
 
+        void execute() {
+            nextRow();
+        }
+
         const char *getText(int n);
 
         uint64_t getInt64(int n);

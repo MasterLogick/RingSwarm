@@ -3,7 +3,7 @@
 
 #define MAX_RESPONSE_SIZE (0)
 namespace RingSwarm::proto {
-    void ClientHandler::chunkChangeEvent(core::Id &fileId, uint64_t chunkIndex, uint8_t changeType) {
+    void ClientHandler::chunkChangeEvent(core::Id *fileId, uint64_t chunkIndex, uint8_t changeType) {
         transport::RequestBuffer req(41);
         req.writeId(fileId);
         req.writeUint64(chunkIndex);

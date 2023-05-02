@@ -50,7 +50,7 @@ namespace RingSwarm::transport {
 
         void writeUint8(uint8_t val);
 
-        void writeId(core::Id id);
+        void writeId(core::Id *id);
 
         void writeFileMeta(core::FileMeta *meta);
 
@@ -58,9 +58,9 @@ namespace RingSwarm::transport {
 
         void writeData(const char *data, uint32_t len);
 
-        void writeChunkLink(core::ChunkLink &link);
+        void writeChunkLink(core::ChunkLink *link);
 
-        void writeNodeList(std::vector<std::shared_ptr<core::Node>> nodeList);
+        void writeNodeList(std::vector<core::Node *> nodeList);
     };
 }
 

@@ -7,20 +7,20 @@ namespace RingSwarm::proto {
     void ClientHandler::dragIntoFileMetaSwarm(
             core::FileMeta *meta,
             uint8_t index,
-            std::vector<std::pair<std::shared_ptr<core::Node>, uint8_t>> &nodeList
+            std::map<int, core::Node *> &nodeList
     ) {
         uint32_t size = 0;
         for (const auto &item: nodeList) {
-            size += item.first->getSerializedSize();
+            size += item.second->getSerializedSize();
         }
         transport::RequestBuffer req(32 + 1 + 1 + nodeList.size() + size);
         req.writeFileMeta(meta);
         req.writeUint8(index);
         req.writeUint8(size);
-        std::vector<std::shared_ptr<core::Node>> nodes;
+        std::vector<core::Node *> nodes;
         for (const auto &item: nodeList) {
-            req.writeUint8(item.second);
-            nodes.push_back(item.first);
+            req.writeUint8(item.first);
+            nodes.push_back(item.second);
         }
         req.writeNodeList(nodes);
         transport->sendRequest(5, req);
@@ -37,14 +37,14 @@ namespace RingSwarm::proto {
         }
         //todo read node indexes
         auto nodeList = request.readNodeList();
-        auto swarm = storage::getHostedFileMetaSwarm(meta->getId());
+        auto swarm = storage::getFileMetaSwarm(meta->fileId);
         if (swarm != nullptr) {
             //todo update node list
             transport->sendEmptyResponse();
         } else {
-            
-            std::shared_ptr<core::FileMetaSwarm> newSwarm(new core::FileMetaSwarm(meta, index, nodeList));
-            storage::storeNewFileMetaSwarm(newSwarm);
+
+            auto *newSwarm = new core::FileMetaSwarm();
+            storage::storeFileMetaSwarm(newSwarm);
             //todo handle file meta propagation
             transport->sendEmptyResponse();
         }
