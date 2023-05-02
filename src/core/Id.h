@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <cstring>
 
 namespace RingSwarm::core {
     struct Id {
@@ -18,6 +19,13 @@ namespace RingSwarm::core {
         static Id *fromHexRepresentation(const char *hex);
 
         static Id *fromBlob(std::vector<char> blob);
+
+        class Comparator {
+        public:
+            bool operator()(Id *const lhs, Id *const rhs) const {
+                return memcmp(lhs->hash, rhs->hash, 32) < 0;
+            }
+        };
     };
 }
 

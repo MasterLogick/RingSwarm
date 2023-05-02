@@ -2,11 +2,11 @@
 #include "StorageManager.h"
 #include "Statement.h"
 #include "StorageException.h"
-#include <boost/log/trivial.hpp>
 #include "ChunkRingStorage.h"
 #include "NodeStorage.h"
 
 namespace RingSwarm::storage {
+    std::map<core::Id *, core::FileMetaSwarm *, core::Id::Comparator> fileMetaSwarmStorage;
     const char *fileMetaSelect =
             "select author,\n"
             "       creation_timestamp,\n"
@@ -24,6 +24,9 @@ namespace RingSwarm::storage {
             "where file_id = :file_id;";
 
     core::FileMetaSwarm *getFileMetaSwarm(core::Id *fileId) {
+        if (fileMetaSwarmStorage.contains(fileId)) {
+            return fileMetaSwarmStorage[fileId];
+        }
         Statement fileMetaSelectStatement(dbConnection, fileMetaSelect);
         fileMetaSelectStatement.bindId(":file_id", fileId);
         if (!fileMetaSelectStatement.nextRow()) {
@@ -54,6 +57,7 @@ namespace RingSwarm::storage {
             }
             swarm[fileSwarmSelectStatement.getInt32(0)] = node;
         }
+        fileMetaSwarmStorage[fileId] = metaSwarm;
         return metaSwarm;
     }
 
@@ -67,6 +71,12 @@ namespace RingSwarm::storage {
             "values (:file_id, :swarm_index, :node_id);";
 
     void storeFileMetaSwarm(core::FileMetaSwarm *fileSwarm) {
+        if (fileMetaSwarmStorage.contains(fileSwarm->meta->fileId)) {
+            throw StorageException();
+        } else {
+            fileMetaSwarmStorage[fileSwarm->meta->fileId] = fileSwarm;
+        }
+
         auto *fileMeta = fileSwarm->meta;
         Statement fileMetaInsertStatement(dbConnection, fileMetaInsert);
         fileMetaInsertStatement.bindId(":file_id", fileMeta->fileId);
@@ -91,5 +101,6 @@ namespace RingSwarm::storage {
         }
 
         storeChunkRing(fileMeta->fileId, fileSwarm->ring);
+
     }
 }
