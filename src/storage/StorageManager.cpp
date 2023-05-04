@@ -47,6 +47,12 @@ namespace RingSwarm::storage {
             "    file_id     blob,\n"
             "    chunk_index integer,\n"
             "    node_id     blob\n"
+            ");\n"
+            "\n"
+            "create table if not exists settings\n"
+            "(\n"
+            "    name  text primary key on conflict replace,\n"
+            "    value text\n"
             ");";
 
     void loadStorage(const char *dbPath) {

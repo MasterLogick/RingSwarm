@@ -81,8 +81,8 @@ namespace RingSwarm::storage {
         }
     }
 
-    const char *Statement::getText(int n) {
-        return reinterpret_cast<const char *>(sqlite3_column_text(statement, n));
+    std::string Statement::getText(int n) {
+        return {reinterpret_cast<const char *>(sqlite3_column_text(statement, n))};
     }
 
     uint32_t Statement::getInt32(int n) {

@@ -17,7 +17,7 @@ namespace RingSwarm::storage {
             return chunkRingStorage[fileId];
         }
         Statement chunkSwarmNodeSelectStatement(dbConnection, chunkSwarmNodeSelect);
-        chunkSwarmNodeSelectStatement.bindId(":dile_id", fileId);
+        chunkSwarmNodeSelectStatement.bindId(":file_id", fileId);
         auto *ring = new core::ChunkRing();
         while (chunkSwarmNodeSelectStatement.nextRow()) {
             auto chunkIndex = chunkSwarmNodeSelectStatement.getInt64(0);

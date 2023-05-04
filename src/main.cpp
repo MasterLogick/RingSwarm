@@ -8,10 +8,12 @@
 #include "storage/FileSwarmStorage.h"
 #include "storage/Statement.h"
 #include "storage/ChunkRingStorage.h"
+#include "crypto/AsymetricalCrypto.h"
 
 int main() {
-    RingSwarm::core::Node::thisNode = new RingSwarm::core::Node();
     RingSwarm::storage::loadStorage("ring-swarm.sqlite3");
+    RingSwarm::crypto::loadNodeKeys();
+    RingSwarm::core::Node::thisNode = new RingSwarm::core::Node();
     RingSwarm::core::FileMeta m(
             RingSwarm::core::Id::fromHexRepresentation(
                     "0000000000000000000000000000000000000000000000000000000000000001"),
