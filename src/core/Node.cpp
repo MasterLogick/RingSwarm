@@ -13,5 +13,5 @@ namespace RingSwarm::core {
         return !(*this == rhs);
     }
 
-    Node *Node::thisNode = nullptr;
+    Node *Node::thisNode = new Node();
 }

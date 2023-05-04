@@ -9,7 +9,7 @@ find_library(gmp NAMES gmp)
 find_library(gmpxx NAMES gmpxx)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED system log)
+find_package(Boost REQUIRED system log program_options)
 
 include(FetchContent)
 FetchContent_Declare(sqlite3

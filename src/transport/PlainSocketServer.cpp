@@ -7,6 +7,7 @@
 #include "PlainSocketTransport.h"
 #include "../proto/ServerHandler.h"
 #include "TransportBackendException.h"
+#include <boost/log/trivial.hpp>
 
 namespace RingSwarm::transport {
     PlainSocketServer::PlainSocketServer(std::string &hostname, int port, int backlog) {
@@ -30,10 +31,16 @@ namespace RingSwarm::transport {
     }
 
     void PlainSocketServer::listen() {
+        BOOST_LOG_TRIVIAL(info) << "Plain tcp server starts listening";
         while (true) {
-            sockaddr addr{};
+            sockaddr_in addr{};
             socklen_t size;
-            int remoteFd = accept(sockFd, &addr, &size);
+            int remoteFd = accept(sockFd, reinterpret_cast<sockaddr *>(&addr), &size);
+            if (getpeername(remoteFd, reinterpret_cast<sockaddr *>(&addr), &size) != 0) {
+                throw TransportBackendException();
+            }
+            BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from "
+                                     << inet_ntoa(addr.sin_addr) << ":" << addr.sin_port;
             if (remoteFd == -1) {
                 throw TransportBackendException();
             }

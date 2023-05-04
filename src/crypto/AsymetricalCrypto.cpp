@@ -1,6 +1,8 @@
 #include "AsymetricalCrypto.h"
 #include "CryptoException.h"
+#include "HashCrypto.h"
 #include "../core/Settings.h"
+#include "../core/Node.h"
 #include <openssl/param_build.h>
 #include <openssl/core_names.h>
 #include <openssl/objects.h>
@@ -227,5 +229,7 @@ namespace RingSwarm::crypto {
         std::string serializedPrivKey = core::getSetting("privKey");
         loadPubKey(serializedPubKey);
         loadPrivKey(serializedPrivKey);
+        core::Node::thisNode->id = hashData(reinterpret_cast<const uint8_t *>(nodePubKey.data()), nodePubKey.size());
+        core::Node::thisNode->publicKey = nodePubKey;
     }
 }

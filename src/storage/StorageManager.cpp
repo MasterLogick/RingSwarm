@@ -66,8 +66,12 @@ namespace RingSwarm::storage {
                                     [](auto mask, void *ctx, void *b, void *c) {
                                         if (mask == SQLITE_TRACE_STMT) {
                                             auto *statement = static_cast<sqlite3_stmt *>(b);
+                                            char *ptr = sqlite3_expanded_sql(statement);
+                                            std::string str(sqlite3_expanded_sql(statement));
+                                            sqlite3_free(ptr);
+                                            std::replace(str.begin(), str.end(), '\n', ' ');
                                             BOOST_LOG_TRIVIAL(trace) << "SQLITE3 trace stmt: "
-                                                                     << sqlite3_expanded_sql(statement);
+                                                                     << str;
                                         }
                                         return 0;
                                     },

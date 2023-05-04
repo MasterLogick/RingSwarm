@@ -10,10 +10,6 @@ namespace RingSwarm::crypto {
     bool verifyData(std::vector<char> &data, std::vector<char> &sig, std::vector<char> &pubKey);
 
     void loadNodeKeys();
-
-    core::Id *getNodeId();
-
-    std::vector<char> getNodePubKey();
 }
 
 #endif //RINGSWARM_ASYMETRICALCRYPTO_H
