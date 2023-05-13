@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include "Id.h"
+#include <array>
 
 namespace RingSwarm::core {
     struct FileMeta {
@@ -13,11 +14,13 @@ namespace RingSwarm::core {
         const uint32_t chunkSize;
         const uint8_t minSwarmSize;
         const uint8_t ringConnectivity;
-        const uint8_t optMeta[10];
         const std::vector<char> sign;
         Id *const fileId;
 
         int getSerializedSize();
+
+        static FileMeta *
+        createNewFileMeta(uint64_t chunksCount, uint32_t chunkSize, uint8_t minSwarmSize, uint8_t ringConnectivity);
     };
 }
 

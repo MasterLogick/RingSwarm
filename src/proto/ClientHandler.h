@@ -8,10 +8,12 @@ namespace RingSwarm::proto {
     class ClientHandler {
         transport::Transport *transport;
 
+        core::Node *remote;
+
         void handshake();
 
     public:
-        explicit ClientHandler(transport::Transport *transport);
+        ClientHandler(transport::Transport *transport, core::Node *remote);
 
         bool getFileMeta(core::Id *fileId, uint8_t nodeIndex, core::FileMeta **meta, core::Node **node);
 

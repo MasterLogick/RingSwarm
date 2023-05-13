@@ -1,13 +1,18 @@
 #include "PlainSocketTransport.h"
 #include "TransportBackendException.h"
 #include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include <netdb.h>
+#include <string>
+#include <boost/log/trivial.hpp>
+#include <boost/algorithm/hex.hpp>
 
 namespace RingSwarm::transport {
     void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket sent: "
+                                 << boost::algorithm::hex(std::string(static_cast<char *>(data), len));
         for (uint32_t i = 0; i < len;) {
             auto sent = send(sockFd, reinterpret_cast<uint8_t *>(data) + i, len, 0);
             if (sent == -1) {
@@ -26,6 +31,8 @@ namespace RingSwarm::transport {
             }
             i += sent;
         }
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket read: "
+                                 << boost::algorithm::hex(std::string(static_cast<char *>(buff), len));
     }
 
     void PlainSocketTransport::close() {
@@ -33,16 +40,29 @@ namespace RingSwarm::transport {
     }
 
     PlainSocketTransport::PlainSocketTransport(std::string &host, int port) {
-        sockFd = socket(AF_INET, SOCK_STREAM, 0);
-        sockaddr_in serv_addr{};
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(port);
-        if (inet_pton(AF_INET, host.c_str(), &serv_addr.sin_addr) != 1) {
+        addrinfo hints{};
+        addrinfo *res, *rp;
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        std::string portStr = std::to_string(port);
+        if (getaddrinfo(host.c_str(), portStr.c_str(), &hints, &res) != 0) {
             throw TransportBackendException();
         }
-        if (connect(sockFd, reinterpret_cast<const sockaddr *>(&serv_addr), sizeof(serv_addr)) != 0) {
+        for (rp = res; rp != nullptr; rp = rp->ai_next) {
+            sockFd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+            if (sockFd == -1) {
+                continue;
+            }
+            if (connect(sockFd, rp->ai_addr, rp->ai_addrlen) != -1) {
+                break;
+            }
+            ::close(sockFd);
+        }
+        if (rp == nullptr) {
             throw TransportBackendException();
         }
+        freeaddrinfo(res);
     }
 
     PlainSocketTransport::PlainSocketTransport(int sockFd) {

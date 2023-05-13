@@ -2,7 +2,7 @@
 #include "Statement.h"
 #include "StorageManager.h"
 #include "NodeStorage.h"
-#include "StorageException.h"
+#include "ClonedEntityException.h"
 
 namespace RingSwarm::storage {
     std::map<core::Id *, core::ChunkRing *, core::Id::Comparator> chunkRingStorage;
@@ -42,7 +42,10 @@ namespace RingSwarm::storage {
 
     void storeChunkRing(core::Id *fileId, core::ChunkRing *ring) {
         if (chunkRingStorage.contains(fileId)) {
-            throw StorageException();
+            if (chunkRingStorage[fileId] != ring) {
+                throw ClonedEntityException();
+            }
+            return;
         } else {
             chunkRingStorage[fileId] = ring;
         }

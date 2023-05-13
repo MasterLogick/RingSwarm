@@ -1,7 +1,7 @@
 #include "NodeStorage.h"
 #include "Statement.h"
 #include "StorageManager.h"
-#include "StorageException.h"
+#include "ClonedEntityException.h"
 #include <map>
 
 namespace RingSwarm::storage {
@@ -20,7 +20,9 @@ namespace RingSwarm::storage {
         if (!nodeSelectStatement.nextRow()) {
             return nullptr;
         }
-        auto *node = new core::Node(nodeId, nodeSelectStatement.getBlob(0), {nodeSelectStatement.getBlob(1)});
+        transport::Buffer b(nodeSelectStatement.getBlob(1));
+        auto *node = new core::Node(nodeId, nodeSelectStatement.getBlob(0),
+                                    transport::ConnectionInfo::parseConnectionInfo(b));
         nodeStorage[nodeId] = node;
         return node;
     }
@@ -31,7 +33,10 @@ namespace RingSwarm::storage {
 
     void storeNode(core::Node *node) {
         if (nodeStorage.contains(node->id)) {
-            throw StorageException();
+            if (nodeStorage[node->id] != node) {
+                throw ClonedEntityException();
+            }
+            return;
         } else {
             nodeStorage[node->id] = node;
         }
@@ -39,7 +44,13 @@ namespace RingSwarm::storage {
         Statement nodeInsertStatement(dbConnection, nodeInsert);
         nodeInsertStatement.bindId(":node_id", node->id);
         nodeInsertStatement.bindBlob(":pub_key", node->publicKey);
-        nodeInsertStatement.bindBlob(":connection_info", node->connectionInfo.info);
+        transport::Buffer b(node->connectionInfo->getSerializedSize());
+        node->connectionInfo->serialize(b);
+        nodeInsertStatement.bindBlob(":connection_info", b.toBlob());
         nodeInsertStatement.execute();
+    }
+
+    void storeThisNode() {
+        nodeStorage[core::Node::thisNode->id] = core::Node::thisNode;
     }
 }

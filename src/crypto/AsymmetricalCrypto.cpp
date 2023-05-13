@@ -1,4 +1,4 @@
-#include "AsymetricalCrypto.h"
+#include "AsymmetricalCrypto.h"
 #include "CryptoException.h"
 #include "HashCrypto.h"
 #include "../core/Settings.h"
@@ -8,19 +8,22 @@
 #include <openssl/objects.h>
 #include <openssl/evp.h>
 #include <openssl/ec.h>
+#include <boost/log/trivial.hpp>
+#include <iostream>
+#include <boost/algorithm/hex.hpp>
 
 namespace RingSwarm::crypto {
     std::vector<char> nodePubKey;
     EVP_PKEY *nodePrivKey;
 
-    std::vector<char> signData(std::vector<char> data) {
+    std::vector<char> signData(void *data, size_t size) {
         EVP_MD_CTX *mdctx;
         if (!(mdctx = EVP_MD_CTX_create())) throw CryptoException();
         if (1 != EVP_DigestSignInit(mdctx, nullptr, EVP_sha256(), nullptr, nodePrivKey)) {
             EVP_MD_CTX_destroy(mdctx);
             throw CryptoException();
         }
-        if (1 != EVP_DigestSignUpdate(mdctx, data.data(), data.size())) {
+        if (1 != EVP_DigestSignUpdate(mdctx, data, size)) {
             EVP_MD_CTX_destroy(mdctx);
             throw CryptoException();
         }
@@ -122,14 +125,8 @@ namespace RingSwarm::crypto {
             EVP_PKEY_free(keyPair);
             throw CryptoException();
         }
-        size_t serializedPubKeyLen = (rawPubKeyLen + 2) / 3 * 4 + 1;
-        std::string serializedPubKey(serializedPubKeyLen, '0');
-        if (EVP_EncodeBlock(reinterpret_cast<unsigned char *>(serializedPubKey.data()),
-                            reinterpret_cast<const unsigned char *>(rawPubKey.data()),
-                            rawPubKeyLen) != serializedPubKeyLen - 1) {
-            EVP_PKEY_free(keyPair);
-            throw CryptoException();
-        }
+        std::string serializedPubKey;
+        boost::algorithm::hex(rawPubKey.begin(), rawPubKey.end(), std::back_inserter(serializedPubKey));
 
         BIGNUM *privateKey = nullptr;
         if (EVP_PKEY_get_bn_param(keyPair, OSSL_PKEY_PARAM_PRIV_KEY, &privateKey) != 1) {
@@ -146,21 +143,7 @@ namespace RingSwarm::crypto {
     }
 
     void loadPubKey(std::string &serializedPubKey) {
-        size_t realLen = serializedPubKey.length() / 4 * 3;
-        auto *decodedPubKey = new uint8_t[realLen];
-        if (EVP_DecodeBlock(decodedPubKey,
-                            reinterpret_cast<const unsigned char *>(serializedPubKey.c_str()),
-                            serializedPubKey.length()) < 0) {
-            delete[] decodedPubKey;
-            throw CryptoException();
-        }
-        if (serializedPubKey.ends_with("==")) {
-            realLen -= 2;
-        }
-        if (serializedPubKey.ends_with("=")) {
-            realLen -= 1;
-        }
-        nodePubKey = std::vector<char>(decodedPubKey, decodedPubKey + realLen);
+        boost::algorithm::unhex(serializedPubKey, std::back_inserter(nodePubKey));
     }
 
     void loadPrivKey(std::string &serializedPrivKey) {
@@ -231,5 +214,19 @@ namespace RingSwarm::crypto {
         loadPrivKey(serializedPrivKey);
         core::Node::thisNode->id = hashData(reinterpret_cast<const uint8_t *>(nodePubKey.data()), nodePubKey.size());
         core::Node::thisNode->publicKey = nodePubKey;
+        BOOST_LOG_TRIVIAL(debug) << "Loaded node keys. ID: " << core::Node::thisNode->id->getHexRepresentation()
+                                 << " Pub key: " << serializedPubKey;
+    }
+
+    EVP_PKEY_CTX *initDeriveKeyContext() {
+        auto *ctx = EVP_PKEY_CTX_new(nodePrivKey, nullptr);
+        if (ctx == nullptr) {
+            throw CryptoException();
+        }
+        if (EVP_PKEY_derive_init(ctx) != 1) {
+            EVP_PKEY_CTX_free(ctx);
+            throw CryptoException();
+        }
+        return ctx;
     }
 }

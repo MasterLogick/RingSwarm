@@ -7,9 +7,11 @@
 #include "../proto/ProtocolException.h"
 #include "../core/Id.h"
 #include "../core/FileMeta.h"
-#include "../core/Node.h"
 #include "../core/ChunkLink.h"
 
+namespace RingSwarm::core {
+    class Node;
+}
 namespace RingSwarm::transport {
     class Buffer {
         uint8_t *data;
@@ -17,6 +19,8 @@ namespace RingSwarm::transport {
         uint32_t offset;
     public:
         explicit Buffer(uint32_t len, uint32_t offset = 0);
+
+        explicit Buffer(std::vector<char> initValue);
 
         ~Buffer();
 
@@ -61,6 +65,16 @@ namespace RingSwarm::transport {
         void writeChunkLink(core::ChunkLink *link);
 
         void writeNodeList(std::vector<core::Node *> nodeList);
+
+        std::string readString();
+
+        uint32_t readUint32();
+
+        void writeString(std::string &str);
+
+        std::vector<char> toBlob();
+
+        void readData(char *data, uint32_t len);
     };
 }
 

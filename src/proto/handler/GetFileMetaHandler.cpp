@@ -1,7 +1,8 @@
 #include "../ServerHandler.h"
 #include "../../storage/FileSwarmStorage.h"
-#include "../../storage/ConnectionsStorage.h"
 #include "../ClientHandler.h"
+#include "../../storage/NodeStorage.h"
+#include "../../core/ConnectionManager.h"
 
 #define MAX_RESPONSE_LENGTH (1024 * 32)
 
@@ -29,7 +30,10 @@ namespace RingSwarm::proto {
         auto index = request.readUint8();
         auto fileSwarm = storage::getFileMetaSwarm(fileId);
         if (fileSwarm == nullptr) {
-            auto node = storage::getPossibleFileMetaHost(fileId, index);
+            auto *node = core::getPossibleFileMetaHost(fileId, index);
+            if (node == nullptr) {
+                transport->sendError();
+            }
             transport::ResponseBuffer resp(1 + node->getSerializedSize());
             resp.writeUint8(0);
             resp.writeNode(node);

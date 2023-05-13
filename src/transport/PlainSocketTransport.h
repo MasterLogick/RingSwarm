@@ -16,6 +16,7 @@ namespace RingSwarm::transport {
         void rawRead(void *buff, uint32_t len) override;
 
         void close() override;
+
     };
 }
 

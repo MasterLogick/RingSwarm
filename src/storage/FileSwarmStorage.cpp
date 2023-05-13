@@ -1,9 +1,9 @@
 #include "FileSwarmStorage.h"
 #include "StorageManager.h"
 #include "Statement.h"
-#include "StorageException.h"
 #include "ChunkRingStorage.h"
 #include "NodeStorage.h"
+#include "ClonedEntityException.h"
 
 namespace RingSwarm::storage {
     std::map<core::Id *, core::FileMetaSwarm *, core::Id::Comparator> fileMetaSwarmStorage;
@@ -39,8 +39,6 @@ namespace RingSwarm::storage {
                 fileMetaSelectStatement.getInt32(3),
                 fileMetaSelectStatement.getInt32(4),
                 fileMetaSelectStatement.getInt32(5),
-                //todo read opts
-                {}, // getSwarmById.getText(6)
                 fileMetaSelectStatement.getBlob(7),
                 fileId
         );
@@ -63,16 +61,18 @@ namespace RingSwarm::storage {
 
     const char *fileMetaInsert =
             "insert into file_meta (file_id, author, creation_timestamp, chunks_count, chunk_size, min_swarm_size, ring_connectivity,\n"
-            "                       opts, sign)\n"
-            "values (:file_id, :author, :creation_timestamp, :chunks_count, :chunk_size, :min_swarm_size, :ring_connectivity,\n"
-            "        :opts, :sign);";
+            "                       sign)\n"
+            "values (:file_id, :author, :creation_timestamp, :chunks_count, :chunk_size, :min_swarm_size, :ring_connectivity, :sign);";
     const char *fileSwarmInsert =
             "insert into file_swarm(file_id, swarm_index, node_id)\n"
             "values (:file_id, :swarm_index, :node_id);";
 
     void storeFileMetaSwarm(core::FileMetaSwarm *fileSwarm) {
         if (fileMetaSwarmStorage.contains(fileSwarm->meta->fileId)) {
-            throw StorageException();
+            if (fileMetaSwarmStorage[fileSwarm->meta->fileId] != fileSwarm) {
+                throw ClonedEntityException();
+            }
+            return;
         } else {
             fileMetaSwarmStorage[fileSwarm->meta->fileId] = fileSwarm;
         }
@@ -86,7 +86,6 @@ namespace RingSwarm::storage {
         fileMetaInsertStatement.bindInt32(":chunk_size", fileMeta->chunkSize);
         fileMetaInsertStatement.bindInt32(":min_swarm_size", fileMeta->minSwarmSize);
         fileMetaInsertStatement.bindInt32(":ring_connectivity", fileMeta->ringConnectivity);
-        fileMetaInsertStatement.bindBlob(":opts", fileMeta->optMeta, 10);
         fileMetaInsertStatement.bindBlob(":sign", fileMeta->sign);
         fileMetaInsertStatement.execute();
 

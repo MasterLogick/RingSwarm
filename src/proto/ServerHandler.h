@@ -79,7 +79,7 @@ namespace RingSwarm::proto {
         };
 
         constexpr static uint16_t MethodsCount = 14;
-        static_assert(sizeof(Methods) / sizeof(RequestHandler) == MethodsCount);
+        static_assert(sizeof(Methods) == sizeof(RequestHandler) * MethodsCount);
     public:
 
         explicit ServerHandler(transport::Transport *transport);

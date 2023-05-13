@@ -1,6 +1,5 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 #include <thread>
 #include <boost/asio/ip/tcp.hpp>
 #include "PlainSocketServer.h"
@@ -8,9 +7,11 @@
 #include "../proto/ServerHandler.h"
 #include "TransportBackendException.h"
 #include <boost/log/trivial.hpp>
+#include "connectionInfo/PlainSocketConnectionInfo.h"
 
 namespace RingSwarm::transport {
     PlainSocketServer::PlainSocketServer(std::string &hostname, int port, int backlog) {
+        connectionInfo = new PlainSocketConnectionInfo(hostname, port);
         sockFd = socket(AF_INET, SOCK_STREAM, 0);
         sockaddr_in serv_addr{};
         serv_addr.sin_family = AF_INET;
@@ -31,7 +32,7 @@ namespace RingSwarm::transport {
     }
 
     void PlainSocketServer::listen() {
-        BOOST_LOG_TRIVIAL(info) << "Plain tcp server starts listening";
+        BOOST_LOG_TRIVIAL(debug) << "Plain tcp server starts listening";
         while (true) {
             sockaddr_in addr{};
             socklen_t size;
@@ -46,8 +47,11 @@ namespace RingSwarm::transport {
             }
             auto *handler =
                     new proto::ServerHandler(new PlainSocketTransport(remoteFd));
-            std::thread th([&handler] { handler->handleClientConnection(); });
-            th.detach();
+            std::thread([handler] { handler->handleClientConnection(); }).detach();
         }
+    }
+
+    ConnectionInfo *PlainSocketServer::getConnectionInfo() {
+        return connectionInfo;
     }
 }

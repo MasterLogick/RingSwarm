@@ -3,7 +3,7 @@
 #include "StorageManager.h"
 #include "ChunkRingStorage.h"
 #include "NodeStorage.h"
-#include "StorageException.h"
+#include "ClonedEntityException.h"
 
 namespace RingSwarm::storage {
     class ChunkIdComparator {
@@ -92,7 +92,10 @@ namespace RingSwarm::storage {
 
     void storeChunkSwarm(core::ChunkSwarm *chunkSwarm) {
         if (chunkSwarmStorage.contains(std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex))) {
-            throw StorageException();
+            if (chunkSwarmStorage[std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex)] != chunkSwarm) {
+                throw ClonedEntityException();
+            }
+            return;
         } else {
             chunkSwarmStorage[std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex)] = chunkSwarm;
         }

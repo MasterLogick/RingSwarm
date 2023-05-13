@@ -2,12 +2,13 @@
 #include "TooLargeMessageException.h"
 #include "../core/RingSwarmException.h"
 #include "RequestHeader.h"
+#include "../transport/SecureOverlayTransport.h"
 #include <boost/log/trivial.hpp>
 
 #define MAX_REQUEST_LENGTH (1024 * 1024)
 namespace RingSwarm::proto {
     void ServerHandler::handleClientConnection() {
-        try {
+//        try {
             handleHandshake();
             while (true) {
                 RequestHeader requestHeader{};
@@ -30,14 +31,15 @@ namespace RingSwarm::proto {
                 BOOST_LOG_TRIVIAL(trace) << "Executed " << ServerHandler::MethodNames[requestHeader.method]
                                          << " method handler";
             }
-        } catch (core::RingSwarmException &e) {
+        /*} catch (core::RingSwarmException &e) {
             BOOST_LOG_TRIVIAL(error) << e.what();
             errorStop();
             return;
-        }
+        }*/
     }
 
-    ServerHandler::ServerHandler(transport::Transport *transport) : transport(transport) {
+    ServerHandler::ServerHandler(transport::Transport *transport) : transport(
+            new transport::SecureOverlayTransport(transport)) {
     }
 
     void ServerHandler::errorStop() {

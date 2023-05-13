@@ -12,6 +12,10 @@ namespace RingSwarm::core {
         const std::vector<char> sign;
 
         uint32_t getSerializedSize();
+
+        static ChunkLink *createChunkLink(Id *file,
+                                          uint64_t chunkIndex,
+                                          Id *dataHash);
     };
 }
 

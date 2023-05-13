@@ -2,16 +2,18 @@
 #define RINGSWARM_NODE_H
 
 #include "Id.h"
-#include "ConnectionInfo.h"
+#include "../transport/connectionInfo/ConnectionInfo.h"
 #include <memory>
 
 namespace RingSwarm::core {
     struct Node {
         Id *id;
         std::vector<char> publicKey;
-        ConnectionInfo connectionInfo;
+        transport::ConnectionInfo *connectionInfo;
 
         int getSerializedSize();
+
+        void deriveId();
 
         bool operator==(Node &rhs) const;
 
