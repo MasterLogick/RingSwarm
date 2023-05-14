@@ -5,7 +5,8 @@
 namespace RingSwarm::transport {
 
     void Transport::sendResponse(ResponseBuffer &resp) {
-        *reinterpret_cast<uint32_t *>(resp.getData()) = resp.getWrittenSize() - 4;
+        *reinterpret_cast<uint32_t *>(resp.getData()) = resp.getWrittenSize() - 5;
+        resp.getData()[4] = 0;
         rawWrite(resp.getData(), resp.getWrittenSize());
     }
 

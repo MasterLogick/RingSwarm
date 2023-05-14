@@ -3,6 +3,7 @@
 #include "HashCrypto.h"
 #include "../core/Settings.h"
 #include "../core/Node.h"
+#include "../storage/NodeStorage.h"
 #include <openssl/param_build.h>
 #include <openssl/core_names.h>
 #include <openssl/objects.h>
@@ -134,8 +135,8 @@ namespace RingSwarm::crypto {
             throw CryptoException();
         }
         char *serializedPrivKey = BN_bn2hex(privateKey);
-        core::setSetting("pubKey", serializedPubKey.c_str());
-        core::setSetting("privKey", serializedPrivKey);
+        core::setSetting("public key", serializedPubKey.c_str());
+        core::setSetting("private key", serializedPrivKey);
         OPENSSL_free(serializedPrivKey);
         BN_free(privateKey);
         EVP_PKEY_free(keyPair);
@@ -204,16 +205,17 @@ namespace RingSwarm::crypto {
     }
 
     void loadNodeKeys() {
-        std::string serializedPubKey = core::getSetting("pubKey");
+        std::string serializedPubKey = core::getSetting("public key");
         if (serializedPubKey.empty()) {
             genNewKeyPair();
             return;
         }
-        std::string serializedPrivKey = core::getSetting("privKey");
+        std::string serializedPrivKey = core::getSetting("private key");
         loadPubKey(serializedPubKey);
         loadPrivKey(serializedPrivKey);
         core::Node::thisNode->id = hashData(reinterpret_cast<const uint8_t *>(nodePubKey.data()), nodePubKey.size());
         core::Node::thisNode->publicKey = nodePubKey;
+        storage::storeThisNode();
         BOOST_LOG_TRIVIAL(debug) << "Loaded node keys. ID: " << core::Node::thisNode->id->getHexRepresentation()
                                  << " Pub key: " << serializedPubKey;
     }

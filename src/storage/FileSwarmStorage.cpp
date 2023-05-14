@@ -14,7 +14,6 @@ namespace RingSwarm::storage {
             "       chunk_size,\n"
             "       min_swarm_size,\n"
             "       ring_connectivity,\n"
-            "       opts,\n"
             "       sign\n"
             "from file_meta\n"
             "where file_id = :file_id;";
@@ -39,7 +38,7 @@ namespace RingSwarm::storage {
                 fileMetaSelectStatement.getInt32(3),
                 fileMetaSelectStatement.getInt32(4),
                 fileMetaSelectStatement.getInt32(5),
-                fileMetaSelectStatement.getBlob(7),
+                fileMetaSelectStatement.getBlob(6),
                 fileId
         );
 
@@ -50,7 +49,7 @@ namespace RingSwarm::storage {
         while (fileSwarmSelectStatement.nextRow()) {
             auto *nodeId = fileSwarmSelectStatement.getId(1);
             auto *node = getNode(nodeId);
-            if (node != nullptr) {
+            if (node == nullptr) {
                 delete nodeId;
             }
             swarm[fileSwarmSelectStatement.getInt32(0)] = node;

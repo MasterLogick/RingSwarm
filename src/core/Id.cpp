@@ -50,4 +50,8 @@ namespace RingSwarm::core {
         memcpy(id->hash, blob.data(), 32);
         return id;
     }
+
+    bool Id::operator<(const Id &rhs) const {
+        return memcmp(hash, rhs.hash, 32) < 0;
+    }
 }

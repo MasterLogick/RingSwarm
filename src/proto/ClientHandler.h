@@ -43,6 +43,8 @@ namespace RingSwarm::proto {
         void chunkChangeEvent(core::Id *fileId, uint64_t chunkIndex, uint8_t changeType);
 
         void unsubscribeOnChunkChange(core::Id *fileId, uint64_t chunkIndex);
+
+        core::Node *getRemote();
     };
 }
 

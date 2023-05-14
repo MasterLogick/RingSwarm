@@ -83,7 +83,6 @@ namespace RingSwarm::storage {
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 table create error: " << sqlite3_errstr(err);
             throw StorageException();
         }
-        storage::storeThisNode();
     }
 
     void closeStorage() {

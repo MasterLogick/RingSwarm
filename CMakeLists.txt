@@ -105,7 +105,15 @@ add_executable(RingSwarm
         src/core/ConnectionManager.h
         src/transport/connectionInfo/PlainSocketConnectionInfo.cpp
         src/transport/connectionInfo/PlainSocketConnectionInfo.h
-        src/transport/connectionInfo/ConnectionInfo.cpp src/transport/SecureOverlayTransport.cpp src/transport/SecureOverlayTransport.h src/crypto/SymmetricalCrypher.cpp src/crypto/SymmetricalCrypher.h)
+        src/transport/connectionInfo/ConnectionInfo.cpp
+        src/transport/SecureOverlayTransport.cpp
+        src/transport/SecureOverlayTransport.h
+        src/crypto/SymmetricalCrypher.cpp
+        src/crypto/SymmetricalCrypher.h
+        src/client/FileDownloader.cpp
+        src/client/FileDownloader.h
+        src/client/FileHandler.cpp
+        src/client/FileHandler.h)
 
 target_compile_definitions(RingSwarm PUBLIC OPENSSL_NO_DEPRECATED)
 target_include_directories(RingSwarm PUBLIC "${OPENSSL_INCLUDE_DIR}" ${sqlite3_SOURCE_DIR})

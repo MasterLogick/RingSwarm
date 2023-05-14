@@ -12,6 +12,10 @@ namespace RingSwarm::proto {
         transport->readResponse(MAX_RESPONSE_SIZE);
     }
 
+    core::Node *ClientHandler::getRemote() {
+        return remote;
+    }
+
     void ServerHandler::handleNoticeLeavedChunkSwarm(transport::Buffer &request) {
         auto id = request.readId();
         auto chunkIndex = request.readUint64();

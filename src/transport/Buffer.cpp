@@ -119,11 +119,28 @@ namespace RingSwarm::transport {
     }
 
     core::FileMeta *Buffer::readFileMeta() {
-        return nullptr;
+        auto *fileId = readId();
+        auto *author = readId();
+        auto creationTimestamp = readUint64();
+        auto chunksCount = readUint64();
+        auto chunkSize = readUint32();
+        auto minSwarmSize = readUint8();
+        auto ringConnectivity = readUint8();
+        std::vector<char> sign(RAW_SIGNATURE_LENGTH);
+        readData(sign.data(), RAW_SIGNATURE_LENGTH);
+        return new core::FileMeta(author, creationTimestamp, chunksCount, chunkSize, minSwarmSize,
+                                  ringConnectivity, sign, fileId);
     }
 
     void Buffer::writeFileMeta(core::FileMeta *meta) {
-
+        writeId(meta->fileId);
+        writeId(meta->author);
+        writeUint64(meta->creationTimestamp);
+        writeUint64(meta->chunksCount);
+        writeUint32(meta->chunkSize);
+        writeUint8(meta->minSwarmSize);
+        writeUint8(meta->ringConnectivity);
+        writeData(meta->sign.data(), RAW_SIGNATURE_LENGTH);
     }
 
     core::Node *Buffer::readNode() {
@@ -142,14 +159,19 @@ namespace RingSwarm::transport {
     }
 
     core::ChunkLink *Buffer::readChunkLink() {
-        return nullptr;
+        auto *fileId = readId();
+        auto chunkIndex = readUint64();
+        auto *dataHash = readId();
+        std::vector<char> sign(RAW_SIGNATURE_LENGTH);
+        readData(sign.data(), RAW_SIGNATURE_LENGTH);
+        return new core::ChunkLink(fileId, chunkIndex, dataHash, sign);
     }
 
     void Buffer::writeChunkLink(core::ChunkLink *link) {
         writeId(link->file);
         writeUint64(link->chunkIndex);
         writeId(link->dataHash);
-        writeData(link->sign.data(), link->sign.size());
+        writeData(link->sign.data(), RAW_SIGNATURE_LENGTH);
     }
 
     std::vector<core::Node *> Buffer::readNodeList() {

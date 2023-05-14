@@ -14,6 +14,8 @@ namespace RingSwarm::core {
 
         bool operator!=(const Id &rhs) const;
 
+        bool operator<(const Id &rhs) const;
+
         std::string getHexRepresentation();
 
         static Id *fromHexRepresentation(const char *hex);
@@ -26,6 +28,10 @@ namespace RingSwarm::core {
                 return memcmp(lhs->hash, rhs->hash, 32) < 0;
             }
         };
+
+        static core::Id *getBiggestId() {
+            return fromHexRepresentation("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        }
     };
 }
 

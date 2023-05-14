@@ -7,7 +7,7 @@
 namespace RingSwarm::transport {
     class ResponseBuffer : public Buffer {
     public:
-        ResponseBuffer(uint32_t len) : Buffer(len + 4, 4) {}
+        ResponseBuffer(uint32_t len) : Buffer(len + 5, 5) {}
     };
 }
 

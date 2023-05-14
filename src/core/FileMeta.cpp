@@ -6,7 +6,7 @@
 
 namespace RingSwarm::core {
     int FileMeta::getSerializedSize() {
-        return 0;
+        return 32 + 32 + 8 + 8 + 4 + 1 + 1 + RAW_SIGNATURE_LENGTH;
     }
 
     FileMeta *

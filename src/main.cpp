@@ -11,6 +11,7 @@
 #include "core/Node.h"
 #include "core/ConnectionManager.h"
 #include "transport/connectionInfo/PlainSocketConnectionInfo.h"
+#include "client/FileDownloader.h"
 
 namespace po = boost::program_options;
 namespace RingSwarm {
@@ -64,15 +65,16 @@ int main(int argc, char **argv, char **envp) {
         }
         case 2: {
             std::vector<char> pubKey;
-            boost::algorithm::unhex("0337898288E222937A4BDCAEB797C3EE9442F275264DD356269D1252E061C81A40",
+            boost::algorithm::unhex("03AF34561B00FC80C7254AA1F3A226EDBA3F7A2D055BC581CAE43A004F707166D7",
                                     std::back_inserter(pubKey));
             auto *node = new RingSwarm::core::Node(RingSwarm::core::Id::fromHexRepresentation(
-                                                           "824ec1599c2269df7c8eba87142223cbbb66d141bbaffc13544210697fcc6440"),
+                                                           "9535dd715563609af32b86271a0521cda381c47c056d3f95bbf61527943805b6"),
                                                    pubKey,
                                                    new RingSwarm::transport::PlainSocketConnectionInfo("localhost",
                                                                                                        port - 1));
-            auto *client = RingSwarm::core::getOrConnect(node);
-            client->getChunkLink(node->id, 1);
+            RingSwarm::core::getOrConnect(node);
+            RingSwarm::client::getFileHandler(RingSwarm::core::Id::fromHexRepresentation(
+                    "aaca6d5be6b5f6127da92cb66797f3eb3e52ef6498c3b78f2626c3acbe5df8e9"));
             break;
         }
         default:

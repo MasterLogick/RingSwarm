@@ -14,7 +14,7 @@ namespace RingSwarm::crypto {
 
     EVP_PKEY_CTX *initDeriveKeyContext();
 
-#define SERIALIZED_NODE_PUBLIC_KEY_LENGTH 44
+#define RAW_SIGNATURE_LENGTH 72
 #define RAW_NODE_PUBLIC_KEY_LENGTH 33
 }
 

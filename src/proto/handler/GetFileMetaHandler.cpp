@@ -28,9 +28,9 @@ namespace RingSwarm::proto {
     void ServerHandler::handleGetFileMeta(transport::Buffer &request) {
         auto fileId = request.readId();
         auto index = request.readUint8();
-        auto fileSwarm = storage::getFileMetaSwarm(fileId);
+        auto *fileSwarm = storage::getFileMetaSwarm(fileId);
         if (fileSwarm == nullptr) {
-            auto *node = core::getPossibleFileMetaHost(fileId, index);
+            auto *node = core::getPossibleFileMetaHost(fileId, index)->getRemote();
             if (node == nullptr) {
                 transport->sendError();
             }

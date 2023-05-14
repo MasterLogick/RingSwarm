@@ -8,7 +8,7 @@ namespace RingSwarm::storage {
         if ((sqlite3_prepare_v2(connection, sql, -1, &statement, nullptr)) != SQLITE_OK) {
 
             BOOST_LOG_TRIVIAL(error) << "SQLITE3 \"" << sql << "\" prepare error: "
-                                     << sqlite3_errmsg(sqlite3_db_handle(statement));
+                                     << sqlite3_errmsg(connection);
             throw StorageException();
         }
     }
