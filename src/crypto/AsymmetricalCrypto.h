@@ -5,6 +5,7 @@
 #include <openssl/types.h>
 #include "../core/Id.h"
 #include "../core/PublicKey.h"
+#include "KeyPair.h"
 #include <array>
 #include <memory>
 
@@ -12,14 +13,9 @@ extern "C"
 void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
 
 namespace RingSwarm::crypto {
-
-    using Signature = std::array<uint8_t, 72>;
-
-    Signature *signData(void *data, size_t size);
-
-    bool verifyData(std::vector<char> &data, Signature *sig, core::PublicKey *pubKey);
-
     void loadNodeKeys();
+
+    KeyPair genKeyPair();
 
     std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext();
 

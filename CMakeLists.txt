@@ -108,7 +108,7 @@ add_executable(RingSwarm
         src/client/FileDownloader.h
         src/client/KeyHandler.cpp
         src/client/KeyHandler.h
-        src/core/PublicKey.h src/core/PublicKey.cpp)
+        src/core/PublicKey.h src/core/PublicKey.cpp src/crypto/KeyPair.cpp src/crypto/KeyPair.h src/crypto/Signature.cpp src/crypto/Signature.h)
 
 target_compile_definitions(RingSwarm PUBLIC OPENSSL_NO_DEPRECATED)
 target_include_directories(RingSwarm PUBLIC "${OPENSSL_INCLUDE_DIR}" ${sqlite3_SOURCE_DIR})

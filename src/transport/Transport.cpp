@@ -10,7 +10,7 @@ namespace RingSwarm::transport {
         *reinterpret_cast<uint32_t *>(resp.getData()) = resp.getWrittenSize() - 5;
         resp.getData()[4] = 0;
         rawWrite(resp.getData(), resp.getWrittenSize());
-        BOOST_LOG_TRIVIAL(trace) << "Sent response (" << resp.getWrittenSize() << " bytes of data)";
+        BOOST_LOG_TRIVIAL(trace) << "Sent response  |===> " << resp.getWrittenSize() << " bytes";
     }
 
     void Transport::startLongResponse(uint32_t size) {
@@ -44,9 +44,8 @@ namespace RingSwarm::transport {
         *reinterpret_cast<uint16_t *>(req.getData() + 4) = commandIndex;
         req.assertFullyUsed();
         rawWrite(req.getData(), req.getWrittenSize());
-        BOOST_LOG_TRIVIAL(trace) << "Sent request for command " << commandIndex << " ("
-                                 << proto::ServerHandler::MethodNames[commandIndex] << ") of size "
-                                 << req.getWrittenSize();
+        BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " << proto::ServerHandler::MethodNames[commandIndex]
+                                 << " " << req.getWrittenSize() << " bytes";
     }
 
     proto::ResponseHeader Transport::readResponseHeader() {
@@ -73,7 +72,7 @@ namespace RingSwarm::transport {
         auto len = readResponseLength(maxResponseLength);
         transport::Buffer resp(len);
         rawRead(resp.getData(), len);
-        BOOST_LOG_TRIVIAL(trace) << "Got response (" << len << " bytes long)";
+        BOOST_LOG_TRIVIAL(trace) << "Got response   |<=== " << len << " bytes";
         return resp;
     }
 }

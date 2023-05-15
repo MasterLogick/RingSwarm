@@ -16,7 +16,7 @@ namespace RingSwarm::core {
             return 32 + 8 + 32 + sign->size();
         }
 
-        static ChunkLink *createChunkLink(Id *keyId,
+        static ChunkLink *createChunkLink(crypto::KeyPair &keyPair,
                                           uint64_t chunkIndex,
                                           Id *dataHash);
     };

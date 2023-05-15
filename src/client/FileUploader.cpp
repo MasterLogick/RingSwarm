@@ -7,22 +7,23 @@
 #include <chrono>
 
 namespace RingSwarm::client {
-    core::Id *uploadFile(const char *filePath, uint8_t minSwarmSize, uint8_t ringConnectivity) {
+    core::Id *uploadFile(const char *filePath, uint8_t minSwarmSize) {
         std::ifstream input(filePath, std::ios::binary);
         std::vector<uint8_t> buffer(std::istreambuf_iterator<char>(input), {});
-/*        auto *key = core::FileMeta::createNewFileMeta(1, buffer.size(), minSwarmSize, ringConnectivity);
-        auto *dataHash = crypto::hashData(buffer.data(), buffer.size());
-        auto *link = core::ChunkLink::createChunkLink(meta->fileId, 0, dataHash);
-        std::map<int, core::Node *> fileMetaSwarmNodes;
+        crypto::KeyPair keyPair;
+        auto *dataHash = crypto::hashData(buffer);
+        auto *link = core::ChunkLink::createChunkLink(keyPair, 0, dataHash);
+        auto *keyId = keyPair.publicKey->getId();
+        std::map<int, core::Node *> keySwarmNodes;
         for (int i = 0; i < minSwarmSize; ++i) {
-            fileMetaSwarmNodes[i] = core::Node::thisNode;
+            keySwarmNodes[i] = core::Node::thisNode;
         }
         auto *ring = new core::ChunkRing();
         (*ring)[0].push_back(core::Node::thisNode);
-        auto *fileMetaSwarm = new core::KeySwarm(meta, fileMetaSwarmNodes, ring);
+        auto *keySwarm = new core::KeySwarm(keyId, keyPair.publicKey, keySwarmNodes, ring);
         auto *chunkSwarm = new core::ChunkSwarm(link, ring);
-        storage::storeKeySwarm(fileMetaSwarm);
+        storage::storeKeySwarm(keySwarm);
         storage::storeChunkSwarm(chunkSwarm);
-        return fileMetaSwarm->meta->fileId;*/
+        return keyId;
     }
 }

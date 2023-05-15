@@ -7,6 +7,12 @@
 namespace RingSwarm::storage {
     ::sqlite3 *dbConnection = nullptr;
     const char *tableCreateStatement =
+            "create table if not exists keys\n"
+            "(\n"
+            "    key_id     blob primary key,\n"
+            "    public_key blob\n"
+            ");\n"
+            "\n"
             "create table if not exists chunk_link\n"
             "(\n"
             "    key_id      blob,\n"

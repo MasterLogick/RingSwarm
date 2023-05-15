@@ -29,7 +29,7 @@ namespace RingSwarm::proto {
                 BOOST_LOG_TRIVIAL(trace) << "Got request for unknown method " << requestHeader.method;
                 throw ProtocolException();
             }
-            BOOST_LOG_TRIVIAL(trace) << "Got request (" << requestHeader.requestLength << " bytes length)";
+            BOOST_LOG_TRIVIAL(trace) << "Got request    |<=== " << requestHeader.requestLength << " bytes";
             BOOST_LOG_TRIVIAL(trace) << "Executing " << ServerHandler::MethodNames[requestHeader.method]
                                      << " method handler";
             (this->*ServerHandler::Methods[requestHeader.method])(buff);

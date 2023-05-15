@@ -56,7 +56,7 @@ int main(int argc, char **argv, char **envp) {
 
     switch (scenario) {
         case 1: {
-            client::uploadFile("RingSwarm", 3, 5);
+            client::uploadFile("RingSwarm", 3);
             break;
         }
         case 2: {
@@ -70,7 +70,7 @@ int main(int argc, char **argv, char **envp) {
                                                                                  port - 1));
             core::getOrConnect(node);
             client::getKeyHandler(core::Id::fromHexRepresentation(
-                    "aaca6d5be6b5f6127da92cb66797f3eb3e52ef6498c3b78f2626c3acbe5df8e9"));
+                    "beb8a3f19205d9c2cf61590a9f955f837e6c2ecf081206bcec694ec8b7de5b55"));
             break;
         }
         default:
