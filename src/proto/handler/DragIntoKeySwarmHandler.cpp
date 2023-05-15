@@ -1,11 +1,11 @@
 #include "../ServerHandler.h"
-#include "../../storage/FileSwarmStorage.h"
+#include "../../storage/KeySwarmStorage.h"
 #include "../ClientHandler.h"
 
 #define MAX_RESPONSE_SIZE (0)
 namespace RingSwarm::proto {
-    void ClientHandler::dragIntoFileMetaSwarm(
-            core::FileMeta *meta,
+    void ClientHandler::dragIntoKeySwarm(
+            core::PublicKey *key,
             uint8_t index,
             std::map<int, core::Node *> &nodeList
     ) {
@@ -14,7 +14,7 @@ namespace RingSwarm::proto {
             size += item.second->getSerializedSize();
         }
         transport::RequestBuffer req(32 + 1 + 1 + nodeList.size() + size);
-        req.write(meta);
+        req.write(key);
         req.write<uint8_t>(index);
         req.write<uint8_t>(size);
         std::vector<core::Node *> nodes;
@@ -27,8 +27,8 @@ namespace RingSwarm::proto {
         transport->readResponse(MAX_RESPONSE_SIZE);
     }
 
-    void ServerHandler::handleDragIntoFileMetaSwarm(transport::Buffer &request) {
-        core::FileMeta *meta = request.read<core::FileMeta *>();
+    void ServerHandler::handleDragIntoKeySwarm(transport::Buffer &request) {
+        core::PublicKey *key = request.read<core::PublicKey *>();
         auto index = request.read<uint8_t>();
         auto swarmSize = request.read<uint8_t>();
         uint8_t swarmIndexes[swarmSize];
@@ -37,15 +37,15 @@ namespace RingSwarm::proto {
         }
         //todo read node indexes
         auto nodeList = request.read<std::vector<core::Node *>>();
-        auto swarm = storage::getFileMetaSwarm(meta->fileId);
+        auto *swarm = storage::getKeySwarm(key->getId());
         if (swarm != nullptr) {
             //todo update node list
             transport->sendEmptyResponse();
         } else {
 
-            auto *newSwarm = new core::FileMetaSwarm();
-            storage::storeFileMetaSwarm(newSwarm);
-            //todo handle file meta propagation
+            auto *newSwarm = new core::KeySwarm();
+            storage::storeKeySwarm(newSwarm);
+            //todo handle keyId key propagation
             transport->sendEmptyResponse();
         }
     }

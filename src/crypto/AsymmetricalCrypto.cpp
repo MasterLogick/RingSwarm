@@ -13,7 +13,7 @@
 #include <boost/algorithm/hex.hpp>
 
 namespace RingSwarm::crypto {
-    PublicKey *nodePubKey;
+    core::PublicKey *nodePubKey;
     EVP_PKEY *nodePrivKey;
 
     Signature *signData(void *data, size_t size) {
@@ -35,7 +35,7 @@ namespace RingSwarm::crypto {
         return sign;
     }
 
-    bool verifyData(std::vector<char> &data, Signature &sig, PublicKey &pubKey) {
+    bool verifyData(std::vector<char> &data, Signature &sig, core::PublicKey &pubKey) {
         OSSL_PARAM params[] = {
                 OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME, (void *) SN_secp256k1, strlen(SN_secp256k1)),
                 OSSL_PARAM_octet_string(OSSL_PKEY_PARAM_PUB_KEY, pubKey.data(), pubKey.size()),
@@ -70,7 +70,7 @@ namespace RingSwarm::crypto {
 
     void genNewKeyPair() {
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> keyPair(EVP_EC_gen(SN_secp256k1), EVP_PKEY_free);
-        PublicKey rawPubKey;
+        core::PublicKey rawPubKey;
         size_t rawPubKeyLen = rawPubKey.size();
         if (EVP_PKEY_get_octet_string_param(keyPair.get(),
                                             OSSL_PKEY_PARAM_PUB_KEY,
@@ -95,7 +95,7 @@ namespace RingSwarm::crypto {
     }
 
     void loadPubKey(std::string &serializedPubKey) {
-        nodePubKey = new PublicKey();
+        nodePubKey = new core::PublicKey();
         boost::algorithm::unhex(serializedPubKey, nodePubKey->begin());
     }
 

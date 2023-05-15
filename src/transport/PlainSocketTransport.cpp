@@ -11,7 +11,7 @@
 
 namespace RingSwarm::transport {
     void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket sent: "
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |===> "
                                  << boost::algorithm::hex(std::string(static_cast<char *>(data), len));
         for (uint32_t i = 0; i < len;) {
             auto sent = send(sockFd, reinterpret_cast<uint8_t *>(data) + i, len, 0);
@@ -31,7 +31,7 @@ namespace RingSwarm::transport {
             }
             i += sent;
         }
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket read: "
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |<=== "
                                  << boost::algorithm::hex(std::string(static_cast<char *>(buff), len));
     }
 

@@ -19,17 +19,17 @@ namespace RingSwarm::storage {
 
     std::map<std::pair<core::Id *, uint64_t>, core::ChunkSwarm *, ChunkIdComparator> chunkSwarmStorage;
     const char *hostedChunkSelect =
-            "select file_id, chunk_index, data_hash, sign\n"
+            "select key_id, chunk_index, data_hash, sign\n"
             "from chunk_link\n"
-            "where file_id = :file_id\n"
+            "where key_id = :key_id\n"
             "  and chunk_index = :chunk_index;";
 
-    core::ChunkSwarm *getHostedChunkSwarm(core::Id *fileId, uint64_t index) {
-        if (chunkSwarmStorage.contains(std::pair(fileId, index))) {
-            return chunkSwarmStorage[std::pair(fileId, index)];
+    core::ChunkSwarm *getHostedChunkSwarm(core::Id *keyId, uint64_t index) {
+        if (chunkSwarmStorage.contains(std::pair(keyId, index))) {
+            return chunkSwarmStorage[std::pair(keyId, index)];
         }
         Statement hostedChunkSelectStatement(dbConnection, hostedChunkSelect);
-        hostedChunkSelectStatement.bindId(":file_id", fileId);
+        hostedChunkSelectStatement.bindId(":key_id", keyId);
         hostedChunkSelectStatement.bindInt64(":chunk_index", index);
         if (!hostedChunkSelectStatement.nextRow()) {
             return nullptr;
@@ -43,22 +43,23 @@ namespace RingSwarm::storage {
                 hostedChunkSelectStatement.getId(2),
                 sign
         );
-        auto *retVal = new core::ChunkSwarm(link, getChunkRing(fileId));
-        chunkSwarmStorage[std::pair(fileId, index)] = retVal;
+        auto *retVal = new core::ChunkSwarm(link, getChunkRing(keyId));
+        chunkSwarmStorage[std::pair(keyId, index)] = retVal;
         return retVal;
     }
 
+    // todo fix distance on ring function
     const char *nearestChunkNodeSelect =
             "select node_id, chunk_index\n"
             "from chunk_swarm\n"
-            "where file_id = :file_id\n"
+            "where key_id = :key_id\n"
             "order by abs(chunk_index - :chunk_index);";
 
     uint64_t dist(uint64_t a, uint64_t b) {
         return a > b ? a - b : b - a;
     }
 
-    core::Node *getNearestChunkNode(core::Id *fileId, uint64_t chunkIndex, uint8_t *retSwarmIndex) {
+    core::Node *getNearestChunkNode(core::Id *keyId, uint64_t chunkIndex, uint8_t *retSwarmIndex) {
         std::pair<std::pair<core::Id *, uint64_t>, core::ChunkSwarm *> min;
         min.first.first = nullptr;
         for (const auto &item: chunkSwarmStorage) {
@@ -73,7 +74,7 @@ namespace RingSwarm::storage {
         }
 
         Statement nearestChunkNodeSelectStatement(dbConnection, nearestChunkNodeSelect);
-        nearestChunkNodeSelectStatement.bindId(":file_id", fileId);
+        nearestChunkNodeSelectStatement.bindId(":key_id", keyId);
         nearestChunkNodeSelectStatement.bindInt64(":chunk_index", chunkIndex);
         if (!nearestChunkNodeSelectStatement.nextRow()) {
             return nullptr;
@@ -90,26 +91,26 @@ namespace RingSwarm::storage {
     }
 
     const char *chunkLinkInsert =
-            "insert into chunk_link (file_id, chunk_index, data_hash, sign)\n"
-            "values (:file_id, :chunk_index, :data_hash, :sign);";
+            "insert into chunk_link (key_id, chunk_index, data_hash, sign)\n"
+            "values (:key_id, :chunk_index, :data_hash, :sign);";
 
     void storeChunkSwarm(core::ChunkSwarm *chunkSwarm) {
-        if (chunkSwarmStorage.contains(std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex))) {
-            if (chunkSwarmStorage[std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex)] != chunkSwarm) {
+        if (chunkSwarmStorage.contains(std::pair(chunkSwarm->link->keyId, chunkSwarm->link->chunkIndex))) {
+            if (chunkSwarmStorage[std::pair(chunkSwarm->link->keyId, chunkSwarm->link->chunkIndex)] != chunkSwarm) {
                 throw ClonedEntityException();
             }
             return;
         } else {
-            chunkSwarmStorage[std::pair(chunkSwarm->link->file, chunkSwarm->link->chunkIndex)] = chunkSwarm;
+            chunkSwarmStorage[std::pair(chunkSwarm->link->keyId, chunkSwarm->link->chunkIndex)] = chunkSwarm;
         }
 
         auto *link = chunkSwarm->link;
         Statement chunkLinkInsertStatement(dbConnection, chunkLinkInsert);
-        chunkLinkInsertStatement.bindId(":file_id", link->file);
+        chunkLinkInsertStatement.bindId(":key_id", link->keyId);
         chunkLinkInsertStatement.bindInt64(":chunk_index", link->chunkIndex);
         chunkLinkInsertStatement.bindId(":data_hash", link->dataHash);
         chunkLinkInsertStatement.bindSignature(":sign", link->sign);
         chunkLinkInsertStatement.execute();
-        storeChunkRing(chunkSwarm->link->file, chunkSwarm->ring);
+        storeChunkRing(chunkSwarm->link->keyId, chunkSwarm->ring);
     }
 }

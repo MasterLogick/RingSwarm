@@ -106,9 +106,9 @@ namespace RingSwarm::storage {
         return sign;
     }
 
-    crypto::PublicKey *Statement::getPublicKey(int n) {
+    core::PublicKey *Statement::getPublicKey(int n) {
         auto *ptr = reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
-        auto *sign = new crypto::PublicKey();
+        auto *sign = new core::PublicKey();
         memcpy(sign->data(), ptr, sign->size());
         return sign;
     }

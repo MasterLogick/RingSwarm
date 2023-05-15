@@ -7,7 +7,7 @@
 
 namespace RingSwarm::core {
     struct ChunkLink {
-        Id *const file;
+        Id *const keyId;
         const uint64_t chunkIndex;
         Id *const dataHash;
         crypto::Signature *const sign;
@@ -16,7 +16,7 @@ namespace RingSwarm::core {
             return 32 + 8 + 32 + sign->size();
         }
 
-        static ChunkLink *createChunkLink(Id *file,
+        static ChunkLink *createChunkLink(Id *keyId,
                                           uint64_t chunkIndex,
                                           Id *dataHash);
     };

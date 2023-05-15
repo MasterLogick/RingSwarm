@@ -6,7 +6,6 @@
 #include <vector>
 #include "../proto/ProtocolException.h"
 #include "../core/Id.h"
-#include "../core/FileMeta.h"
 #include "../core/ChunkLink.h"
 #include "DataSerialisationException.h"
 #include <concepts>
@@ -23,6 +22,7 @@ namespace RingSwarm::transport {
         void writeData(const char *data, uint32_t len);
 
         void readData(char *data, uint32_t len);
+
     public:
 
         explicit Buffer(uint32_t len, uint32_t offset = 0);
@@ -69,6 +69,12 @@ namespace RingSwarm::transport {
             Integer retVal = *reinterpret_cast<Integer *>(data + offset);
             offset += sizeof(Integer);
             return retVal;
+        }
+
+        void assertFullyUsed() {
+            if (offset != len) {
+                throw DataSerialisationException();
+            }
         }
     };
 }

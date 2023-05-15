@@ -1,11 +1,11 @@
 #ifndef RINGSWARM_FILEDOWNLOADER_H
 #define RINGSWARM_FILEDOWNLOADER_H
 
-#include "FileHandler.h"
+#include "KeyHandler.h"
 #include "../core/Id.h"
 
 namespace RingSwarm::client {
-    FileHandler *getFileHandler(core::Id *fileId);
+    KeyHandler *getKeyHandler(core::Id *fileId);
 }
 
 #endif //RINGSWARM_FILEDOWNLOADER_H

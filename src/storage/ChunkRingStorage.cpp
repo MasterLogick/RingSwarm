@@ -10,14 +10,14 @@ namespace RingSwarm::storage {
     const char *chunkSwarmNodeSelect =
             "select chunk_index, node_id\n"
             "from chunk_swarm\n"
-            "where file_id = :file_id;";
+            "where key_id = :key_id;";
 
-    core::ChunkRing *getChunkRing(core::Id *fileId) {
-        if (chunkRingStorage.contains(fileId)) {
-            return chunkRingStorage[fileId];
+    core::ChunkRing *getChunkRing(core::Id *keyId) {
+        if (chunkRingStorage.contains(keyId)) {
+            return chunkRingStorage[keyId];
         }
         Statement chunkSwarmNodeSelectStatement(dbConnection, chunkSwarmNodeSelect);
-        chunkSwarmNodeSelectStatement.bindId(":file_id", fileId);
+        chunkSwarmNodeSelectStatement.bindId(":key_id", keyId);
         auto *ring = new core::ChunkRing();
         while (chunkSwarmNodeSelectStatement.nextRow()) {
             auto chunkIndex = chunkSwarmNodeSelectStatement.getInt64(0);
@@ -32,26 +32,26 @@ namespace RingSwarm::storage {
                 delete nodeId;
             }
         }
-        chunkRingStorage[fileId] = ring;
+        chunkRingStorage[keyId] = ring;
         return ring;
     }
 
     const char *chunkSwarmNodeInsert =
-            "insert into chunk_swarm (file_id, chunk_index, node_id)\n"
-            "values (:file_id, :chunk_index, :node_id);";
+            "insert into chunk_swarm (key_id, chunk_index, node_id)\n"
+            "values (:key_id, :chunk_index, :node_id);";
 
-    void storeChunkRing(core::Id *fileId, core::ChunkRing *ring) {
-        if (chunkRingStorage.contains(fileId)) {
-            if (chunkRingStorage[fileId] != ring) {
+    void storeChunkRing(core::Id *keyId, core::ChunkRing *ring) {
+        if (chunkRingStorage.contains(keyId)) {
+            if (chunkRingStorage[keyId] != ring) {
                 throw ClonedEntityException();
             }
             return;
         } else {
-            chunkRingStorage[fileId] = ring;
+            chunkRingStorage[keyId] = ring;
         }
 
         Statement chunkSwarmNodeInsertStatement(dbConnection, chunkSwarmNodeInsert);
-        chunkSwarmNodeInsertStatement.bindId(":file_id", fileId);
+        chunkSwarmNodeInsertStatement.bindId(":key_id", keyId);
         for (const auto &pair: *ring) {
             chunkSwarmNodeInsertStatement.bindInt64(":chunk_index", pair.first);
             auto &swarm = pair.second;

@@ -7,16 +7,16 @@
 #include <condition_variable>
 
 namespace RingSwarm::client {
-    FileHandler *getFileHandler(core::Id *fileId) {
+    KeyHandler *getKeyHandler(core::Id *keyId) {
         std::atomic_flag hitFlag;
         int threadCount = 8;
-        auto threadCountSetting = core::getSetting("file search thread count");
+        auto threadCountSetting = core::getSetting("key search thread count");
         if (!threadCountSetting.empty()) {
             threadCount = std::stoi(threadCountSetting);
         }
         std::vector<proto::ClientHandler *> startingPoints;
         for (int i = 0; i < threadCount; ++i) {
-            auto *client = core::getPossibleFileMetaHost(fileId, 0);
+            auto *client = core::getPossibleKeyHost(keyId, 0);
             for (const auto &item: startingPoints) {
                 if (*client->getRemote() == *item->getRemote()) {
                     client = nullptr;
@@ -29,23 +29,23 @@ namespace RingSwarm::client {
         }
         threadCount = startingPoints.size();
         std::thread pool[threadCount];
-        proto::ClientHandler *possibleMetaRingNodeClient = nullptr;
-        core::FileMeta *meta = nullptr;
-        std::condition_variable metaFoundCV;
+        proto::ClientHandler *possibleKeySwarmNodeClient = nullptr;
+        core::PublicKey *key = nullptr;
+        std::condition_variable keyFoundCondVar;
         std::mutex lockerMutex;
         for (int i = 0; i < threadCount; ++i) {
             pool[i] = std::thread(
-                    [&hitFlag, i, &startingPoints, fileId, &possibleMetaRingNodeClient, &meta, &metaFoundCV] {
+                    [&hitFlag, i, &startingPoints, keyId, &possibleKeySwarmNodeClient, &key, &keyFoundCondVar] {
                         auto *client = startingPoints[i];
                         while (!hitFlag.test()) {
-                            core::FileMeta *localMeta = nullptr;
+                            core::PublicKey *localKey = nullptr;
                             core::Node *node = nullptr;
-                            if (client->getFileMeta(fileId, i, &localMeta, &node)) {
+                            if (client->getKey(keyId, i, &localKey, &node)) {
                                 if (hitFlag.test_and_set())
                                     return;
-                                meta = localMeta;
-                                possibleMetaRingNodeClient = client;
-                                metaFoundCV.notify_one();
+                                key = localKey;
+                                possibleKeySwarmNodeClient = client;
+                                keyFoundCondVar.notify_one();
                                 return;
                             } else {
                                 client = core::getOrConnect(node);
@@ -53,11 +53,11 @@ namespace RingSwarm::client {
                         }
                     });
         }
-        BOOST_LOG_TRIVIAL(debug) << "Started " << fileId->getHexRepresentation() << " file meta search using "
+        BOOST_LOG_TRIVIAL(debug) << "Started " << keyId->getHexRepresentation() << " key search using "
                                  << threadCount << " threads";
         std::unique_lock<std::mutex> lock(lockerMutex);
-        metaFoundCV.wait(lock, [&hitFlag] { return hitFlag.test(); });
-        BOOST_LOG_TRIVIAL(debug) << "Found " << fileId->getHexRepresentation() << " file meta";
-        return new FileHandler(meta, possibleMetaRingNodeClient);
+        keyFoundCondVar.wait(lock, [&hitFlag] { return hitFlag.test(); });
+        BOOST_LOG_TRIVIAL(debug) << "Found " << keyId->getHexRepresentation() << " key";
+        return new KeyHandler(key, possibleKeySwarmNodeClient);
     }
 }

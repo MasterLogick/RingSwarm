@@ -4,9 +4,9 @@
 
 #define MAX_RESPONSE_LENGTH (1024 * 1024)
 namespace RingSwarm::proto {
-    core::ChunkLink *ClientHandler::getChunkLink(core::Id *id, uint64_t chunkIndex) {
+    core::ChunkLink *ClientHandler::getChunkLink(core::Id *keyId, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
-        req.write(id);
+        req.write(keyId);
         req.write<uint64_t>(chunkIndex);
         transport->sendRequest(3, req);
         auto resp = transport->readResponse(MAX_RESPONSE_LENGTH);
@@ -14,9 +14,9 @@ namespace RingSwarm::proto {
     }
 
     void ServerHandler::handleGetChunkLink(transport::Buffer &request) {
-        auto *id = request.read<core::Id *>();
+        auto *keyId = request.read<core::Id *>();
         uint64_t chunkIndex = request.read<uint64_t>();
-        auto chunk = storage::getHostedChunkSwarm(id, chunkIndex);
+        auto chunk = storage::getHostedChunkSwarm(keyId, chunkIndex);
         if (chunk == nullptr) {
             transport->sendError();
             return;

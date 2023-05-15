@@ -11,7 +11,7 @@ namespace RingSwarm::transport {
         Transport *transport;
         crypto::SymmetricCypher *cypher;
     public:
-        SecureOverlayTransport(Transport *transport, crypto::PublicKey *remotePublicKey);
+        SecureOverlayTransport(Transport *transport, core::PublicKey *remotePublicKey);
 
         explicit SecureOverlayTransport(Transport *transport);
 

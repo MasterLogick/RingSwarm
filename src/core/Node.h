@@ -9,7 +9,7 @@
 namespace RingSwarm::core {
     struct Node {
         Id *id;
-        crypto::PublicKey *publicKey;
+        core::PublicKey *publicKey;
         transport::ConnectionInfo *connectionInfo;
 
         int getSerializedSize();

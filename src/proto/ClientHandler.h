@@ -15,34 +15,34 @@ namespace RingSwarm::proto {
     public:
         ClientHandler(transport::Transport *transport, core::Node *remote);
 
-        bool getFileMeta(core::Id *fileId, uint8_t nodeIndex, core::FileMeta **meta, core::Node **node);
+        bool getKey(core::Id *keyId, uint8_t nodeIndex, core::PublicKey **key, core::Node **node);
 
-        uint64_t getNearestChunk(core::Id *fileId, uint64_t chunkIndex, core::Node **node);
+        uint64_t getNearestChunk(core::Id *keyid, uint64_t chunkIndex, core::Node **node);
 
-        core::ChunkLink *getChunkLink(core::Id *id, uint64_t chunkIndex);
+        core::ChunkLink *getChunkLink(core::Id *keyId, uint64_t chunkIndex);
 
-        void getChunk(core::Id *fileId, uint64_t chunkIndex, uint32_t offset, void *buffer, uint32_t length);
+        void getChunk(core::Id *keyId, uint64_t chunkIndex, uint32_t offset, void *buffer, uint32_t length);
 
-        void dragIntoFileMetaSwarm(
-                core::FileMeta *meta,
+        void dragIntoKeySwarm(
+                core::PublicKey *key,
                 uint8_t index,
                 std::map<int, core::Node *> &nodeList);
 
-        std::vector<core::Node *> noticeJoinedFileMetaSwarm(core::Id *fileId, uint8_t index);
+        std::vector<core::Node *> noticeJoinedKeySwarm(core::Id *keyId, uint8_t index);
 
-        std::vector<core::Node *> noticeJoinedChunkSwarm(core::Id *fileId, uint64_t chunkIndex);
+        std::vector<core::Node *> noticeJoinedChunkSwarm(core::Id *keyId, uint64_t chunkIndex);
 
-        std::vector<core::Node *> getFileMetaSwarm(core::Id *fileId);
+        std::vector<core::Node *> getKeySwarm(core::Id *keyId);
 
-        std::vector<core::Node *> getChunkSwarm(core::Id *fileId, uint64_t chunkIndex);
+        std::vector<core::Node *> getChunkSwarm(core::Id *keyId, uint64_t chunkIndex);
 
-        void noticeLeavedChunkSwarm(core::Id *fileId, uint64_t chunkIndex);
+        void noticeLeavedChunkSwarm(core::Id *keyId, uint64_t chunkIndex);
 
-        void subscribeOnChunkChange(core::Id *fileId, uint64_t chunkIndex);
+        void subscribeOnChunkChange(core::Id *keyId, uint64_t chunkIndex);
 
-        void chunkChangeEvent(core::Id *fileId, uint64_t chunkIndex, uint8_t changeType);
+        void chunkChangeEvent(core::Id *keyId, uint64_t chunkIndex, uint8_t changeType);
 
-        void unsubscribeOnChunkChange(core::Id *fileId, uint64_t chunkIndex);
+        void unsubscribeOnChunkChange(core::Id *keyId, uint64_t chunkIndex);
 
         core::Node *getRemote();
     };

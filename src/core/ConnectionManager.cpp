@@ -14,20 +14,20 @@ namespace RingSwarm::core {
         return handler;
     }
 
-    proto::ClientHandler *getPossibleFileMetaHost(core::Id *fileId, uint8_t index) {
-        struct PossibleFileMetaHost {
-            uint8_t fileId[32];
-            uint8_t nodeId[32];
+    proto::ClientHandler *getPossibleKeyHost(core::Id *keyId, uint8_t index) {
+        struct PossibleKeyHost {
+            uint8_t keyHash[32];
+            uint8_t nodeHash[32];
             uint8_t index;
         }__attribute__((packed)) host{};
-        static_assert(sizeof(PossibleFileMetaHost) == 65);
-        memcpy(host.fileId, fileId->hash, 32);
+        static_assert(sizeof(PossibleKeyHost) == 65);
+        memcpy(host.keyHash, keyId->hash, 32);
         host.index = index;
         proto::ClientHandler *bestHost = connections.begin()->second;
         core::Id *smallestHashValue = core::Id::getBiggestId();
         for (const auto &item: connections) {
-            memcpy(host.nodeId, item.first->hash, 32);
-            core::Id *hash = crypto::hashData(reinterpret_cast<const uint8_t *>(&host), sizeof(PossibleFileMetaHost));
+            memcpy(host.nodeHash, item.first->hash, 32);
+            core::Id *hash = crypto::hashData(reinterpret_cast<const uint8_t *>(&host), sizeof(PossibleKeyHost));
             if (*hash < *smallestHashValue) {
                 delete smallestHashValue;
                 smallestHashValue = hash;

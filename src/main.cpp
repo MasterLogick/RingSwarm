@@ -60,16 +60,16 @@ int main(int argc, char **argv, char **envp) {
             break;
         }
         case 2: {
-            auto *pubKey = new crypto::PublicKey();
-            boost::algorithm::unhex("03AF34561B00FC80C7254AA1F3A226EDBA3F7A2D055BC581CAE43A004F707166D7",
+            auto *pubKey = new core::PublicKey();
+            boost::algorithm::unhex("030D7A75BAF4CFA1E787EB4BD6D5F4069090A6495D907C28A6A370D980A9AD5EA2",
                                     pubKey->begin());
             auto *node = new core::Node(core::Id::fromHexRepresentation(
-                                                "9535dd715563609af32b86271a0521cda381c47c056d3f95bbf61527943805b6"),
+                                                "ca298dbf52fbc37e19c06d4e38fd7f7ec2e70bf4c244c684568e9052a646f4a3"),
                                         pubKey,
                                         new transport::PlainSocketConnectionInfo("localhost",
                                                                                  port - 1));
             core::getOrConnect(node);
-            client::getFileHandler(core::Id::fromHexRepresentation(
+            client::getKeyHandler(core::Id::fromHexRepresentation(
                     "aaca6d5be6b5f6127da92cb66797f3eb3e52ef6498c3b78f2626c3acbe5df8e9"));
             break;
         }

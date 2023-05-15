@@ -28,10 +28,10 @@ namespace RingSwarm::transport {
 
     SecureOverlayTransport::SecureOverlayTransport(
             transport::Transport *transport,
-            crypto::PublicKey *remotePublicKey
+            core::PublicKey *remotePublicKey
     ) : transport(transport) {
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> keyPair(EVP_EC_gen(SN_secp256k1), EVP_PKEY_free);
-        auto *rawPubKey = new crypto::PublicKey();
+        auto *rawPubKey = new core::PublicKey();
         size_t rawPubKeyLen = rawPubKey->size();
         if (EVP_PKEY_get_octet_string_param(keyPair.get(),
                                             OSSL_PKEY_PARAM_PUB_KEY,
@@ -61,7 +61,7 @@ namespace RingSwarm::transport {
             throw crypto::CryptoException();
         }
         transport->rawWrite(iv, 16);
-        auto *remotePubKey = new crypto::PublicKey();
+        auto *remotePubKey = new core::PublicKey();
         transport->rawRead(remotePubKey->data(), remotePubKey->size());
         cypher = new crypto::SymmetricCypher(crypto::initDeriveKeyContext(), remotePubKey, iv);
     }

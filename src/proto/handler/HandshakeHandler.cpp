@@ -15,6 +15,7 @@ namespace RingSwarm::proto {
     }
 
     void ServerHandler::handleHandshake() {
+        // todo add client verification
         uint32_t size;
         transport->rawRead(&size, 4);
         if (size > 1024 * 1024) {

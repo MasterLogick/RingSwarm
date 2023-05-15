@@ -6,7 +6,7 @@
 namespace RingSwarm::core {
     proto::ClientHandler *getOrConnect(core::Node *node);
 
-    proto::ClientHandler *getPossibleFileMetaHost(core::Id *, uint8_t index);
+    proto::ClientHandler *getPossibleKeyHost(core::Id *, uint8_t index);
 
 }
 

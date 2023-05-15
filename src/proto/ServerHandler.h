@@ -17,7 +17,7 @@ namespace RingSwarm::proto {
 
         void handleHandshake();
 
-        void handleGetFileMeta(transport::Buffer &request);
+        void handleGetKey(transport::Buffer &request);
 
         void handleGetNearestChunk(transport::Buffer &request);
 
@@ -25,13 +25,13 @@ namespace RingSwarm::proto {
 
         void handleGetChunk(transport::Buffer &request);
 
-        void handleDragIntoFileMetaSwarm(transport::Buffer &request);
+        void handleDragIntoKeySwarm(transport::Buffer &request);
 
-        void handleNoticeJoinedFileMetaSwarm(transport::Buffer &request);
+        void handleNoticeJoinedKeySwarm(transport::Buffer &request);
 
         void handleNoticeJoinedChunkSwarm(transport::Buffer &request);
 
-        void handleGetFileMetaSwarm(transport::Buffer &request);
+        void handleGetKeySwarm(transport::Buffer &request);
 
         void handleGetChunkSwarm(transport::Buffer &request);
 
@@ -47,40 +47,39 @@ namespace RingSwarm::proto {
 
         constexpr static RequestHandler Methods[] = {
                 nullptr,
-                &ServerHandler::handleGetFileMeta,
+                &ServerHandler::handleGetKey,
                 &ServerHandler::handleGetNearestChunk,
                 &ServerHandler::handleGetChunkLink,
                 &ServerHandler::handleGetChunk,
-                &ServerHandler::handleDragIntoFileMetaSwarm,
-                &ServerHandler::handleNoticeJoinedFileMetaSwarm,
+                &ServerHandler::handleDragIntoKeySwarm,
+                &ServerHandler::handleNoticeJoinedKeySwarm,
                 &ServerHandler::handleNoticeJoinedChunkSwarm,
-                &ServerHandler::handleGetFileMetaSwarm,
+                &ServerHandler::handleGetKeySwarm,
                 &ServerHandler::handleGetChunkSwarm,
                 &ServerHandler::handleNoticeLeavedChunkSwarm,
                 &ServerHandler::handleSubscribeOnChunkChange,
                 &ServerHandler::handleChunkChangeEvent,
                 &ServerHandler::handleUnsubscribeOnChunkChange
         };
+        constexpr static uint16_t MethodsCount = 14;
+        static_assert(sizeof(Methods) == sizeof(RequestHandler) * MethodsCount);
+    public:
         constexpr static const char *MethodNames[] = {
                 nullptr,
-                "GetFileMeta",
+                "GetKey",
                 "GetNearestChunk",
                 "GetChunkLink",
                 "GetChunk",
-                "DragIntoFileMetaSwarm",
-                "NoticeJoinedFileMetaSwarm",
+                "DragIntoKeySwarm",
+                "NoticeJoinedKeySwarm",
                 "NoticeJoinedChunkSwarm",
-                "GetFileMetaSwarm",
+                "GetKeySwarm",
                 "GetChunkSwarm",
                 "NoticeLeavedChunkSwarm",
                 "SubscribeOnChunkChange",
                 "ChunkChangeEvent",
                 "UnsubscribeOnChunkChange"
         };
-
-        constexpr static uint16_t MethodsCount = 14;
-        static_assert(sizeof(Methods) == sizeof(RequestHandler) * MethodsCount);
-    public:
 
         explicit ServerHandler(transport::Transport *transport);
 

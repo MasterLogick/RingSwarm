@@ -36,7 +36,7 @@ namespace RingSwarm::storage {
             bindBlob(label, sign->data(), sign->size());
         }
 
-        void bindPublicKey(const char *label, crypto::PublicKey *publicKey) {
+        void bindPublicKey(const char *label, core::PublicKey *publicKey) {
             bindBlob(label, publicKey->data(), publicKey->size());
 
         }
@@ -57,7 +57,7 @@ namespace RingSwarm::storage {
 
         crypto::Signature *getSignature(int n);
 
-        crypto::PublicKey *getPublicKey(int n);
+        core::PublicKey *getPublicKey(int n);
 
         core::Id *getId(int n) {
             return core::Id::fromBlob(getBlob(n));

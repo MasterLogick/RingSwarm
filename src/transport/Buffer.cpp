@@ -8,8 +8,6 @@
 
 namespace RingSwarm::transport {
 
-//    template uint8_t Buffer::read<uint8_t>();
-
     Buffer::Buffer(uint32_t len, uint32_t offset) {
         data = new uint8_t[len];
         this->len = len;
@@ -76,47 +74,21 @@ namespace RingSwarm::transport {
     }
 
     template<>
-    core::FileMeta *Buffer::read<core::FileMeta *>() {
-        auto *fileId = read<core::Id *>();
-        auto *author = read<core::Id *>();
-        auto creationTimestamp = read<uint64_t>();
-        auto chunksCount = read<uint64_t>();
-        auto chunkSize = read<uint32_t>();
-        auto minSwarmSize = read<uint8_t>();
-        auto ringConnectivity = read<uint8_t>();
-        auto sign = read<crypto::Signature *>();
-        return new core::FileMeta(author, creationTimestamp, chunksCount, chunkSize, minSwarmSize,
-                                  ringConnectivity, sign, fileId);
-    }
-
-    template<>
-    void Buffer::write(core::FileMeta *meta) {
-        write(meta->fileId);
-        write(meta->author);
-        write<uint64_t>(meta->creationTimestamp);
-        write<uint64_t>(meta->chunksCount);
-        write<uint32_t>(meta->chunkSize);
-        write<uint8_t>(meta->minSwarmSize);
-        write<uint8_t>(meta->ringConnectivity);
-        write(meta->sign);
-    }
-
-    template<>
-    crypto::PublicKey *Buffer::read<crypto::PublicKey *>() {
-        auto *key = new crypto::PublicKey();
+    core::PublicKey *Buffer::read<core::PublicKey *>() {
+        auto *key = new core::PublicKey();
         readData(reinterpret_cast<char *>(key->data()), key->size());
         return key;
     }
 
     template<>
-    void Buffer::write(crypto::PublicKey *publicKey) {
+    void Buffer::write(core::PublicKey *publicKey) {
         writeData(reinterpret_cast<char *>(publicKey->data()), publicKey->size());
     }
 
     template<>
     core::Node *Buffer::read<core::Node *>() {
         auto *node = new core::Node();
-        node->publicKey = read<crypto::PublicKey *>();
+        node->publicKey = read<core::PublicKey *>();
         node->connectionInfo = ConnectionInfo::parseConnectionInfo(*this);
         node->id = crypto::hashData(node->publicKey);
         return node;
@@ -130,16 +102,16 @@ namespace RingSwarm::transport {
 
     template<>
     core::ChunkLink *Buffer::read<core::ChunkLink *>() {
-        auto *fileId = read<core::Id *>();
+        auto *keyId = read<core::Id *>();
         auto chunkIndex = read<uint64_t>();
         auto *dataHash = read<core::Id *>();
         auto sign = read<crypto::Signature *>();
-        return new core::ChunkLink(fileId, chunkIndex, dataHash, sign);
+        return new core::ChunkLink(keyId, chunkIndex, dataHash, sign);
     }
 
     template<>
     void Buffer::write(core::ChunkLink *link) {
-        write(link->file);
+        write(link->keyId);
         write<uint64_t>(link->chunkIndex);
         write(link->dataHash);
         write(link->sign);

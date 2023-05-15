@@ -12,7 +12,7 @@
 namespace RingSwarm::crypto {
 
     SymmetricCypher::SymmetricCypher(std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx,
-                                     crypto::PublicKey *serializedPublicKey, const uint8_t *iv) :
+                                     core::PublicKey *serializedPublicKey, const uint8_t *iv) :
             cipher(nullptr, EVP_CIPHER_CTX_free), decipher(nullptr, EVP_CIPHER_CTX_free) {
         std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> publicKeyCtx(
                 EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr),

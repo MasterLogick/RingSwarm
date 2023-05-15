@@ -23,8 +23,6 @@ add_library(sqlite3 ${sqlite3_SOURCE_DIR}/sqlite3.c ${sqlite3_SOURCE_DIR}/sqlite
 
 add_executable(RingSwarm
         src/main.cpp
-        src/core/FileMeta.cpp
-        src/core/FileMeta.h
         src/core/Id.cpp
         src/core/Id.h
         src/core/ChunkLink.cpp
@@ -44,20 +42,17 @@ add_executable(RingSwarm
         src/storage/ChunkSwarmStorage.h
         src/core/ChunkSwarm.cpp
         src/core/ChunkSwarm.h
-        src/storage/FileSwarmStorage.cpp
-        src/storage/FileSwarmStorage.h
-        src/core/FileMetaSwarm.cpp
-        src/core/FileMetaSwarm.h
-        src/proto/handler/GetFileMetaHandler.cpp
+        src/storage/KeySwarmStorage.cpp
+        src/storage/KeySwarmStorage.h
+        src/core/KeySwarm.h
+        src/proto/handler/GetKeyHandler.cpp
         src/core/Node.cpp
         src/core/Node.h
         src/proto/handler/GetNearestChunkHandler.cpp
-        src/core/Random.cpp
-        src/core/Random.h
         src/proto/handler/GetChunkHandler.cpp
-        src/proto/handler/DragIntoFileMetaSwarmHandler.cpp
-        src/proto/handler/NoticeJoinedFileMetaSwarmHandler.cpp
-        src/proto/handler/GetFileMetaSwarmHandler.cpp
+        src/proto/handler/DragIntoKeySwarmHandler.cpp
+        src/proto/handler/NoticeJoinedKeySwarmHandler.cpp
+        src/proto/handler/GetKeySwarmHandler.cpp
         src/proto/handler/GetChunkSwarmHandler.cpp
         src/proto/handler/NoticeJoinedChunkSwarmHandler.cpp
         src/proto/handler/NoticeLeavedChunkSwarmHandler.cpp
@@ -88,7 +83,6 @@ add_executable(RingSwarm
         src/storage/NodeStorage.h
         src/storage/ChunkRingStorage.cpp
         src/storage/ChunkRingStorage.h
-        src/core/Ring.cpp
         src/core/ChunkRing.h
         src/transport/connectionInfo/ConnectionInfo.h
         src/crypto/AsymmetricalCrypto.cpp
@@ -112,8 +106,9 @@ add_executable(RingSwarm
         src/crypto/SymmetricalCrypher.h
         src/client/FileDownloader.cpp
         src/client/FileDownloader.h
-        src/client/FileHandler.cpp
-        src/client/FileHandler.h)
+        src/client/KeyHandler.cpp
+        src/client/KeyHandler.h
+        src/core/PublicKey.h src/core/PublicKey.cpp)
 
 target_compile_definitions(RingSwarm PUBLIC OPENSSL_NO_DEPRECATED)
 target_include_directories(RingSwarm PUBLIC "${OPENSSL_INCLUDE_DIR}" ${sqlite3_SOURCE_DIR})
