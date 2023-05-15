@@ -6,8 +6,8 @@
 namespace RingSwarm::proto {
     void ClientHandler::noticeLeavedChunkSwarm(core::Id *fileId, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
-        req.writeId(fileId);
-        req.writeUint64(chunkIndex);
+        req.write(fileId);
+        req.write<uint64_t>(chunkIndex);
         transport->sendRequest(10, req);
         transport->readResponse(MAX_RESPONSE_SIZE);
     }
@@ -17,8 +17,8 @@ namespace RingSwarm::proto {
     }
 
     void ServerHandler::handleNoticeLeavedChunkSwarm(transport::Buffer &request) {
-        auto id = request.readId();
-        auto chunkIndex = request.readUint64();
+        auto id = request.read<core::Id *>();
+        auto chunkIndex = request.read<uint64_t>();
         auto chunkSwarm = storage::getHostedChunkSwarm(id, chunkIndex);
         if (chunkSwarm == nullptr) {
             transport->sendError();

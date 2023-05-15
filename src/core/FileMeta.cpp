@@ -5,9 +5,6 @@
 #include "../crypto/HashCrypto.h"
 
 namespace RingSwarm::core {
-    int FileMeta::getSerializedSize() {
-        return 32 + 32 + 8 + 8 + 4 + 1 + 1 + RAW_SIGNATURE_LENGTH;
-    }
 
     FileMeta *
     FileMeta::createNewFileMeta(uint64_t chunksCount, uint32_t chunkSize, uint8_t minSwarmSize,
@@ -25,10 +22,10 @@ namespace RingSwarm::core {
                                                  ringConnectivity};
         memcpy(&packedFileMeta.author, Node::thisNode->id->hash, 32);
         auto sign = crypto::signData(&packedFileMeta, sizeof(PackedFileMeta));
-        uint8_t meta[sizeof(PackedFileMeta) + sign.size()];
+        uint8_t meta[sizeof(PackedFileMeta) + sign->size()];
         memcpy(meta, &packedFileMeta, sizeof(PackedFileMeta));
-        memcpy(meta + sizeof(PackedFileMeta), sign.data(), sign.size());
-        auto *hash = crypto::hashData(meta, sizeof(PackedFileMeta) + sign.size());
+        memcpy(meta + sizeof(PackedFileMeta), sign->data(), sign->size());
+        auto *hash = crypto::hashData(meta, sizeof(PackedFileMeta) + sign->size());
         return new FileMeta(core::Node::thisNode->id, millisecondsTimestamp, chunksCount, chunkSize, minSwarmSize,
                             ringConnectivity, sign, hash);
 

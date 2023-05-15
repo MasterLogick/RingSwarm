@@ -21,7 +21,7 @@ namespace RingSwarm::storage {
             return nullptr;
         }
         transport::Buffer b(nodeSelectStatement.getBlob(1));
-        auto *node = new core::Node(nodeId, nodeSelectStatement.getBlob(0),
+        auto *node = new core::Node(nodeId, nodeSelectStatement.getPublicKey(0),
                                     transport::ConnectionInfo::parseConnectionInfo(b));
         nodeStorage[nodeId] = node;
         return node;
@@ -43,7 +43,7 @@ namespace RingSwarm::storage {
 
         Statement nodeInsertStatement(dbConnection, nodeInsert);
         nodeInsertStatement.bindId(":node_id", node->id);
-        nodeInsertStatement.bindBlob(":pub_key", node->publicKey);
+        nodeInsertStatement.bindPublicKey(":pub_key", node->publicKey);
         transport::Buffer b(node->connectionInfo->getSerializedSize());
         node->connectionInfo->serialize(b);
         nodeInsertStatement.bindBlob(":connection_info", b.toBlob());

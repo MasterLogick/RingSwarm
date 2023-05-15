@@ -8,6 +8,8 @@
 #include "../core/Id.h"
 #include "../core/FileMeta.h"
 #include "../core/ChunkLink.h"
+#include "DataSerialisationException.h"
+#include <concepts>
 
 namespace RingSwarm::core {
     class Node;
@@ -17,10 +19,20 @@ namespace RingSwarm::transport {
         uint8_t *data;
         uint32_t len;
         uint32_t offset;
+
+        void writeData(const char *data, uint32_t len);
+
+        void readData(char *data, uint32_t len);
     public:
+
         explicit Buffer(uint32_t len, uint32_t offset = 0);
 
         explicit Buffer(std::vector<char> initValue);
+
+        /*template<typename... Args>
+        Buffer(Args &&... args):Buffer(123) {
+            write<Args...>(args...);
+        }*/
 
         ~Buffer();
 
@@ -32,49 +44,32 @@ namespace RingSwarm::transport {
             return data;
         }
 
-        uint64_t readUint64();
-
-        uint16_t readUint16();
-
-        uint8_t readUint8();
-
-        core::Id *readId();
-
-        core::FileMeta *readFileMeta();
-
-        core::Node *readNode();
-
-        std::vector<core::Node *> readNodeList();
-
-        core::ChunkLink *readChunkLink();
-
-        void writeUint64(uint64_t val);
-
-        void writeUint32(uint32_t val);
-
-        void writeUint8(uint8_t val);
-
-        void writeId(core::Id *id);
-
-        void writeFileMeta(core::FileMeta *meta);
-
-        void writeNode(core::Node *node);
-
-        void writeData(const char *data, uint32_t len);
-
-        void writeChunkLink(core::ChunkLink *link);
-
-        void writeNodeList(std::vector<core::Node *> nodeList);
-
-        std::string readString();
-
-        uint32_t readUint32();
-
-        void writeString(std::string &str);
-
         std::vector<char> toBlob();
 
-        void readData(char *data, uint32_t len);
+        template<class T>
+        void write(T val);
+
+        template<class Integer>
+        void write(std::enable_if_t<std::is_unsigned_v<Integer>, Integer> val) {
+            if (len - offset < sizeof(Integer)) {
+                throw DataSerialisationException();
+            }
+            *reinterpret_cast<Integer *>(data + offset) = val;
+            offset += sizeof(Integer);
+        }
+
+        template<class T>
+        std::enable_if_t<!std::is_unsigned_v<T>, T> read();
+
+        template<class Integer>
+        std::enable_if_t<std::is_unsigned_v<Integer>, Integer> read() {
+            if (len - offset < sizeof(Integer)) {
+                throw DataSerialisationException();
+            }
+            Integer retVal = *reinterpret_cast<Integer *>(data + offset);
+            offset += sizeof(Integer);
+            return retVal;
+        }
     };
 }
 

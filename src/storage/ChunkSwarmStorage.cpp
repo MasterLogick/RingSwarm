@@ -34,11 +34,14 @@ namespace RingSwarm::storage {
         if (!hostedChunkSelectStatement.nextRow()) {
             return nullptr;
         }
+        auto sign = new crypto::Signature();
+        auto blobSign = hostedChunkSelectStatement.getBlob(3);
+        std::copy(blobSign.begin(), blobSign.end(), sign->begin());
         auto *link = new core::ChunkLink(
                 hostedChunkSelectStatement.getId(0),
                 hostedChunkSelectStatement.getInt64(1),
                 hostedChunkSelectStatement.getId(2),
-                hostedChunkSelectStatement.getBlob(3)
+                sign
         );
         auto *retVal = new core::ChunkSwarm(link, getChunkRing(fileId));
         chunkSwarmStorage[std::pair(fileId, index)] = retVal;
@@ -105,7 +108,7 @@ namespace RingSwarm::storage {
         chunkLinkInsertStatement.bindId(":file_id", link->file);
         chunkLinkInsertStatement.bindInt64(":chunk_index", link->chunkIndex);
         chunkLinkInsertStatement.bindId(":data_hash", link->dataHash);
-        chunkLinkInsertStatement.bindBlob(":sign", link->sign);
+        chunkLinkInsertStatement.bindSignature(":sign", link->sign);
         chunkLinkInsertStatement.execute();
         storeChunkRing(chunkSwarm->link->file, chunkSwarm->ring);
     }

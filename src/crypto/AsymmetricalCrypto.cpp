@@ -10,128 +10,80 @@
 #include <openssl/evp.h>
 #include <openssl/ec.h>
 #include <boost/log/trivial.hpp>
-#include <iostream>
 #include <boost/algorithm/hex.hpp>
 
 namespace RingSwarm::crypto {
-    std::vector<char> nodePubKey;
+    PublicKey *nodePubKey;
     EVP_PKEY *nodePrivKey;
 
-    std::vector<char> signData(void *data, size_t size) {
-        EVP_MD_CTX *mdctx;
-        if (!(mdctx = EVP_MD_CTX_create())) throw CryptoException();
-        if (1 != EVP_DigestSignInit(mdctx, nullptr, EVP_sha256(), nullptr, nodePrivKey)) {
-            EVP_MD_CTX_destroy(mdctx);
+    Signature *signData(void *data, size_t size) {
+        std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> mdCtx(EVP_MD_CTX_create(), EVP_MD_CTX_free);
+        if (mdCtx == nullptr) {
             throw CryptoException();
         }
-        if (1 != EVP_DigestSignUpdate(mdctx, data, size)) {
-            EVP_MD_CTX_destroy(mdctx);
+        if (EVP_DigestSignInit(mdCtx.get(), nullptr, EVP_sha256(), nullptr, nodePrivKey) != 1) {
             throw CryptoException();
         }
-        size_t slen;
-        if (1 != EVP_DigestSignFinal(mdctx, nullptr, &slen)) {
-            EVP_MD_CTX_destroy(mdctx);
+        if (EVP_DigestSignUpdate(mdCtx.get(), data, size) != 1) {
             throw CryptoException();
         }
-        std::vector<char> sig(slen);
-        if (1 != EVP_DigestSignFinal(mdctx, reinterpret_cast<unsigned char *>(sig.data()), &slen)) {
-            EVP_MD_CTX_destroy(mdctx);
+        auto sign = new Signature();
+        size_t len = sign->size();
+        if (EVP_DigestSignFinal(mdCtx.get(), sign->data(), &len) != 1) {
             throw CryptoException();
         }
-        EVP_MD_CTX_destroy(mdctx);
-        return sig;
+        return sign;
     }
 
-    bool verifyData(std::vector<char> &data, std::vector<char> &sig, std::vector<char> &pubKey) {
-        OSSL_PARAM_BLD *paramBuild = OSSL_PARAM_BLD_new();
-        if (paramBuild == nullptr) {
-            throw CryptoException();
-        }
-        if (OSSL_PARAM_BLD_push_utf8_string(paramBuild,
-                                            OSSL_PKEY_PARAM_GROUP_NAME, SN_secp256k1, 0) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            throw CryptoException();
-        }
-        if (OSSL_PARAM_BLD_push_octet_string(paramBuild, OSSL_PKEY_PARAM_PUB_KEY,
-                                             pubKey.data(), pubKey.size()) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            throw CryptoException();
-        }
-        OSSL_PARAM *params = OSSL_PARAM_BLD_to_param(paramBuild);
-        if (params == nullptr) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            throw CryptoException();
-        }
-        EVP_PKEY_CTX *publicKeyCtx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
+    bool verifyData(std::vector<char> &data, Signature &sig, PublicKey &pubKey) {
+        OSSL_PARAM params[] = {
+                OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME, (void *) SN_secp256k1, strlen(SN_secp256k1)),
+                OSSL_PARAM_octet_string(OSSL_PKEY_PARAM_PUB_KEY, pubKey.data(), pubKey.size()),
+                OSSL_PARAM_END};
+        std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> publicKeyCtx(
+                EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr),
+                EVP_PKEY_CTX_free);
         if (publicKeyCtx == nullptr) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
             throw CryptoException();
         }
-        if (EVP_PKEY_fromdata_init(publicKeyCtx) <= 0) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
-            EVP_PKEY_CTX_free(publicKeyCtx);
+        if (EVP_PKEY_fromdata_init(publicKeyCtx.get()) != 1) {
             throw CryptoException();
         }
-        EVP_PKEY *publicKey = nullptr;
-        if (EVP_PKEY_fromdata(publicKeyCtx, &publicKey,
-                              EVP_PKEY_PUBLIC_KEY, params) <= 0) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
-            EVP_PKEY_CTX_free(publicKeyCtx);
-            throw CryptoException();
-        }
-        OSSL_PARAM_BLD_free(paramBuild);
-        OSSL_PARAM_free(params);
-        EVP_PKEY_CTX_free(publicKeyCtx);
 
+        EVP_PKEY *ptr = nullptr;
+        if (EVP_PKEY_fromdata(publicKeyCtx.get(), &ptr,
+                              EVP_PKEY_PUBLIC_KEY, params) != 1) {
+            throw CryptoException();
+        }
+        std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> publicKey(ptr, EVP_PKEY_free);
 
-        auto *mdctx = EVP_MD_CTX_create();
-        if (EVP_DigestVerifyInit(mdctx, nullptr, EVP_sha256(), nullptr, publicKey) != 1) {
-            EVP_MD_CTX_destroy(mdctx);
-            EVP_PKEY_free(publicKey);
+        std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> mdCtx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
+        if (EVP_DigestVerifyInit(mdCtx.get(), nullptr, EVP_sha256(), nullptr, publicKey.get()) != 1) {
             throw CryptoException();
         }
-        if (EVP_DigestVerifyUpdate(mdctx, data.data(), data.size()) != 1) {
-            EVP_MD_CTX_destroy(mdctx);
-            EVP_PKEY_free(publicKey);
+        if (EVP_DigestVerifyUpdate(mdCtx.get(), data.data(), data.size()) != 1) {
             throw CryptoException();
         }
-        if (EVP_DigestVerifyFinal(mdctx, reinterpret_cast<const unsigned char *>(pubKey.data()), pubKey.size()) == 1) {
-            EVP_MD_CTX_destroy(mdctx);
-            EVP_PKEY_free(publicKey);
-            return true;
-        } else {
-            EVP_MD_CTX_destroy(mdctx);
-            EVP_PKEY_free(publicKey);
-            return false;
-        }
+
+        return EVP_DigestVerifyFinal(mdCtx.get(), pubKey.cbegin(), pubKey.size()) == 1;
     }
 
     void genNewKeyPair() {
-        auto *keyPair = EVP_EC_gen(SN_secp256k1);
-
-        size_t rawPubKeyLen = 0;
-        if (EVP_PKEY_get_octet_string_param(keyPair, OSSL_PKEY_PARAM_PUB_KEY, nullptr, 0, &rawPubKeyLen) != 1) {
-            EVP_PKEY_free(keyPair);
-            throw CryptoException();
-        }
-        std::vector<char> rawPubKey(rawPubKeyLen);
-        if (EVP_PKEY_get_octet_string_param(keyPair,
+        std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> keyPair(EVP_EC_gen(SN_secp256k1), EVP_PKEY_free);
+        PublicKey rawPubKey;
+        size_t rawPubKeyLen = rawPubKey.size();
+        if (EVP_PKEY_get_octet_string_param(keyPair.get(),
                                             OSSL_PKEY_PARAM_PUB_KEY,
                                             reinterpret_cast<unsigned char *>(rawPubKey.data()),
                                             rawPubKeyLen,
                                             &rawPubKeyLen) != 1) {
-            EVP_PKEY_free(keyPair);
             throw CryptoException();
         }
+
         std::string serializedPubKey;
         boost::algorithm::hex(rawPubKey.begin(), rawPubKey.end(), std::back_inserter(serializedPubKey));
-
         BIGNUM *privateKey = nullptr;
-        if (EVP_PKEY_get_bn_param(keyPair, OSSL_PKEY_PARAM_PRIV_KEY, &privateKey) != 1) {
-            EVP_PKEY_free(keyPair);
+        if (EVP_PKEY_get_bn_param(keyPair.get(), OSSL_PKEY_PARAM_PRIV_KEY, &privateKey) != 1) {
             throw CryptoException();
         }
         char *serializedPrivKey = BN_bn2hex(privateKey);
@@ -139,69 +91,79 @@ namespace RingSwarm::crypto {
         core::setSetting("private key", serializedPrivKey);
         OPENSSL_free(serializedPrivKey);
         BN_free(privateKey);
-        EVP_PKEY_free(keyPair);
         loadNodeKeys();
     }
 
     void loadPubKey(std::string &serializedPubKey) {
-        boost::algorithm::unhex(serializedPubKey, std::back_inserter(nodePubKey));
+        nodePubKey = new PublicKey();
+        boost::algorithm::unhex(serializedPubKey, nodePubKey->begin());
     }
 
     void loadPrivKey(std::string &serializedPrivKey) {
-        OSSL_PARAM_BLD *paramBuild = OSSL_PARAM_BLD_new();
+        /*
+                BIGNUM *ptr = nullptr;
+        if (BN_hex2bn(&ptr, serializedPrivKey.c_str()) == 0) {
+            throw CryptoException();
+        }
+        std::unique_ptr<BIGNUM, decltype(&BN_free)> privKeyBn(ptr, BN_free);
+        OSSL_PARAM params[] = {
+                OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME, (void *) SN_secp256k1, strlen(SN_secp256k1)),
+                OSSL_PARAM_BN(OSSL_PKEY_PARAM_PRIV_KEY, privKeyBn.get(), (size_t) BN_num_bytes(privKeyBn.get())),
+                OSSL_PARAM_END
+        };
+        std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> privateKeyCtx(
+                EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr),
+                EVP_PKEY_CTX_free);
+        if (privateKeyCtx == nullptr) {
+            throw CryptoException();
+        }
+        if (EVP_PKEY_fromdata_init(privateKeyCtx.get()) != 1) {
+            throw CryptoException();
+        }
+        if (EVP_PKEY_fromdata(privateKeyCtx.get(), &nodePrivKey, EVP_PKEY_KEYPAIR, params) != 1) {
+            throw CryptoException();
+        }
+         * */
+        std::unique_ptr<OSSL_PARAM_BLD, decltype(&OSSL_PARAM_BLD_free)> paramBuild(
+                OSSL_PARAM_BLD_new(),
+                OSSL_PARAM_BLD_free);
         if (paramBuild == nullptr) {
             throw CryptoException();
         }
-        if (OSSL_PARAM_BLD_push_utf8_string(paramBuild,
+        if (OSSL_PARAM_BLD_push_utf8_string(paramBuild.get(),
                                             OSSL_PKEY_PARAM_GROUP_NAME,
                                             SN_secp256k1,
                                             0) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
             throw CryptoException();
         }
-        BIGNUM *privKeyBn = nullptr;
-        if (BN_hex2bn(&privKeyBn, serializedPrivKey.c_str()) == 0) {
-            OSSL_PARAM_BLD_free(paramBuild);
+        BIGNUM *ptr = nullptr;
+        if (BN_hex2bn(&ptr, serializedPrivKey.c_str()) == 0) {
             throw CryptoException();
         }
-        if (OSSL_PARAM_BLD_push_BN(paramBuild,
+        std::unique_ptr<BIGNUM, decltype(&BN_free)> privKeyBn(ptr, &BN_free);
+        if (OSSL_PARAM_BLD_push_BN(paramBuild.get(),
                                    OSSL_PKEY_PARAM_PRIV_KEY,
-                                   privKeyBn) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            BN_free(privKeyBn);
+                                   privKeyBn.get()) != 1) {
             throw CryptoException();
         }
-        OSSL_PARAM *params = OSSL_PARAM_BLD_to_param(paramBuild);
+        std::unique_ptr<OSSL_PARAM, decltype(&OSSL_PARAM_free)> params(
+                OSSL_PARAM_BLD_to_param(paramBuild.get()),
+                OSSL_PARAM_free);
         if (params == nullptr) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            BN_free(privKeyBn);
             throw CryptoException();
         }
-        EVP_PKEY_CTX *privateKeyCtx = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
+        std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> privateKeyCtx(
+                EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr),
+                EVP_PKEY_CTX_free);
         if (privateKeyCtx == nullptr) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
-            BN_free(privKeyBn);
             throw CryptoException();
         }
-        if (EVP_PKEY_fromdata_init(privateKeyCtx) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
-            EVP_PKEY_CTX_free(privateKeyCtx);
-            BN_free(privKeyBn);
+        if (EVP_PKEY_fromdata_init(privateKeyCtx.get()) != 1) {
             throw CryptoException();
         }
-        if (EVP_PKEY_fromdata(privateKeyCtx, &nodePrivKey, EVP_PKEY_KEYPAIR, params) != 1) {
-            OSSL_PARAM_BLD_free(paramBuild);
-            OSSL_PARAM_free(params);
-            EVP_PKEY_CTX_free(privateKeyCtx);
-            BN_free(privKeyBn);
+        if (EVP_PKEY_fromdata(privateKeyCtx.get(), &nodePrivKey, EVP_PKEY_KEYPAIR, params.get()) != 1) {
             throw CryptoException();
         }
-        OSSL_PARAM_BLD_free(paramBuild);
-        OSSL_PARAM_free(params);
-        EVP_PKEY_CTX_free(privateKeyCtx);
-        BN_free(privKeyBn);
     }
 
     void loadNodeKeys() {
@@ -213,20 +175,21 @@ namespace RingSwarm::crypto {
         std::string serializedPrivKey = core::getSetting("private key");
         loadPubKey(serializedPubKey);
         loadPrivKey(serializedPrivKey);
-        core::Node::thisNode->id = hashData(reinterpret_cast<const uint8_t *>(nodePubKey.data()), nodePubKey.size());
+        core::Node::thisNode->id = hashData(nodePubKey);
         core::Node::thisNode->publicKey = nodePubKey;
         storage::storeThisNode();
         BOOST_LOG_TRIVIAL(debug) << "Loaded node keys. ID: " << core::Node::thisNode->id->getHexRepresentation()
                                  << " Pub key: " << serializedPubKey;
     }
 
-    EVP_PKEY_CTX *initDeriveKeyContext() {
-        auto *ctx = EVP_PKEY_CTX_new(nodePrivKey, nullptr);
+    std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext() {
+        std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx(
+                EVP_PKEY_CTX_new(nodePrivKey, nullptr),
+                EVP_PKEY_CTX_free);
         if (ctx == nullptr) {
             throw CryptoException();
         }
-        if (EVP_PKEY_derive_init(ctx) != 1) {
-            EVP_PKEY_CTX_free(ctx);
+        if (EVP_PKEY_derive_init(ctx.get()) != 1) {
             throw CryptoException();
         }
         return ctx;

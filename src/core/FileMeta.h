@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include "Id.h"
+#include "../crypto/AsymmetricalCrypto.h"
 #include <array>
 
 namespace RingSwarm::core {
@@ -14,10 +15,12 @@ namespace RingSwarm::core {
         const uint32_t chunkSize;
         const uint8_t minSwarmSize;
         const uint8_t ringConnectivity;
-        const std::vector<char> sign;
+        crypto::Signature *const sign;
         Id *const fileId;
 
-        int getSerializedSize();
+        constexpr int getSerializedSize() {
+            return 32 + 32 + 8 + 8 + 4 + 1 + 1 + sign->size();
+        }
 
         static FileMeta *
         createNewFileMeta(uint64_t chunksCount, uint32_t chunkSize, uint8_t minSwarmSize, uint8_t ringConnectivity);

@@ -4,18 +4,26 @@
 #include <vector>
 #include <openssl/types.h>
 #include "../core/Id.h"
+#include <array>
+#include <memory>
+
+extern "C"
+void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
 
 namespace RingSwarm::crypto {
-    std::vector<char> signData(void *data, size_t size);
 
-    bool verifyData(std::vector<char> &data, std::vector<char> &sig, std::vector<char> &pubKey);
+    using PublicKey = std::array<uint8_t, 33>;
+
+    using Signature = std::array<uint8_t, 72>;
+
+    Signature *signData(void *data, size_t size);
+
+    bool verifyData(std::vector<char> &data, Signature *sig, PublicKey *pubKey);
 
     void loadNodeKeys();
 
-    EVP_PKEY_CTX *initDeriveKeyContext();
+    std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext();
 
-#define RAW_SIGNATURE_LENGTH 72
-#define RAW_NODE_PUBLIC_KEY_LENGTH 33
 }
 
 #endif //RINGSWARM_ASYMMETRICALCRYPTO_H

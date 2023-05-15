@@ -53,7 +53,7 @@ namespace RingSwarm::proto {
         }
         transport::ResponseBuffer resp(nodeListSize);
         for (const auto &node: nodeList) {
-            resp.writeNode(node);
+            resp.write(node);
         }
         transport->sendResponse(resp);
     }

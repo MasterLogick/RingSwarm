@@ -7,20 +7,16 @@
 
 namespace RingSwarm::crypto {
     class SymmetricCypher {
-        EVP_CIPHER_CTX *cipher, *decipher;
-
-        void initCypher(EVP_PKEY_CTX *ctx, std::vector<char> &serializedPubKey, uint8_t *iv);
+        std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> cipher;
+        std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)> decipher;
 
     public:
-        SymmetricCypher(EVP_PKEY *privateKey, std::vector<char> &remotePublicKey, uint8_t *iv);
-
-        SymmetricCypher(std::vector<char> &remotePublicKey, uint8_t *iv);
+        SymmetricCypher(std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx,
+                        crypto::PublicKey *serializedPublicKey, const uint8_t *iv);
 
         void write(RingSwarm::transport::Transport *transport, void *data, uint32_t len);
 
         void read(transport::Transport *transport, void *data, uint32_t len);
-
-        ~SymmetricCypher();
     };
 }
 

@@ -13,7 +13,7 @@ namespace RingSwarm::transport {
     static_assert(sizeof(Parsers) == sizeof(Parser) * ParsersCount);
 
     ConnectionInfo *ConnectionInfo::parseConnectionInfo(Buffer &buffer) {
-        uint8_t type = buffer.readUint8();
+        uint8_t type = buffer.read<uint8_t>();
         if (type >= ParsersCount) {
             throw DataSerialisationException();
         }

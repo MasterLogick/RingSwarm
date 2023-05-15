@@ -6,16 +6,16 @@
 namespace RingSwarm::proto {
     std::vector<core::Node *> ClientHandler::noticeJoinedFileMetaSwarm(core::Id *fileId, uint8_t index) {
         transport::RequestBuffer req(33);
-        req.writeId(fileId);
-        req.writeUint8(index);
+        req.write(fileId);
+        req.write<uint8_t>(index);
         transport->sendRequest(6, req);
         auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.readNodeList();
+        return resp.read<std::vector<core::Node *>>();
     }
 
     void ServerHandler::handleNoticeJoinedFileMetaSwarm(transport::Buffer &request) {
-        auto id = request.readId();
-        auto index = request.readUint8();
+        auto id = request.read<core::Id *>();
+        auto index = request.read<uint8_t>();
         auto fileMetaSwarm = storage::getFileMetaSwarm(id);
         if (fileMetaSwarm == nullptr) {
             transport->sendError();

@@ -9,16 +9,16 @@
 namespace RingSwarm::proto {
     bool ClientHandler::getFileMeta(core::Id *fileId, uint8_t nodeIndex, core::FileMeta **meta, core::Node **node) {
         transport::RequestBuffer req(33);
-        req.writeId(fileId);
-        req.writeUint8(nodeIndex);
+        req.write(fileId);
+        req.write<uint8_t>(nodeIndex);
         transport->sendRequest(1, req);
         transport::Buffer resp = transport->readResponse(MAX_RESPONSE_LENGTH);
-        auto type = resp.readUint8();
+        auto type = resp.read<uint8_t>();
         if (type == 0) {
-            *node = resp.readNode();
+            *node = resp.read<core::Node *>();
             return false;
         } else if (type == 1) {
-            *meta = resp.readFileMeta();
+            *meta = resp.read<core::FileMeta *>();
             return true;
         } else {
             throw ProtocolException();
@@ -26,8 +26,8 @@ namespace RingSwarm::proto {
     }
 
     void ServerHandler::handleGetFileMeta(transport::Buffer &request) {
-        auto fileId = request.readId();
-        auto index = request.readUint8();
+        auto fileId = request.read<core::Id *>();
+        auto index = request.read<uint8_t>();
         auto *fileSwarm = storage::getFileMetaSwarm(fileId);
         if (fileSwarm == nullptr) {
             auto *node = core::getPossibleFileMetaHost(fileId, index)->getRemote();
@@ -35,14 +35,14 @@ namespace RingSwarm::proto {
                 transport->sendError();
             }
             transport::ResponseBuffer resp(1 + node->getSerializedSize());
-            resp.writeUint8(0);
-            resp.writeNode(node);
+            resp.write<uint8_t>(0);
+            resp.write(node);
             transport->sendResponse(resp);
         } else {
             auto *fileMeta = fileSwarm->meta;
             transport::ResponseBuffer resp(1 + fileMeta->getSerializedSize());
-            resp.writeUint8(1);
-            resp.writeFileMeta(fileMeta);
+            resp.write<uint8_t>(1);
+            resp.write(fileMeta);
             transport->sendResponse(resp);
         }
     }

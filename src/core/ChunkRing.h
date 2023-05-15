@@ -5,8 +5,7 @@
 #include <map>
 
 namespace RingSwarm::core {
-    struct ChunkRing : std::map<uint64_t, std::vector<Node *>> {
-    };
+    using ChunkRing = std::map<uint64_t, std::vector<Node *>>;
 }
 
 #endif //RINGSWARM_CHUNKRING_H

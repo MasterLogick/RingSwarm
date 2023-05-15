@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "../core/Id.h"
+#include "../crypto/AsymmetricalCrypto.h"
 
 class sqlite3_stmt;
 
@@ -31,6 +32,15 @@ namespace RingSwarm::storage {
             bindBlob(label, id->hash, 32);
         }
 
+        void bindSignature(const char *label, crypto::Signature *sign) {
+            bindBlob(label, sign->data(), sign->size());
+        }
+
+        void bindPublicKey(const char *label, crypto::PublicKey *publicKey) {
+            bindBlob(label, publicKey->data(), publicKey->size());
+
+        }
+
         bool nextRow();
 
         void execute() {
@@ -44,6 +54,10 @@ namespace RingSwarm::storage {
         uint32_t getInt32(int n);
 
         std::vector<char> getBlob(int n);
+
+        crypto::Signature *getSignature(int n);
+
+        crypto::PublicKey *getPublicKey(int n);
 
         core::Id *getId(int n) {
             return core::Id::fromBlob(getBlob(n));

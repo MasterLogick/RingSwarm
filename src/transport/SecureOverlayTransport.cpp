@@ -3,7 +3,6 @@
 #include <openssl/ec.h>
 #include <openssl/core_names.h>
 #include "SecureOverlayTransport.h"
-#include "../crypto/AsymmetricalCrypto.h"
 #include "../crypto/CryptoException.h"
 #include "../crypto/SymmetricalCrypher.h"
 #include <openssl/rand.h>
@@ -12,14 +11,14 @@
 
 namespace RingSwarm::transport {
     void SecureOverlayTransport::rawWrite(void *data, uint32_t len) {
-        BOOST_LOG_TRIVIAL(trace) << "Secure overlay sent: "
+        BOOST_LOG_TRIVIAL(trace) << "Secure overlay |===> "
                                  << boost::algorithm::hex(std::string(static_cast<char *>(data), len));
         cypher->write(transport, data, len);
     }
 
     void SecureOverlayTransport::rawRead(void *buff, uint32_t len) {
         cypher->read(transport, buff, len);
-        BOOST_LOG_TRIVIAL(trace) << "Secure overlay read: "
+        BOOST_LOG_TRIVIAL(trace) << "Secure overlay |<=== "
                                  << boost::algorithm::hex(std::string(static_cast<char *>(buff), len));
     }
 
@@ -27,32 +26,33 @@ namespace RingSwarm::transport {
         transport->close();
     }
 
-    SecureOverlayTransport::SecureOverlayTransport(transport::Transport *transport,
-                                                   std::vector<char> &remotePublicKey) : transport(transport) {
-        auto *keyPair = EVP_EC_gen(SN_secp256k1);
-        size_t rawPubKeyLen = 0;
-        if (EVP_PKEY_get_octet_string_param(keyPair, OSSL_PKEY_PARAM_PUB_KEY, nullptr, 0, &rawPubKeyLen) != 1) {
-            EVP_PKEY_free(keyPair);
-            throw crypto::CryptoException();
-        }
-        if (rawPubKeyLen != RAW_NODE_PUBLIC_KEY_LENGTH) {
-            EVP_PKEY_free(keyPair);
-            throw crypto::CryptoException();
-        }
-        uint8_t rawPubKey[RAW_NODE_PUBLIC_KEY_LENGTH];
-
-        if (EVP_PKEY_get_octet_string_param(keyPair,
+    SecureOverlayTransport::SecureOverlayTransport(
+            transport::Transport *transport,
+            crypto::PublicKey *remotePublicKey
+    ) : transport(transport) {
+        std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> keyPair(EVP_EC_gen(SN_secp256k1), EVP_PKEY_free);
+        auto *rawPubKey = new crypto::PublicKey();
+        size_t rawPubKeyLen = rawPubKey->size();
+        if (EVP_PKEY_get_octet_string_param(keyPair.get(),
                                             OSSL_PKEY_PARAM_PUB_KEY,
-                                            rawPubKey,
+                                            rawPubKey->data(),
                                             rawPubKeyLen,
                                             &rawPubKeyLen) != 1) {
-            EVP_PKEY_free(keyPair);
             throw crypto::CryptoException();
         }
-        transport->rawWrite(rawPubKey, rawPubKeyLen);
+        std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx(
+                EVP_PKEY_CTX_new(keyPair.get(), nullptr),
+                EVP_PKEY_CTX_free);
+        if (ctx == nullptr) {
+            throw crypto::CryptoException();
+        }
+        if (EVP_PKEY_derive_init(ctx.get()) != 1) {
+            throw crypto::CryptoException();
+        }
+        transport->rawWrite(rawPubKey, rawPubKey->size());
         uint8_t iv[16];
         transport->rawRead(iv, 16);
-        cypher = new crypto::SymmetricCypher(keyPair, remotePublicKey, iv);
+        cypher = new crypto::SymmetricCypher(std::move(ctx), remotePublicKey, iv);
     }
 
     SecureOverlayTransport::SecureOverlayTransport(transport::Transport *transport) : transport(transport) {
@@ -61,9 +61,9 @@ namespace RingSwarm::transport {
             throw crypto::CryptoException();
         }
         transport->rawWrite(iv, 16);
-        std::vector<char> remotePubKey(RAW_NODE_PUBLIC_KEY_LENGTH);
-        transport->rawRead(remotePubKey.data(), RAW_NODE_PUBLIC_KEY_LENGTH);
-        cypher = new crypto::SymmetricCypher(remotePubKey, iv);
+        auto *remotePubKey = new crypto::PublicKey();
+        transport->rawRead(remotePubKey->data(), remotePubKey->size());
+        cypher = new crypto::SymmetricCypher(crypto::initDeriveKeyContext(), remotePubKey, iv);
     }
 
     SecureOverlayTransport::~SecureOverlayTransport() {

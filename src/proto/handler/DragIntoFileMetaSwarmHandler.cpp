@@ -14,29 +14,29 @@ namespace RingSwarm::proto {
             size += item.second->getSerializedSize();
         }
         transport::RequestBuffer req(32 + 1 + 1 + nodeList.size() + size);
-        req.writeFileMeta(meta);
-        req.writeUint8(index);
-        req.writeUint8(size);
+        req.write(meta);
+        req.write<uint8_t>(index);
+        req.write<uint8_t>(size);
         std::vector<core::Node *> nodes;
         for (const auto &item: nodeList) {
-            req.writeUint8(item.first);
+            req.write<uint8_t>(item.first);
             nodes.push_back(item.second);
         }
-        req.writeNodeList(nodes);
+        req.write<std::vector<core::Node *> &>(nodes);
         transport->sendRequest(5, req);
         transport->readResponse(MAX_RESPONSE_SIZE);
     }
 
     void ServerHandler::handleDragIntoFileMetaSwarm(transport::Buffer &request) {
-        core::FileMeta *meta = request.readFileMeta();
-        auto index = request.readUint8();
-        auto swarmSize = request.readUint8();
+        core::FileMeta *meta = request.read<core::FileMeta *>();
+        auto index = request.read<uint8_t>();
+        auto swarmSize = request.read<uint8_t>();
         uint8_t swarmIndexes[swarmSize];
         for (int i = 0; i < swarmSize; ++i) {
-            swarmIndexes[i] = request.readUint8();
+            swarmIndexes[i] = request.read<uint8_t>();
         }
         //todo read node indexes
-        auto nodeList = request.readNodeList();
+        auto nodeList = request.read<std::vector<core::Node *>>();
         auto swarm = storage::getFileMetaSwarm(meta->fileId);
         if (swarm != nullptr) {
             //todo update node list

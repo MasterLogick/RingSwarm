@@ -14,20 +14,9 @@
 #include "client/FileDownloader.h"
 
 namespace po = boost::program_options;
-namespace RingSwarm {
-    void start(int scenario, std::string &host, int port) {
-        std::string path = "ring-swarm-" + std::to_string(scenario) + ".sqlite3";
-        storage::loadStorage(path.c_str());
-        crypto::loadNodeKeys();
-
-        auto *server = new transport::PlainSocketServer(host, port, 8);
-        core::Node::thisNode->connectionInfo = server->getConnectionInfo();
-        std::thread([server] { server->listen(); }).detach();
-    }
-}
+using namespace RingSwarm;
 
 int main(int argc, char **argv, char **envp) {
-
     po::options_description desc("Options");
     std::string host;
     int port;
@@ -57,30 +46,37 @@ int main(int argc, char **argv, char **envp) {
         return 0;
     }
 
-    RingSwarm::start(scenario, host, port);
+    std::string path = "ring-swarm-" + std::to_string(scenario) + ".sqlite3";
+    storage::loadStorage(path.c_str());
+    crypto::loadNodeKeys();
+
+    auto *server = new transport::PlainSocketServer(host, port, 8);
+    core::Node::thisNode->connectionInfo = server->getConnectionInfo();
+    std::thread([server] { server->listen(); }).detach();
+
     switch (scenario) {
         case 1: {
-            RingSwarm::client::uploadFile("RingSwarm", 3, 5);
+            client::uploadFile("RingSwarm", 3, 5);
             break;
         }
         case 2: {
-            std::vector<char> pubKey;
+            auto *pubKey = new crypto::PublicKey();
             boost::algorithm::unhex("03AF34561B00FC80C7254AA1F3A226EDBA3F7A2D055BC581CAE43A004F707166D7",
-                                    std::back_inserter(pubKey));
-            auto *node = new RingSwarm::core::Node(RingSwarm::core::Id::fromHexRepresentation(
-                                                           "9535dd715563609af32b86271a0521cda381c47c056d3f95bbf61527943805b6"),
-                                                   pubKey,
-                                                   new RingSwarm::transport::PlainSocketConnectionInfo("localhost",
-                                                                                                       port - 1));
-            RingSwarm::core::getOrConnect(node);
-            RingSwarm::client::getFileHandler(RingSwarm::core::Id::fromHexRepresentation(
+                                    pubKey->begin());
+            auto *node = new core::Node(core::Id::fromHexRepresentation(
+                                                "9535dd715563609af32b86271a0521cda381c47c056d3f95bbf61527943805b6"),
+                                        pubKey,
+                                        new transport::PlainSocketConnectionInfo("localhost",
+                                                                                 port - 1));
+            core::getOrConnect(node);
+            client::getFileHandler(core::Id::fromHexRepresentation(
                     "aaca6d5be6b5f6127da92cb66797f3eb3e52ef6498c3b78f2626c3acbe5df8e9"));
             break;
         }
         default:
-            throw RingSwarm::core::RingSwarmException();
+            throw core::RingSwarmException();
     }
 
     std::cin.get();
-    RingSwarm::storage::closeStorage();
+    storage::closeStorage();
 }

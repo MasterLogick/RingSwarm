@@ -6,16 +6,16 @@
 namespace RingSwarm::proto {
     core::ChunkLink *ClientHandler::getChunkLink(core::Id *id, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
-        req.writeId(id);
-        req.writeUint64(chunkIndex);
+        req.write(id);
+        req.write<uint64_t>(chunkIndex);
         transport->sendRequest(3, req);
         auto resp = transport->readResponse(MAX_RESPONSE_LENGTH);
-        return resp.readChunkLink();
+        return resp.read<core::ChunkLink *>();
     }
 
     void ServerHandler::handleGetChunkLink(transport::Buffer &request) {
-        auto *id = request.readId();
-        uint64_t chunkIndex = request.readUint64();
+        auto *id = request.read<core::Id *>();
+        uint64_t chunkIndex = request.read<uint64_t>();
         auto chunk = storage::getHostedChunkSwarm(id, chunkIndex);
         if (chunk == nullptr) {
             transport->sendError();
@@ -23,7 +23,7 @@ namespace RingSwarm::proto {
         }
         auto *link = chunk->link;
         transport::ResponseBuffer resp(link->getSerializedSize());
-        resp.writeChunkLink(link);
+        resp.write(link);
         transport->sendResponse(resp);
     }
 }

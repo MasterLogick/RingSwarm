@@ -3,15 +3,18 @@
 
 #include <string>
 #include "Id.h"
+#include "../crypto/AsymmetricalCrypto.h"
 
 namespace RingSwarm::core {
     struct ChunkLink {
         Id *const file;
         const uint64_t chunkIndex;
         Id *const dataHash;
-        const std::vector<char> sign;
+        crypto::Signature *const sign;
 
-        uint32_t getSerializedSize();
+        constexpr uint32_t getSerializedSize() {
+            return 32 + 8 + 32 + sign->size();
+        }
 
         static ChunkLink *createChunkLink(Id *file,
                                           uint64_t chunkIndex,

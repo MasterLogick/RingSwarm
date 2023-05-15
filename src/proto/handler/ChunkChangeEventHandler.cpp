@@ -5,9 +5,9 @@
 namespace RingSwarm::proto {
     void ClientHandler::chunkChangeEvent(core::Id *fileId, uint64_t chunkIndex, uint8_t changeType) {
         transport::RequestBuffer req(41);
-        req.writeId(fileId);
-        req.writeUint64(chunkIndex);
-        req.writeUint8(changeType);
+        req.write(fileId);
+        req.write<uint64_t>(chunkIndex);
+        req.write<uint8_t>(changeType);
         transport->sendRequest(12, req);
         transport->readResponse(MAX_RESPONSE_SIZE);
     }

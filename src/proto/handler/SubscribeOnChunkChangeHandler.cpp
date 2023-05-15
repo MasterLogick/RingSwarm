@@ -5,8 +5,8 @@
 namespace RingSwarm::proto {
     void ClientHandler::subscribeOnChunkChange(core::Id *fileId, uint64_t chunkIndex) {
         transport::RequestBuffer req(40);
-        req.writeId(fileId);
-        req.writeUint64(chunkIndex);
+        req.write(fileId);
+        req.write<uint64_t>(chunkIndex);
         transport->sendRequest(11, req);
         transport->readResponse(MAX_RESPONSE_SIZE);
     }

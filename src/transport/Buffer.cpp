@@ -7,6 +7,9 @@
 #include "../crypto/HashCrypto.h"
 
 namespace RingSwarm::transport {
+
+//    template uint8_t Buffer::read<uint8_t>();
+
     Buffer::Buffer(uint32_t len, uint32_t offset) {
         data = new uint8_t[len];
         this->len = len;
@@ -24,43 +27,8 @@ namespace RingSwarm::transport {
         delete data;
     }
 
-    uint64_t Buffer::readUint64() {
-        if (len - offset < 8) {
-            throw DataSerialisationException();
-        }
-        uint64_t retVal = *reinterpret_cast<uint64_t *>(data + offset);
-        offset += 8;
-        return retVal;
-    }
-
-    uint32_t Buffer::readUint32() {
-        if (len - offset < 4) {
-            throw DataSerialisationException();
-        }
-        uint16_t retVal = *reinterpret_cast<uint16_t *>(data + offset);
-        offset += 4;
-        return retVal;
-    }
-
-    uint16_t Buffer::readUint16() {
-        if (len - offset < 2) {
-            throw DataSerialisationException();
-        }
-        uint16_t retVal = *reinterpret_cast<uint16_t *>(data + offset);
-        offset += 2;
-        return retVal;
-    }
-
-    uint8_t Buffer::readUint8() {
-        if (len - offset < 1) {
-            throw DataSerialisationException();
-        }
-        uint8_t retVal = data[offset];
-        offset += 1;
-        return retVal;
-    }
-
-    core::Id *Buffer::readId() {
+    template<>
+    core::Id *Buffer::read<core::Id *>() {
         if (len - offset < 32) {
             throw DataSerialisationException();
         }
@@ -70,36 +38,13 @@ namespace RingSwarm::transport {
         return d;
     }
 
-    void Buffer::writeId(core::Id *id) {
+    template<>
+    void Buffer::write(core::Id *id) {
         if (len - offset < 32) {
             throw DataSerialisationException();
         }
         std::memcpy(data + offset, &id->hash, 32);
         offset += 32;
-    }
-
-    void Buffer::writeUint64(uint64_t val) {
-        if (len - offset < 8) {
-            throw DataSerialisationException();
-        }
-        std::memcpy(data + offset, &val, 8);
-        offset += 8;
-    }
-
-    void Buffer::writeUint32(uint32_t val) {
-        if (len - offset < 4) {
-            throw DataSerialisationException();
-        }
-        std::memcpy(data + offset, &val, 4);
-        offset += 4;
-    }
-
-    void Buffer::writeUint8(uint8_t val) {
-        if (len - offset < 1) {
-            throw DataSerialisationException();
-        }
-        data[offset] = val;
-        offset += 1;
     }
 
     void Buffer::writeData(const char *data, uint32_t len) {
@@ -118,72 +63,101 @@ namespace RingSwarm::transport {
         offset += len;
     }
 
-    core::FileMeta *Buffer::readFileMeta() {
-        auto *fileId = readId();
-        auto *author = readId();
-        auto creationTimestamp = readUint64();
-        auto chunksCount = readUint64();
-        auto chunkSize = readUint32();
-        auto minSwarmSize = readUint8();
-        auto ringConnectivity = readUint8();
-        std::vector<char> sign(RAW_SIGNATURE_LENGTH);
-        readData(sign.data(), RAW_SIGNATURE_LENGTH);
+    template<>
+    crypto::Signature *Buffer::read<crypto::Signature *>() {
+        auto *sign = new crypto::Signature();
+        readData(reinterpret_cast<char *>(sign->data()), sign->size());
+        return sign;
+    }
+
+    template<>
+    void Buffer::write(crypto::Signature *sign) {
+        writeData(reinterpret_cast<char *>(sign->data()), sign->size());
+    }
+
+    template<>
+    core::FileMeta *Buffer::read<core::FileMeta *>() {
+        auto *fileId = read<core::Id *>();
+        auto *author = read<core::Id *>();
+        auto creationTimestamp = read<uint64_t>();
+        auto chunksCount = read<uint64_t>();
+        auto chunkSize = read<uint32_t>();
+        auto minSwarmSize = read<uint8_t>();
+        auto ringConnectivity = read<uint8_t>();
+        auto sign = read<crypto::Signature *>();
         return new core::FileMeta(author, creationTimestamp, chunksCount, chunkSize, minSwarmSize,
                                   ringConnectivity, sign, fileId);
     }
 
-    void Buffer::writeFileMeta(core::FileMeta *meta) {
-        writeId(meta->fileId);
-        writeId(meta->author);
-        writeUint64(meta->creationTimestamp);
-        writeUint64(meta->chunksCount);
-        writeUint32(meta->chunkSize);
-        writeUint8(meta->minSwarmSize);
-        writeUint8(meta->ringConnectivity);
-        writeData(meta->sign.data(), RAW_SIGNATURE_LENGTH);
+    template<>
+    void Buffer::write(core::FileMeta *meta) {
+        write(meta->fileId);
+        write(meta->author);
+        write<uint64_t>(meta->creationTimestamp);
+        write<uint64_t>(meta->chunksCount);
+        write<uint32_t>(meta->chunkSize);
+        write<uint8_t>(meta->minSwarmSize);
+        write<uint8_t>(meta->ringConnectivity);
+        write(meta->sign);
     }
 
-    core::Node *Buffer::readNode() {
+    template<>
+    crypto::PublicKey *Buffer::read<crypto::PublicKey *>() {
+        auto *key = new crypto::PublicKey();
+        readData(reinterpret_cast<char *>(key->data()), key->size());
+        return key;
+    }
+
+    template<>
+    void Buffer::write(crypto::PublicKey *publicKey) {
+        writeData(reinterpret_cast<char *>(publicKey->data()), publicKey->size());
+    }
+
+    template<>
+    core::Node *Buffer::read<core::Node *>() {
         auto *node = new core::Node();
-        node->publicKey.resize(RAW_NODE_PUBLIC_KEY_LENGTH);
-        readData(node->publicKey.data(), RAW_NODE_PUBLIC_KEY_LENGTH);
+        node->publicKey = read<crypto::PublicKey *>();
         node->connectionInfo = ConnectionInfo::parseConnectionInfo(*this);
-        node->id = crypto::hashData(reinterpret_cast<const uint8_t *>(node->publicKey.data()),
-                                    RAW_NODE_PUBLIC_KEY_LENGTH);
+        node->id = crypto::hashData(node->publicKey);
         return node;
     }
 
-    void Buffer::writeNode(core::Node *node) {
-        writeData(node->publicKey.data(), RAW_NODE_PUBLIC_KEY_LENGTH);
+    template<>
+    void Buffer::write(core::Node *node) {
+        write(node->publicKey);
         node->connectionInfo->serialize(*this);
     }
 
-    core::ChunkLink *Buffer::readChunkLink() {
-        auto *fileId = readId();
-        auto chunkIndex = readUint64();
-        auto *dataHash = readId();
-        std::vector<char> sign(RAW_SIGNATURE_LENGTH);
-        readData(sign.data(), RAW_SIGNATURE_LENGTH);
+    template<>
+    core::ChunkLink *Buffer::read<core::ChunkLink *>() {
+        auto *fileId = read<core::Id *>();
+        auto chunkIndex = read<uint64_t>();
+        auto *dataHash = read<core::Id *>();
+        auto sign = read<crypto::Signature *>();
         return new core::ChunkLink(fileId, chunkIndex, dataHash, sign);
     }
 
-    void Buffer::writeChunkLink(core::ChunkLink *link) {
-        writeId(link->file);
-        writeUint64(link->chunkIndex);
-        writeId(link->dataHash);
-        writeData(link->sign.data(), RAW_SIGNATURE_LENGTH);
+    template<>
+    void Buffer::write(core::ChunkLink *link) {
+        write(link->file);
+        write<uint64_t>(link->chunkIndex);
+        write(link->dataHash);
+        write(link->sign);
     }
 
-    std::vector<core::Node *> Buffer::readNodeList() {
+    template<>
+    std::vector<core::Node *> Buffer::read<std::vector<core::Node *>>() {
         return {};
     }
 
-    void Buffer::writeNodeList(std::vector<core::Node *> nodeList) {
+    template<>
+    void Buffer::write(std::vector<core::Node *> &nodeList) {
 
     }
 
-    std::string Buffer::readString() {
-        uint32_t size = readUint32();
+    template<>
+    std::string Buffer::read<std::string>() {
+        auto size = read<uint32_t>();
         if (len - offset < size) {
             throw DataSerialisationException();
         }
@@ -192,11 +166,12 @@ namespace RingSwarm::transport {
         return retVal;
     }
 
-    void Buffer::writeString(std::string &str) {
+    template<>
+    void Buffer::write(std::string &str) {
         if (len - offset < str.size() + 4) {
             throw DataSerialisationException();
         }
-        writeUint32(str.size());
+        write<uint32_t>(str.size());
         std::memcpy(data + offset, str.c_str(), str.size());
         offset += str.size();
 

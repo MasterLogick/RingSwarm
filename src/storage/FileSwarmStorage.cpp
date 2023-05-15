@@ -38,7 +38,7 @@ namespace RingSwarm::storage {
                 fileMetaSelectStatement.getInt32(3),
                 fileMetaSelectStatement.getInt32(4),
                 fileMetaSelectStatement.getInt32(5),
-                fileMetaSelectStatement.getBlob(6),
+                fileMetaSelectStatement.getSignature(6),
                 fileId
         );
 
@@ -85,7 +85,7 @@ namespace RingSwarm::storage {
         fileMetaInsertStatement.bindInt32(":chunk_size", fileMeta->chunkSize);
         fileMetaInsertStatement.bindInt32(":min_swarm_size", fileMeta->minSwarmSize);
         fileMetaInsertStatement.bindInt32(":ring_connectivity", fileMeta->ringConnectivity);
-        fileMetaInsertStatement.bindBlob(":sign", fileMeta->sign);
+        fileMetaInsertStatement.bindSignature(":sign", fileMeta->sign);
         fileMetaInsertStatement.execute();
 
         Statement fileSwarmInsertStatement(dbConnection, fileSwarmInsert);

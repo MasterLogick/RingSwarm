@@ -1,11 +1,6 @@
 #include "ChunkLink.h"
-#include "../crypto/AsymmetricalCrypto.h"
 
 namespace RingSwarm::core {
-    uint32_t ChunkLink::getSerializedSize() {
-        return 0;
-    }
-
     ChunkLink *ChunkLink::createChunkLink(Id *file, uint64_t chunkIndex, Id *dataHash) {
         struct PackedChunkLink {
             uint8_t file[32];

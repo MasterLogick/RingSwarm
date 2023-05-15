@@ -11,14 +11,14 @@ namespace RingSwarm::transport {
     }
 
     void PlainSocketConnectionInfo::serialize(Buffer &buffer) {
-        buffer.writeUint8(1);
-        buffer.writeUint32(port);
-        buffer.writeString(host);
+        buffer.write<uint8_t>(1);
+        buffer.write<uint32_t>(port);
+        buffer.write<std::string &>(host);
     }
 
     ConnectionInfo *PlainSocketConnectionInfo::parseConnectionInfo(Buffer &buffer) {
-        uint32_t port = buffer.readUint32();
-        std::string host = buffer.readString();
+        uint32_t port = buffer.read<uint32_t>();
+        std::string host = buffer.read<std::string>();
         return new PlainSocketConnectionInfo(host, port);
     }
 

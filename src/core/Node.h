@@ -4,16 +4,15 @@
 #include "Id.h"
 #include "../transport/connectionInfo/ConnectionInfo.h"
 #include <memory>
+#include "../crypto/AsymmetricalCrypto.h"
 
 namespace RingSwarm::core {
     struct Node {
         Id *id;
-        std::vector<char> publicKey;
+        crypto::PublicKey *publicKey;
         transport::ConnectionInfo *connectionInfo;
 
         int getSerializedSize();
-
-        void deriveId();
 
         bool operator==(Node &rhs) const;
 

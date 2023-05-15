@@ -2,7 +2,6 @@
 #include "../ClientHandler.h"
 #include <chrono>
 #include <boost/log/trivial.hpp>
-#include "../../crypto/AsymmetricalCrypto.h"
 #include "../TooLargeMessageException.h"
 
 namespace RingSwarm::proto {
@@ -10,8 +9,8 @@ namespace RingSwarm::proto {
     void ClientHandler::handshake() {
         uint32_t buffSize = core::Node::thisNode->getSerializedSize();
         transport::Buffer b(buffSize + 4);
-        b.writeUint32(buffSize);
-        b.writeNode(core::Node::thisNode);
+        b.write<uint32_t>(buffSize);
+        b.write(core::Node::thisNode);
         transport->rawWrite(b.getData(), b.getWrittenSize());
     }
 
@@ -24,7 +23,7 @@ namespace RingSwarm::proto {
 
         transport::Buffer b(size);
         transport->rawRead(b.getData(), size);
-        remote = b.readNode();
+        remote = b.read<core::Node *>();
         BOOST_LOG_TRIVIAL(debug) << "Got handshake from " << remote->id->getHexRepresentation();
     }
 }

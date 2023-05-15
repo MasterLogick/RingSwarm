@@ -3,7 +3,7 @@
 
 namespace RingSwarm::core {
     int Node::getSerializedSize() {
-        return RAW_NODE_PUBLIC_KEY_LENGTH + connectionInfo->getSerializedSize();
+        return publicKey->size() + connectionInfo->getSerializedSize();
     }
 
     bool Node::operator==(Node &rhs) const {
