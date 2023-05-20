@@ -5,9 +5,17 @@
 #include <boost/log/trivial.hpp>
 #include <mutex>
 #include <condition_variable>
+#include "../storage/KeySwarmStorage.h"
+#include "CachedKeyHandler.h"
+#include "ExternalKeyHandler.h"
 
 namespace RingSwarm::client {
     KeyHandler *getKeyHandler(core::Id *keyId) {
+        auto *keySwarm = storage::getKeySwarm(keyId);
+        if (keySwarm != nullptr) {
+            BOOST_LOG_TRIVIAL(debug) << "Local cache hit for " << keyId->getHexRepresentation();
+            return new CachedKeyHandler(keyId);
+        }
         std::atomic_flag hitFlag;
         int threadCount = 8;
         auto threadCountSetting = core::getSetting("key search thread count");
@@ -58,6 +66,6 @@ namespace RingSwarm::client {
         std::unique_lock<std::mutex> lock(lockerMutex);
         keyFoundCondVar.wait(lock, [&hitFlag] { return hitFlag.test(); });
         BOOST_LOG_TRIVIAL(debug) << "Found " << keyId->getHexRepresentation() << " key";
-        return new KeyHandler(key, possibleKeySwarmNodeClient);
+        return new ExternalKeyHandler(keyId, key, possibleKeySwarmNodeClient);
     }
 }

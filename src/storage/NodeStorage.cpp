@@ -2,10 +2,11 @@
 #include "Statement.h"
 #include "StorageManager.h"
 #include "ClonedEntityException.h"
+#include "KeyIndexedStorages.h"
 #include <map>
 
 namespace RingSwarm::storage {
-    std::map<core::Id *, core::Node *, core::Id::Comparator> nodeStorage;
+    KeyIndexedStorage<core::Node *> nodeStorage;
     const char *nodeSelect =
             "select pub_key, connection_info\n"
             "from node\n"

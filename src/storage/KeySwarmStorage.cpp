@@ -4,9 +4,10 @@
 #include "StorageManager.h"
 #include "Statement.h"
 #include "NodeStorage.h"
+#include "KeyIndexedStorages.h"
 
 namespace RingSwarm::storage {
-    std::map<core::Id *, core::KeySwarm *, core::Id::Comparator> keySwarmStorage;
+    KeyIndexedStorage<core::KeySwarm *> keySwarmStorage;
 
     const char *keySelect =
             "select public_key\n"
@@ -37,10 +38,25 @@ namespace RingSwarm::storage {
                 }
                 ks->swarm[keySwarmNodeSelectStatement.getInt32(1)] = node;
             }
+            keySwarmStorage[keyId] = ks;
             return ks;
         }
         return nullptr;
     }
+
+    const char *allKeysSelect =
+            "select key_id\n"
+            "from keys;";
+
+    std::vector<core::Id *> getAllStoredKeySwarms() {
+        Statement allKeysSelectStatement(dbConnection, allKeysSelect);
+        std::vector<core::Id *> allKeys;
+        while (allKeysSelectStatement.nextRow()) {
+            allKeys.push_back(allKeysSelectStatement.getId(0));
+        }
+        return allKeys;
+    }
+
 
     const char *keyInsert =
             "insert into keys (key_id, public_key)\n"

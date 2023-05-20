@@ -10,7 +10,7 @@ namespace RingSwarm::proto {
         req.write<uint64_t>(chunkIndex);
         transport->sendRequest(7, req);
         auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.read<std::vector<core::Node *>>();
+        return resp.readVec<core::Node *>();
     }
 
     void ServerHandler::handleNoticeJoinedChunkSwarm(transport::Buffer &request) {

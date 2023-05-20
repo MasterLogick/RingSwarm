@@ -4,12 +4,12 @@
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
 namespace RingSwarm::proto {
-    std::vector<core::Node *> ClientHandler::getKeySwarm(core::Id *keyId) {
+    std::map<uint8_t, core::Node *> ClientHandler::getKeySwarm(core::Id *keyId) {
         transport::RequestBuffer req(32);
         req.write(keyId);
         transport->sendRequest(8, req);
         auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.read<std::vector<core::Node *>>();
+        return resp.readMap<uint8_t, core::Node *>();
     }
 
     void ServerHandler::handleGetKeySwarm(transport::Buffer &request) {
@@ -19,8 +19,13 @@ namespace RingSwarm::proto {
             transport->sendError();
         } else {
             auto &nodeList = keySwarm->swarm;
-            //todo fix
-//            sendNodeListResponse(nodeList);
+            uint32_t size = 0;
+            for (const auto &item: nodeList) {
+                size += item.second->getSerializedSize() + 1;
+            }
+            transport::ResponseBuffer resp(4 + size);
+            resp.write(nodeList);
+            transport->sendResponse(resp);
         }
     }
 }

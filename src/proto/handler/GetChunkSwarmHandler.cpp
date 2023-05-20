@@ -10,7 +10,7 @@ namespace RingSwarm::proto {
         req.write<uint64_t>(chunkIndex);
         transport->sendRequest(9, req);
         auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.read<std::vector<core::Node *>>();
+        return resp.readVec<core::Node *>();
     }
 
     void ServerHandler::handleGetChunkSwarm(transport::Buffer &request) {
@@ -19,6 +19,7 @@ namespace RingSwarm::proto {
         auto chunkSwarm = storage::getHostedChunkSwarm(keyId, chunkIndex);
         if (chunkSwarm == nullptr) {
             transport->sendError();
+        } else {
             sendNodeListResponse((*chunkSwarm->ring)[chunkIndex]);
         }
     }

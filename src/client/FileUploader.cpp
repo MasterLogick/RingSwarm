@@ -3,18 +3,36 @@
 #include "../crypto/HashCrypto.h"
 #include "../storage/ChunkSwarmStorage.h"
 #include "../storage/KeySwarmStorage.h"
-#include <fstream>
-#include <chrono>
+#include "../storage/ChunkStorage.h"
+#include "../core/KeyInfo.h"
+#include <filesystem>
+#include <boost/log/trivial.hpp>
 
 namespace RingSwarm::client {
     core::Id *uploadFile(const char *filePath, uint8_t minSwarmSize) {
-        std::ifstream input(filePath, std::ios::binary);
-        std::vector<uint8_t> buffer(std::istreambuf_iterator<char>(input), {});
+        if (!std::filesystem::exists(filePath) || !std::filesystem::exists("storage")) {
+            throw core::RingSwarmException();
+        }
         crypto::KeyPair keyPair;
-        auto *dataHash = crypto::hashData(buffer);
-        auto *link = core::ChunkLink::createChunkLink(keyPair, 0, dataHash);
         auto *keyId = keyPair.publicKey->getId();
-        std::map<int, core::Node *> keySwarmNodes;
+        std::string chunkPath = std::string("storage/") + keyId->getHexRepresentation() + ".0";
+        auto externalFile = fopen(filePath, "r");
+        auto chunkFile = fopen(chunkPath.c_str(), "w");
+        core::KeyInfo keyInfo{};
+        keyInfo.type = core::KeyInfo::ONE_FILE;
+        keyInfo.chunksCount = 1;
+        fwrite(&keyInfo, sizeof(core::KeyInfo), 1, chunkFile);
+        char buff[8192];
+        int read = 0;
+        while ((read = fread(buff, 1, 8192, externalFile)) > 0) {
+            fwrite(buff, 1, read, chunkFile);
+        }
+        fclose(externalFile);
+        fclose(chunkFile);
+        auto chunk = storage::getMappedChunk(keyId, 0);
+        auto *dataHash = crypto::hashData(chunk->getData(), chunk->getSize());
+        auto *link = core::ChunkLink::createChunkLink(keyPair, 0, dataHash);
+        std::map<uint8_t, core::Node *> keySwarmNodes;
         for (int i = 0; i < minSwarmSize; ++i) {
             keySwarmNodes[i] = core::Node::thisNode;
         }

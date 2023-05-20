@@ -1,5 +1,4 @@
 #include "Transport.h"
-#include "../proto/ResponseHeader.h"
 #include "../proto/TooLargeMessageException.h"
 #include "../proto/ServerHandler.h"
 #include <boost/log/trivial.hpp>

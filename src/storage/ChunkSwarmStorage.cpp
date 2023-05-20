@@ -4,20 +4,12 @@
 #include "ChunkRingStorage.h"
 #include "NodeStorage.h"
 #include "ClonedEntityException.h"
+#include "KeyIndexedStorages.h"
 
 namespace RingSwarm::storage {
-    class ChunkIdComparator {
-    public:
-        bool operator()(const std::pair<core::Id *, uint64_t> &lhs, const std::pair<core::Id *, uint64_t> &rhs) const {
-            if (*lhs.first == *rhs.first) {
-                return lhs.second < rhs.second;
-            } else {
-                return core::Id::Comparator()(lhs.first, rhs.first);
-            }
-        }
-    };
 
-    std::map<std::pair<core::Id *, uint64_t>, core::ChunkSwarm *, ChunkIdComparator> chunkSwarmStorage;
+
+    ChunkIndexedStorage<core::ChunkSwarm *> chunkSwarmStorage;
     const char *hostedChunkSelect =
             "select key_id, chunk_index, data_hash, sign\n"
             "from chunk_link\n"

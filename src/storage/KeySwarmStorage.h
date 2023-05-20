@@ -7,6 +7,8 @@
 namespace RingSwarm::storage {
     core::KeySwarm *getKeySwarm(core::Id *keyId);
 
+    std::vector<core::Id *> getAllStoredKeySwarms();
+
     void storeKeySwarm(core::KeySwarm *keySwarm);
 }
 #endif //RINGSWARM_KEYSWARMSTORAGE_H

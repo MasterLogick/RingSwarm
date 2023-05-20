@@ -33,7 +33,7 @@ namespace RingSwarm::core {
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> publicKey(ptr, EVP_PKEY_free);
 
         std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> mdCtx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
-        if (EVP_DigestVerifyInit(mdCtx.get(), nullptr, EVP_sha256(), nullptr, publicKey.get()) != 1) {
+        if (EVP_DigestVerifyInit(mdCtx.get(), nullptr, EVP_sha3_256(), nullptr, publicKey.get()) != 1) {
             throw crypto::CryptoException();
         }
         if (EVP_DigestVerifyUpdate(mdCtx.get(), data.data(), data.size()) != 1) {

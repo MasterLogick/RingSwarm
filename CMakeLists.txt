@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 3.24)
-project(RingSwarm)
+project(RingSwarm LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 
 set(OPENSSL_USE_STATIC_LIBS ON)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
-find_library(gmp NAMES gmp)
-find_library(gmpxx NAMES gmpxx)
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED system log program_options)
@@ -20,6 +18,9 @@ FetchContent_Declare(sqlite3
         )
 FetchContent_MakeAvailable(sqlite3)
 add_library(sqlite3 ${sqlite3_SOURCE_DIR}/sqlite3.c ${sqlite3_SOURCE_DIR}/sqlite3.h ${sqlite3_SOURCE_DIR}/sqlite3ext.h)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+find_package(fuse3 REQUIRED)
 
 add_executable(RingSwarm
         src/main.cpp
@@ -106,10 +107,28 @@ add_executable(RingSwarm
         src/crypto/SymmetricalCrypher.h
         src/client/FileDownloader.cpp
         src/client/FileDownloader.h
-        src/client/KeyHandler.cpp
-        src/client/KeyHandler.h
-        src/core/PublicKey.h src/core/PublicKey.cpp src/crypto/KeyPair.cpp src/crypto/KeyPair.h src/crypto/Signature.cpp src/crypto/Signature.h)
+        src/client/ExternalKeyHandler.cpp
+        src/client/ExternalKeyHandler.h
+        src/core/PublicKey.h
+        src/core/PublicKey.cpp
+        src/crypto/KeyPair.cpp
+        src/crypto/KeyPair.h
+        src/crypto/Signature.cpp
+        src/crypto/Signature.h
+        src/storage/ChunkStorage.cpp
+        src/storage/ChunkStorage.h
+        src/storage/MappedChunk.cpp
+        src/storage/MappedChunk.h src/fuse/FuseController.cpp src/fuse/FuseController.h src/fuse/FuseException.h src/core/KeyInfo.cpp src/core/KeyInfo.h src/storage/ChunkIdComparator.h src/storage/KeyIndexedStorages.h src/client/KeyHandler.h src/client/CachedKeyHandler.cpp src/client/CachedKeyHandler.h)
 
-target_compile_definitions(RingSwarm PUBLIC OPENSSL_NO_DEPRECATED)
-target_include_directories(RingSwarm PUBLIC "${OPENSSL_INCLUDE_DIR}" ${sqlite3_SOURCE_DIR})
-target_link_libraries(RingSwarm PUBLIC OpenSSL::Crypto gmp gmpxx ${Boost_LIBRARIES} sqlite3)
+if (WIN32)
+    target_compile_definitions(RingSwarm PRIVATE TGT_WINDOWS)
+elseif (UNIX)
+    target_compile_definitions(RingSwarm PRIVATE TGT_LINUX)
+elseif (APPLE)
+    # maybe will support later
+    target_compile_definitions(RingSwarm PRIVATE TGT_APPLE)
+endif ()
+
+target_compile_definitions(RingSwarm PRIVATE OPENSSL_NO_DEPRECATED)
+target_include_directories(RingSwarm PRIVATE ${OpenSSL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${sqlite3_SOURCE_DIR} ${fuse3_INCLUDE_DIRS})
+target_link_libraries(RingSwarm PRIVATE OpenSSL::Crypto ${Boost_LIBRARIES} sqlite3 fuse3::fuse3)

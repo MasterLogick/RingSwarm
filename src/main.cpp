@@ -12,6 +12,8 @@
 #include "core/ConnectionManager.h"
 #include "transport/connectionInfo/PlainSocketConnectionInfo.h"
 #include "client/FileDownloader.h"
+#include <filesystem>
+#include "fuse/FuseController.h"
 
 namespace po = boost::program_options;
 using namespace RingSwarm;
@@ -21,17 +23,23 @@ int main(int argc, char **argv, char **envp) {
     std::string host;
     int port;
     int scenario;
+    std::string remotePubKey;
+    std::string remoteKeyId;
     desc.add_options()
             ("help", "Print this message")
             ("host", po::value(&host)->required()->value_name("address"), "host")
             ("port", po::value(&port)->required()->value_name("number"), "port")
-            ("scenario", po::value(&scenario)->required());
+            ("scenario", po::value(&scenario)->required())
+            ("pubKey", po::value(&remotePubKey))
+            ("keyId", po::value(&remoteKeyId));
 
     po::positional_options_description p;
     p
             .add("host", 1)
             .add("port", 1)
-            .add("scenario", 1);
+            .add("scenario", 1)
+            .add("pubKey", 1)
+            .add("keyId", 1);
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     try {
@@ -49,6 +57,14 @@ int main(int argc, char **argv, char **envp) {
     std::string path = "ring-swarm-" + std::to_string(scenario) + ".sqlite3";
     storage::loadStorage(path.c_str());
     crypto::loadNodeKeys();
+    std::filesystem::create_directory("./storage");
+    std::string fuseMP = "./fuse" + std::to_string(scenario);
+    try {
+        std::filesystem::create_directory(fuseMP);
+    } catch (std::filesystem::filesystem_error &e) {
+        system(("fusermount3 -uz " + fuseMP).c_str());
+    }
+    RingSwarm::fuse::startFuse(fuseMP);
 
     auto *server = new transport::PlainSocketServer(host, port, 8);
     core::Node::thisNode->connectionInfo = server->getConnectionInfo();
@@ -56,21 +72,17 @@ int main(int argc, char **argv, char **envp) {
 
     switch (scenario) {
         case 1: {
-            client::uploadFile("RingSwarm", 3);
+            auto d = client::uploadFile("./testFile", 3);
+            fuse::mountRing(d);
             break;
         }
         case 2: {
             auto *pubKey = new core::PublicKey();
-            boost::algorithm::unhex("030D7A75BAF4CFA1E787EB4BD6D5F4069090A6495D907C28A6A370D980A9AD5EA2",
-                                    pubKey->begin());
-            auto *node = new core::Node(core::Id::fromHexRepresentation(
-                                                "ca298dbf52fbc37e19c06d4e38fd7f7ec2e70bf4c244c684568e9052a646f4a3"),
-                                        pubKey,
-                                        new transport::PlainSocketConnectionInfo("localhost",
-                                                                                 port - 1));
+            boost::algorithm::unhex(remotePubKey, pubKey->begin());
+            auto *node = new core::Node(pubKey->getId(), pubKey,
+                                        new transport::PlainSocketConnectionInfo("localhost", port - 1));
             core::getOrConnect(node);
-            client::getKeyHandler(core::Id::fromHexRepresentation(
-                    "beb8a3f19205d9c2cf61590a9f955f837e6c2ecf081206bcec694ec8b7de5b55"));
+            client::getKeyHandler(core::Id::fromHexRepresentation(remoteKeyId.c_str()));
             break;
         }
         default:

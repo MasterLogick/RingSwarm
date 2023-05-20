@@ -8,7 +8,7 @@ namespace RingSwarm::core {
         if (connections.contains(node->id)) {
             return connections[node->id];
         }
-        transport::Transport *transport = node->connectionInfo->openConnection();
+        auto *transport = node->connectionInfo->openConnection();
         auto *handler = new proto::ClientHandler(transport, node);
         connections[node->id] = handler;
         return handler;
@@ -27,7 +27,7 @@ namespace RingSwarm::core {
         core::Id *smallestHashValue = core::Id::getBiggestId();
         for (const auto &item: connections) {
             memcpy(host.nodeHash, item.first->hash, 32);
-            core::Id *hash = crypto::hashData(reinterpret_cast<const uint8_t *>(&host), sizeof(PossibleKeyHost));
+            core::Id *hash = crypto::hashData(&host, sizeof(PossibleKeyHost));
             if (*hash < *smallestHashValue) {
                 delete smallestHashValue;
                 smallestHashValue = hash;
@@ -36,6 +36,18 @@ namespace RingSwarm::core {
         }
         delete smallestHashValue;
         return bestHost;
+    }
+
+    proto::ClientHandler *getOrConnectToOne(std::vector<core::Node *> &nodeList) {
+        std::vector<core::Node *> copy(nodeList);
+        //todo shuffle
+        for (const auto &item: copy) {
+            try {
+                auto *client = core::getOrConnect(item);
+                return client;
+            } catch (std::exception &) {}
+        }
+        return nullptr;
     }
 
 }

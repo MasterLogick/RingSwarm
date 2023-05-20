@@ -21,7 +21,7 @@ namespace RingSwarm::proto {
 
         core::ChunkLink *getChunkLink(core::Id *keyId, uint64_t chunkIndex);
 
-        void getChunk(core::Id *keyId, uint64_t chunkIndex, uint32_t offset, void *buffer, uint32_t length);
+        uint32_t getChunk(core::Id *keyId, uint64_t chunkIndex, uint64_t offset, void *buffer, uint32_t length);
 
         void dragIntoKeySwarm(
                 core::PublicKey *key,
@@ -32,7 +32,7 @@ namespace RingSwarm::proto {
 
         std::vector<core::Node *> noticeJoinedChunkSwarm(core::Id *keyId, uint64_t chunkIndex);
 
-        std::vector<core::Node *> getKeySwarm(core::Id *keyId);
+        std::map<uint8_t, core::Node *> getKeySwarm(core::Id *keyId);
 
         std::vector<core::Node *> getChunkSwarm(core::Id *keyId, uint64_t chunkIndex);
 

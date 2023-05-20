@@ -52,14 +52,12 @@ namespace RingSwarm::proto {
     }
 
     void ServerHandler::sendNodeListResponse(std::vector<core::Node *> &nodeList) {
-        uint32_t nodeListSize = 0;
+        uint32_t nodeListSize = 4;
         for (const auto &node: nodeList) {
             nodeListSize += node->getSerializedSize();
         }
         transport::ResponseBuffer resp(nodeListSize);
-        for (const auto &node: nodeList) {
-            resp.write(node);
-        }
+        resp.write(nodeList);
         transport->sendResponse(resp);
     }
 }

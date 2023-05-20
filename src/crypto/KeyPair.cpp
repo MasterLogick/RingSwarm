@@ -27,7 +27,7 @@ namespace RingSwarm::crypto {
         if (mdCtx == nullptr) {
             throw CryptoException();
         }
-        if (EVP_DigestSignInit(mdCtx.get(), nullptr, EVP_sha256(), nullptr, privateKey) != 1) {
+        if (EVP_DigestSignInit(mdCtx.get(), nullptr, EVP_sha3_256(), nullptr, privateKey) != 1) {
             throw CryptoException();
         }
         if (EVP_DigestSignUpdate(mdCtx.get(), data, size) != 1) {

@@ -10,7 +10,7 @@ namespace RingSwarm::proto {
         req.write<uint8_t>(index);
         transport->sendRequest(6, req);
         auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.read<std::vector<core::Node *>>();
+        return resp.readVec<core::Node *>();
     }
 
     void ServerHandler::handleNoticeJoinedKeySwarm(transport::Buffer &request) {

@@ -118,16 +118,6 @@ namespace RingSwarm::transport {
     }
 
     template<>
-    std::vector<core::Node *> Buffer::read<std::vector<core::Node *>>() {
-        return {};
-    }
-
-    template<>
-    void Buffer::write(std::vector<core::Node *> &nodeList) {
-
-    }
-
-    template<>
     std::string Buffer::read<std::string>() {
         auto size = read<uint32_t>();
         if (len - offset < size) {
@@ -151,5 +141,9 @@ namespace RingSwarm::transport {
 
     std::vector<char> Buffer::toBlob() {
         return std::vector<char>(data, data + len);
+    }
+
+    uint32_t Buffer::calcSize(core::Node *n) {
+        return calcSize((core::PublicKey *) nullptr) + n->connectionInfo->getSerializedSize();
     }
 }

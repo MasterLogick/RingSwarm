@@ -10,7 +10,7 @@ namespace RingSwarm::core {
     struct KeySwarm {
         core::Id *keyId;
         core::PublicKey *key;
-        std::map<int, Node *> swarm;
+        std::map<uint8_t, Node *> swarm;
         ChunkRing *ring;
     };
 }

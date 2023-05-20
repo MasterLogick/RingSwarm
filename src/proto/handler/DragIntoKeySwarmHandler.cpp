@@ -22,7 +22,7 @@ namespace RingSwarm::proto {
             req.write<uint8_t>(item.first);
             nodes.push_back(item.second);
         }
-        req.write<std::vector<core::Node *> &>(nodes);
+        req.write<core::Node *>(nodes);
         transport->sendRequest(5, req);
         transport->readResponse(MAX_RESPONSE_SIZE);
     }
@@ -36,7 +36,7 @@ namespace RingSwarm::proto {
             swarmIndexes[i] = request.read<uint8_t>();
         }
         //todo read node indexes
-        auto nodeList = request.read<std::vector<core::Node *>>();
+        auto nodeList = request.readVec<core::Node *>();
         auto *swarm = storage::getKeySwarm(key->getId());
         if (swarm != nullptr) {
             //todo update node list

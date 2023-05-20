@@ -3,9 +3,10 @@
 #include "StorageManager.h"
 #include "NodeStorage.h"
 #include "ClonedEntityException.h"
+#include "KeyIndexedStorages.h"
 
 namespace RingSwarm::storage {
-    std::map<core::Id *, core::ChunkRing *, core::Id::Comparator> chunkRingStorage;
+    KeyIndexedStorage<core::ChunkRing *> chunkRingStorage;
 
     const char *chunkSwarmNodeSelect =
             "select chunk_index, node_id\n"

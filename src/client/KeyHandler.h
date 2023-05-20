@@ -1,17 +1,12 @@
 #ifndef RINGSWARM_KEYHANDLER_H
 #define RINGSWARM_KEYHANDLER_H
 
-#include "../proto/ClientHandler.h"
+#include <cstdint>
 
 namespace RingSwarm::client {
     class KeyHandler {
-        core::PublicKey *key;
-        proto::ClientHandler *possibleKeySwarmNode;
     public:
-        KeyHandler(core::PublicKey *key, proto::ClientHandler *possibleKeySwarmNode) :
-                key(key), possibleKeySwarmNode(possibleKeySwarmNode) {
-
-        }
+        virtual uint32_t readData(void *buff, uint32_t len, uint64_t offset) = 0;
     };
 }
 
