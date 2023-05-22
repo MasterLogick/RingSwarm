@@ -24,22 +24,19 @@ int main(int argc, char **argv, char **envp) {
     int port;
     int scenario;
     std::string remotePubKey;
-    std::string remoteKeyId;
     desc.add_options()
             ("help", "Print this message")
             ("host", po::value(&host)->required()->value_name("address"), "host")
             ("port", po::value(&port)->required()->value_name("number"), "port")
             ("scenario", po::value(&scenario)->required())
-            ("pubKey", po::value(&remotePubKey))
-            ("keyId", po::value(&remoteKeyId));
+            ("pubKey", po::value(&remotePubKey));
 
     po::positional_options_description p;
     p
             .add("host", 1)
             .add("port", 1)
             .add("scenario", 1)
-            .add("pubKey", 1)
-            .add("keyId", 1);
+            .add("pubKey", 1);
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     try {
@@ -82,7 +79,8 @@ int main(int argc, char **argv, char **envp) {
             auto *node = new core::Node(pubKey->getId(), pubKey,
                                         new transport::PlainSocketConnectionInfo("localhost", port - 1));
             core::getOrConnect(node);
-            client::getKeyHandler(core::Id::fromHexRepresentation(remoteKeyId.c_str()));
+            fuse::mountRing(core::Id::fromHexRepresentation(
+                    "7fef93330a683562b30e768fa5e5b49604cec6585391b178a6326b4052ff0e5d"));
             break;
         }
         default:

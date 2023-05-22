@@ -66,6 +66,9 @@ namespace RingSwarm::client {
         std::unique_lock<std::mutex> lock(lockerMutex);
         keyFoundCondVar.wait(lock, [&hitFlag] { return hitFlag.test(); });
         BOOST_LOG_TRIVIAL(debug) << "Found " << keyId->getHexRepresentation() << " key";
+        for (int i = 0; i < threadCount; ++i) {
+            pool[i].join();
+        }
         return new ExternalKeyHandler(keyId, key, possibleKeySwarmNodeClient);
     }
 }
