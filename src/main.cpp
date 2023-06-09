@@ -1,7 +1,6 @@
 #include <thread>
 #include <iostream>
 #include "transport/PlainSocketServer.h"
-#include "storage/Statement.h"
 #include "crypto/AsymmetricalCrypto.h"
 #include "storage/StorageManager.h"
 #include "core/RingSwarmException.h"
@@ -11,9 +10,9 @@
 #include "core/Node.h"
 #include "core/ConnectionManager.h"
 #include "transport/connectionInfo/PlainSocketConnectionInfo.h"
-#include "client/FileDownloader.h"
 #include <filesystem>
 #include "fuse/FuseController.h"
+#include "async/EventLoop.h"
 
 namespace po = boost::program_options;
 using namespace RingSwarm;
@@ -63,9 +62,13 @@ int main(int argc, char **argv, char **envp) {
     }
     RingSwarm::fuse::startFuse(fuseMP);
 
-    auto *server = new transport::PlainSocketServer(host, port, 8);
+    async::initEventLoop();
+    auto *server = new transport::PlainSocketServer(host, port);
     core::Node::thisNode->connectionInfo = server->getConnectionInfo();
     std::thread([server] { server->listen(); }).detach();
+
+
+    async::runTaskHandlers(std::max<int>(1, std::thread::hardware_concurrency()));
 
     switch (scenario) {
         case 1: {
@@ -78,7 +81,7 @@ int main(int argc, char **argv, char **envp) {
             boost::algorithm::unhex(remotePubKey, pubKey->begin());
             auto *node = new core::Node(pubKey->getId(), pubKey,
                                         new transport::PlainSocketConnectionInfo("localhost", port - 1));
-            core::getOrConnect(node);
+            std::get<0>(core::getOrConnect(node)->await());
             fuse::mountRing(core::Id::fromHexRepresentation(
                     "7fef93330a683562b30e768fa5e5b49604cec6585391b178a6326b4052ff0e5d"));
             break;
@@ -87,6 +90,10 @@ int main(int argc, char **argv, char **envp) {
             throw core::RingSwarmException();
     }
 
-    std::cin.get();
+    //todo run event loop in separate thread
+    while (true) {
+        async::getEventLoop()->run(uvw::details::uvw_run_mode::DEFAULT);
+    }
+//    std::cin.get();
     storage::closeStorage();
 }

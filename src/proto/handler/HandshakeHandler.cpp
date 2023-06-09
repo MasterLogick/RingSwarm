@@ -1,6 +1,5 @@
 #include "../ServerHandler.h"
 #include "../ClientHandler.h"
-#include <chrono>
 #include <boost/log/trivial.hpp>
 #include "../TooLargeMessageException.h"
 
@@ -11,20 +10,21 @@ namespace RingSwarm::proto {
         transport::Buffer b(buffSize + 4);
         b.write<uint32_t>(buffSize);
         b.write(core::Node::thisNode);
-        transport->rawWrite(b.getData(), b.getWrittenSize());
+        transport->rawWrite(b.data, b.len);
     }
 
     void ServerHandler::handleHandshake() {
         // todo add client verification
-        uint32_t size;
-        transport->rawRead(&size, 4);
-        if (size > 1024 * 1024) {
-            throw TooLargeMessageException();
-        }
-
-        transport::Buffer b(size);
-        transport->rawRead(b.getData(), size);
-        remote = b.read<core::Node *>();
-        BOOST_LOG_TRIVIAL(debug) << "Got handshake from " << remote->id->getHexRepresentation();
+        transport->rawRead(4)->then([&](uint8_t *d) {
+            auto *size = reinterpret_cast<uint32_t *>(d);
+            if (*size > 1024 * 1024) {
+                //todo throw TooLargeMessageException
+            }
+            transport->readBuffer(*size)->then([&](transport::Buffer b) {
+                remote = b.read<core::Node *>();
+                BOOST_LOG_TRIVIAL(debug) << "Got handshake from " << remote->id->getHexRepresentation();
+                listenRequest();
+            });
+        });
     }
 }

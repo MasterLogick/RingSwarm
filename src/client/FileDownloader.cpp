@@ -13,7 +13,7 @@ namespace RingSwarm::client {
     KeyHandler *getKeyHandler(core::Id *keyId) {
         auto *keySwarm = storage::getKeySwarm(keyId);
         if (keySwarm != nullptr) {
-            BOOST_LOG_TRIVIAL(debug) << "Local cache hit for " << keyId->getHexRepresentation();
+            BOOST_LOG_TRIVIAL(debug) << "File download: Local cache hit for " << keyId->getHexRepresentation();
             return new CachedKeyHandler(keyId);
         }
         std::atomic_flag hitFlag;
@@ -38,28 +38,26 @@ namespace RingSwarm::client {
         threadCount = startingPoints.size();
         std::thread pool[threadCount];
         proto::ClientHandler *possibleKeySwarmNodeClient = nullptr;
-        core::PublicKey *key = nullptr;
+        core::PublicKey *publicKey = nullptr;
         std::condition_variable keyFoundCondVar;
         std::mutex lockerMutex;
         for (int i = 0; i < threadCount; ++i) {
-            pool[i] = std::thread(
-                    [&hitFlag, i, &startingPoints, keyId, &possibleKeySwarmNodeClient, &key, &keyFoundCondVar] {
-                        auto *client = startingPoints[i];
-                        while (!hitFlag.test()) {
-                            core::PublicKey *localKey = nullptr;
-                            core::Node *node = nullptr;
-                            if (client->getKey(keyId, i, &localKey, &node)) {
-                                if (hitFlag.test_and_set())
-                                    return;
-                                key = localKey;
-                                possibleKeySwarmNodeClient = client;
-                                keyFoundCondVar.notify_one();
-                                return;
-                            } else {
-                                client = core::getOrConnect(node);
-                            }
-                        }
-                    });
+            std::function<void(core::PublicKey *, core::Node *, bool)> f;
+            f = [&hitFlag, &publicKey, &lockerMutex, &keyFoundCondVar, &f, keyId, i](core::PublicKey *key,
+                                                                                     core::Node *node,
+                                                                                     bool isKeyFound) {
+                if (hitFlag.test()) return;
+                if (isKeyFound) {
+                    if (hitFlag.test_and_set()) {
+                        return;
+                    }
+                    publicKey = key;
+                    std::lock_guard<std::mutex> l(lockerMutex);
+                    keyFoundCondVar.notify_one();
+                } else {
+                    std::get<0>(core::getOrConnect(node)->await())->getKey(keyId, i)->then(f);
+                }
+            };
         }
         BOOST_LOG_TRIVIAL(debug) << "Started " << keyId->getHexRepresentation() << " key search using "
                                  << threadCount << " threads";
@@ -69,6 +67,6 @@ namespace RingSwarm::client {
         for (int i = 0; i < threadCount; ++i) {
             pool[i].join();
         }
-        return new ExternalKeyHandler(keyId, key, possibleKeySwarmNodeClient);
+        return new ExternalKeyHandler(keyId, publicKey, possibleKeySwarmNodeClient);
     }
 }

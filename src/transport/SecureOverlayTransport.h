@@ -10,18 +10,22 @@ namespace RingSwarm::transport {
     class SecureOverlayTransport : public Transport {
         Transport *transport;
         crypto::SymmetricCypher *cypher;
-    public:
-        SecureOverlayTransport(Transport *transport, core::PublicKey *remotePublicKey);
 
-        explicit SecureOverlayTransport(Transport *transport);
+        SecureOverlayTransport(Transport *transport, crypto::SymmetricCypher *cypher);
+
+    public:
+        static std::shared_ptr<async::Future<SecureOverlayTransport *>> createClientSide(
+                Transport *transport, core::PublicKey *remotePublicKey);
+
+        static std::shared_ptr<async::Future<SecureOverlayTransport *>> createServerSide(Transport *transport);
+
+        std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) override;
 
         void rawWrite(void *data, uint32_t len) override;
 
-        void rawRead(void *buff, uint32_t len) override;
-
         void close() override;
 
-        ~SecureOverlayTransport();
+        ~SecureOverlayTransport() override;
     };
 }
 

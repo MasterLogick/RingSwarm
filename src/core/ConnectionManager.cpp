@@ -1,17 +1,19 @@
 #include "ConnectionManager.h"
 #include "../crypto/HashCrypto.h"
+#include "../transport/SecureOverlayTransport.h"
 
 namespace RingSwarm::core {
     std::map<core::Id *, proto::ClientHandler *, core::Id::Comparator> connections;
 
-    proto::ClientHandler *getOrConnect(core::Node *node) {
+    std::shared_ptr<async::Future<proto::ClientHandler *>> getOrConnect(core::Node *node) {
         if (connections.contains(node->id)) {
-            return connections[node->id];
+            return async::Future<proto::ClientHandler *>::createResolved(connections[node->id]);
         }
         auto *transport = node->connectionInfo->openConnection();
-        auto *handler = new proto::ClientHandler(transport, node);
-        connections[node->id] = handler;
-        return handler;
+        return transport::SecureOverlayTransport::createClientSide(transport, node->publicKey)->
+                then<proto::ClientHandler *>([node](auto *overlay) {
+            return (connections[node->id] = new proto::ClientHandler(overlay, node));
+        });
     }
 
     proto::ClientHandler *getPossibleKeyHost(core::Id *keyId, uint8_t index) {
@@ -38,12 +40,13 @@ namespace RingSwarm::core {
         return bestHost;
     }
 
-    proto::ClientHandler *getOrConnectToOne(std::vector<core::Node *> &nodeList) {
+    std::shared_ptr<async::Future<proto::ClientHandler *>> getOrConnectToOne(std::vector<core::Node *> &nodeList) {
         std::vector<core::Node *> copy(nodeList);
         //todo shuffle
+        //todo
         for (const auto &item: copy) {
             try {
-                auto *client = core::getOrConnect(item);
+                auto client = core::getOrConnect(item);
                 return client;
             } catch (std::exception &) {}
         }

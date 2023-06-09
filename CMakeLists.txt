@@ -10,13 +10,24 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED system log program_options)
 
 include(FetchContent)
-FetchContent_Declare(sqlite3
+FetchContent_Declare(
+        sqlite3
         URL https://sqlite.org/2023/sqlite-amalgamation-3410200.zip
         URL_HASH SHA3_256=c51ca72411b8453c64e0980be23bc9b9530bdc3ec1513e06fbf022ed0fd02463
         OVERRIDE_FIND_PACKAGE
         TLS_VERIFY true
-        )
-FetchContent_MakeAvailable(sqlite3)
+)
+
+set(USE_LIBCPP OFF)
+set(BUILD_UVW_LIBS ON)
+FetchContent_Declare(
+        uvw
+        GIT_REPOSITORY https://github.com/MasterLogick/uvw.git
+        GIT_TAG b5eea8f01de1ce126ba9993390731e820cdcc1bc
+        GIT_SHALLOW true
+)
+
+FetchContent_MakeAvailable(sqlite3 uvw)
 add_library(sqlite3 ${sqlite3_SOURCE_DIR}/sqlite3.c ${sqlite3_SOURCE_DIR}/sqlite3.h ${sqlite3_SOURCE_DIR}/sqlite3ext.h)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
@@ -30,7 +41,6 @@ add_executable(RingSwarm
         src/core/ChunkLink.h
         src/transport/Buffer.cpp
         src/transport/Buffer.h
-        src/transport/Transport.cpp
         src/transport/Transport.h
         src/proto/ServerHandler.cpp
         src/proto/ServerHandler.h
@@ -64,14 +74,13 @@ add_executable(RingSwarm
         src/transport/PlainSocketServer.h
         src/proto/ClientHandler.cpp
         src/proto/ClientHandler.h
-        src/transport/ResponseBuffer.h
-        src/transport/RequestBuffer.h
+        src/proto/ResponseBuffer.h
+        src/proto/RequestBuffer.h
         src/proto/TooLargeMessageException.h
         src/core/RingSwarmException.h
         src/transport/TransportBackendException.h
         src/transport/DataSerialisationException.h
         src/proto/ResponseHeader.h
-        src/transport/ResponseBuffer.cpp
         src/proto/RequestHeader.h
         src/storage/StorageManager.h
         src/storage/StorageManager.h
@@ -118,7 +127,22 @@ add_executable(RingSwarm
         src/storage/ChunkStorage.cpp
         src/storage/ChunkStorage.h
         src/storage/MappedChunk.cpp
-        src/storage/MappedChunk.h src/fuse/FuseController.cpp src/fuse/FuseController.h src/fuse/FuseException.h src/core/KeyInfo.cpp src/core/KeyInfo.h src/storage/ChunkIdComparator.h src/storage/KeyIndexedStorages.h src/client/KeyHandler.h src/client/CachedKeyHandler.cpp src/client/CachedKeyHandler.h)
+        src/storage/MappedChunk.h
+        src/fuse/FuseController.cpp
+        src/fuse/FuseController.h
+        src/fuse/FuseException.h
+        src/core/KeyInfo.cpp
+        src/core/KeyInfo.h
+        src/storage/ChunkIdComparator.h
+        src/storage/KeyIndexedStorages.h
+        src/client/KeyHandler.h
+        src/client/CachedKeyHandler.cpp
+        src/client/CachedKeyHandler.h
+        src/async/TaskManager.cpp
+        src/async/TaskManager.h
+        src/async/Future.h
+        src/proto/TransportServerSideWrapper.cpp
+        src/proto/TransportServerSideWrapper.h src/proto/TransportClientSideWrapper.cpp src/proto/TransportClientSideWrapper.h src/transport/TransportWrapper.h src/async/Spinlock.h src/transport/Transport.cpp src/async/EventLoop.h src/async/EventLoop.cpp)
 
 if (WIN32)
     target_compile_definitions(RingSwarm PRIVATE TGT_WINDOWS)
@@ -130,5 +154,5 @@ elseif (APPLE)
 endif ()
 
 target_compile_definitions(RingSwarm PRIVATE OPENSSL_NO_DEPRECATED)
-target_include_directories(RingSwarm PRIVATE ${OpenSSL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${sqlite3_SOURCE_DIR} ${fuse3_INCLUDE_DIRS})
-target_link_libraries(RingSwarm PRIVATE OpenSSL::Crypto ${Boost_LIBRARIES} sqlite3 fuse3::fuse3)
+target_include_directories(RingSwarm PRIVATE ${OpenSSL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${sqlite3_SOURCE_DIR} ${fuse3_INCLUDE_DIRS} ${uvw_SOURCE_DIR}/src)
+target_link_libraries(RingSwarm PRIVATE OpenSSL::Crypto ${Boost_LIBRARIES} sqlite3 fuse3::fuse3 uvw::uvw-static uv::uv-static)

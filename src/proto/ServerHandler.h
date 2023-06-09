@@ -5,45 +5,51 @@
 #include <vector>
 #include <memory>
 #include "../transport/Transport.h"
+#include "RequestHeader.h"
+#include "../transport/Buffer.h"
+#include "TransportServerSideWrapper.h"
+#include <set>
 
 namespace RingSwarm::proto {
     class ServerHandler {
-        transport::Transport *transport;
+        TransportServerSideWrapper *transport;
         core::Node *remote;
+
+        void listenRequest();
 
         void errorStop();
 
-        void sendNodeListResponse(std::vector<core::Node *> &nodeList);
+        void sendNodeListResponse(std::vector<core::Node *> &nodeList, uint8_t responseType, uint8_t tag);
 
         void handleHandshake();
 
-        void handleGetKey(transport::Buffer &request);
+        void handleGetKey(transport::Buffer &request, uint8_t tag);
 
-        void handleGetNearestChunk(transport::Buffer &request);
+        void handleGetNearestChunk(transport::Buffer &request, uint8_t tag);
 
-        void handleGetChunkLink(transport::Buffer &request);
+        void handleGetChunkLink(transport::Buffer &request, uint8_t tag);
 
-        void handleGetChunk(transport::Buffer &request);
+        void handleGetChunk(transport::Buffer &request, uint8_t tag);
 
-        void handleDragIntoKeySwarm(transport::Buffer &request);
+        void handleDragIntoKeySwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleNoticeJoinedKeySwarm(transport::Buffer &request);
+        void handleNoticeJoinedKeySwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleNoticeJoinedChunkSwarm(transport::Buffer &request);
+        void handleNoticeJoinedChunkSwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleGetKeySwarm(transport::Buffer &request);
+        void handleGetKeySwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleGetChunkSwarm(transport::Buffer &request);
+        void handleGetChunkSwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleNoticeLeavedChunkSwarm(transport::Buffer &request);
+        void handleNoticeLeavedChunkSwarm(transport::Buffer &request, uint8_t tag);
 
-        void handleSubscribeOnChunkChange(transport::Buffer &request);
+        void handleSubscribeOnChunkChange(transport::Buffer &request, uint8_t tag);
 
-        void handleChunkChangeEvent(transport::Buffer &request);
+        void handleChunkChangeEvent(transport::Buffer &request, uint8_t tag);
 
-        void handleUnsubscribeOnChunkChange(transport::Buffer &request);
+        void handleUnsubscribeOnChunkChange(transport::Buffer &request, uint8_t tag);
 
-        typedef void (ServerHandler::*RequestHandler)(transport::Buffer &buffer);
+        typedef void (ServerHandler::*RequestHandler)(transport::Buffer &buffer, uint8_t);
 
         constexpr static RequestHandler Methods[] = {
                 nullptr,
@@ -61,9 +67,12 @@ namespace RingSwarm::proto {
                 &ServerHandler::handleChunkChangeEvent,
                 &ServerHandler::handleUnsubscribeOnChunkChange
         };
+
+        explicit ServerHandler(transport::Transport *transport);
+
+    public:
         constexpr static uint16_t MethodsCount = 14;
         static_assert(sizeof(Methods) == sizeof(RequestHandler) * MethodsCount);
-    public:
         constexpr static const char *MethodNames[] = {
                 nullptr,
                 "GetKey",
@@ -81,9 +90,7 @@ namespace RingSwarm::proto {
                 "UnsubscribeOnChunkChange"
         };
 
-        explicit ServerHandler(transport::Transport *transport);
-
-        void handleClientConnection();
+        static void Handle(transport::Transport *serverSide);
     };
 }
 

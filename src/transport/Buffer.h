@@ -17,10 +17,6 @@ namespace RingSwarm::core {
 }
 namespace RingSwarm::transport {
     class Buffer {
-        uint8_t *data;
-        uint32_t len;
-        uint32_t offset;
-
         void writeData(const char *data, uint32_t len);
 
         void readData(char *data, uint32_t len);
@@ -59,24 +55,19 @@ namespace RingSwarm::transport {
 
     public:
 
+        Buffer() : data(nullptr), offset(0), len(0) {}
+
         explicit Buffer(uint32_t len, uint32_t offset = 0);
+
+        explicit Buffer(uint8_t *ptr, uint32_t len) : data(ptr), offset(0), len(len) {}
 
         explicit Buffer(std::vector<char> initValue);
 
-        /*  template<class ...Args>
-          explicit Buffer(Args... args):Buffer(calcSize(args...)) {
-
-          }*/
-
         ~Buffer();
 
-        uint32_t getWrittenSize() {
-            return offset;
-        }
-
-        uint8_t *getData() {
-            return data;
-        }
+        uint8_t *data;
+        uint32_t len;
+        uint32_t offset;
 
         std::vector<char> toBlob();
 

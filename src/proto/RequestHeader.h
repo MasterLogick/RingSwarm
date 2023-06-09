@@ -6,7 +6,8 @@
 namespace RingSwarm::proto {
     struct RequestHeader {
         uint32_t requestLength;
-        uint16_t method;
+        uint8_t method;
+        uint8_t tag;
     } __attribute__((packed));
 }
 

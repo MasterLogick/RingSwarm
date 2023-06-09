@@ -14,9 +14,12 @@ namespace RingSwarm::crypto {
         SymmetricCypher(std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx,
                         core::PublicKey *serializedPublicKey, const uint8_t *iv);
 
-        void write(RingSwarm::transport::Transport *transport, void *data, uint32_t len);
+        void encode(void *data, uint32_t size);
+//        void write(RingSwarm::transport::Transport *transport, void *data, uint32_t len);
 
-        void read(transport::Transport *transport, void *data, uint32_t len);
+//        uint32_t rawNonBlockingRead(transport::Transport *transport, void *data, uint32_t len);
+
+        void decode(uint8_t *data, uint32_t size);
     };
 }
 

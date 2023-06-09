@@ -6,7 +6,8 @@
 namespace RingSwarm::proto {
     struct ResponseHeader {
         uint32_t responseLen;
-        bool errorFlag;
+        uint8_t responseType;
+        uint8_t tag;
     } __attribute__((packed));
 }
 

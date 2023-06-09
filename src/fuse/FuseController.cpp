@@ -157,10 +157,10 @@ namespace RingSwarm::fuse {
             char *d[] = {strdup("RingSwarm"),
                          strdup(mountPoint.c_str()),
                          strdup("-f"),
-                         strdup("-oallow_other"),
-                         strdup("-d")};
+                         strdup("-oallow_other")/*,
+                         strdup("-d")*/};
             cwdBeforeFuseStart = std::filesystem::current_path().string();
-            int ret = fuse_main(5, d, &ops, nullptr);
+            int ret = fuse_main(4, d, &ops, nullptr);
             if (ret != 0) {
                 std::cout << ret << std::endl;
             }

@@ -4,21 +4,26 @@
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
 namespace RingSwarm::proto {
-    std::vector<core::Node *> ClientHandler::noticeJoinedKeySwarm(core::Id *keyId, uint8_t index) {
-        transport::RequestBuffer req(33);
+    std::shared_ptr<async::Future<std::vector<core::Node *>>> ClientHandler::noticeJoinedKeySwarm(
+            core::Id *keyId, uint8_t index) {
+        RequestBuffer req(33);
         req.write(keyId);
         req.write<uint8_t>(index);
-        transport->sendRequest(6, req);
-        auto resp = transport->readResponse(MAX_RESPONSE_SIZE);
-        return resp.readVec<core::Node *>();
+        return transport->sendRequest(sizeof(ResponseHeader), req, MAX_RESPONSE_SIZE)->
+                then<std::vector<core::Node *>>([&](ResponseHeader h) {
+            return transport->readBuffer(h.responseLen)->then<std::vector<core::Node *>>([](
+                    transport::Buffer resp) {
+                return (resp.readVec<core::Node *>());
+            });
+        });
     }
 
-    void ServerHandler::handleNoticeJoinedKeySwarm(transport::Buffer &request) {
+    void ServerHandler::handleNoticeJoinedKeySwarm(transport::Buffer &request, uint8_t tag) {
         auto keyId = request.read<core::Id *>();
         auto index = request.read<uint8_t>();
         auto keySwarm = storage::getKeySwarm(keyId);
         if (keySwarm == nullptr) {
-            transport->sendError();
+            transport->sendError(tag);
         } else {
             auto &swarm = keySwarm->swarm;
             if (std::none_of(swarm.begin(), swarm.end(),

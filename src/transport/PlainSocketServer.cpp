@@ -1,54 +1,51 @@
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <thread>
 #include <boost/asio/ip/tcp.hpp>
 #include "PlainSocketServer.h"
 #include "PlainSocketTransport.h"
 #include "../proto/ServerHandler.h"
-#include "TransportBackendException.h"
 #include <boost/log/trivial.hpp>
 #include "connectionInfo/PlainSocketConnectionInfo.h"
+#include "../async/EventLoop.h"
+#include <uvw/dns.h>
 
 namespace RingSwarm::transport {
-    PlainSocketServer::PlainSocketServer(std::string &hostname, int port, int backlog) {
-        connectionInfo = new PlainSocketConnectionInfo(hostname, port);
-        sockFd = socket(AF_INET, SOCK_STREAM, 0);
-        sockaddr_in serv_addr{};
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(port);
-        bool d = true;
-        if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &d, sizeof(int)) != 0) {
-            throw TransportBackendException();
+    using namespace uvw;
+
+    PlainSocketServer::PlainSocketServer(std::string &host, int port) :
+            connectionInfo(new PlainSocketConnectionInfo(host, port)),
+            serverHandler(async::getEventLoop()->resource<tcp_handle>()) {
+        serverHandler->on<uvw::listen_event>([](auto &, auto &server) {
+            auto socket = async::getEventLoop()->resource<uvw::tcp_handle>();
+            server.accept(*socket);
+//            async::getEventLoop()->stop();
+            auto peer = socket->peer();
+            BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from " << peer.ip << ":" << peer.port;
+            proto::ServerHandler::Handle(new PlainSocketTransport(socket));
+        });
+        serverHandler->on<error_event>([](auto &evt, auto &) {
+            BOOST_LOG_TRIVIAL(debug) << "Plain tcp server error: " << evt.what();
+        });
+        addrinfo hints;
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE;
+        auto req = async::getEventLoop()->resource<get_addr_info_req>();
+        auto resp = req->addr_info_sync(host, std::to_string(port), &hints);
+        if (resp.first) {
+            for (auto x = resp.second.get(); x != nullptr; x = x->ai_next) {
+                if (serverHandler->bind(*resp.second->ai_addr) == 0) {
+                    return;
+                }
+            }
         }
-        if (inet_pton(AF_INET, hostname.c_str(), &serv_addr.sin_addr) != 1) {
-            throw TransportBackendException();
-        }
-        if (bind(sockFd, reinterpret_cast<const sockaddr *>(&serv_addr), sizeof(serv_addr)) != 0) {
-            throw TransportBackendException();
-        }
-        if (::listen(sockFd, backlog) != 0) {
-            throw TransportBackendException();
-        }
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp server could not listed on " << host << ":" << port;
+
     }
 
     void PlainSocketServer::listen() {
         BOOST_LOG_TRIVIAL(debug) << "Plain tcp server starts listening";
-        while (true) {
-            sockaddr_in addr{};
-            socklen_t size;
-            int remoteFd = accept(sockFd, reinterpret_cast<sockaddr *>(&addr), &size);
-            if (getpeername(remoteFd, reinterpret_cast<sockaddr *>(&addr), &size) != 0) {
-                throw TransportBackendException();
-            }
-            BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from "
-                                     << inet_ntoa(addr.sin_addr) << ":" << addr.sin_port;
-            if (remoteFd == -1) {
-                throw TransportBackendException();
-            }
-            auto *handler =
-                    new proto::ServerHandler(new PlainSocketTransport(remoteFd));
-            std::thread([handler] { handler->handleClientConnection(); }).detach();
-        }
+        serverHandler->listen();
     }
 
     ConnectionInfo *PlainSocketServer::getConnectionInfo() {
