@@ -5,7 +5,7 @@
 #include "../core/Id.h"
 
 namespace RingSwarm::client {
-    KeyHandler *getKeyHandler(core::Id *fileId);
+    KeyHandler *createKeyHandler(core::Id *fileId);
 }
 
 #endif //RINGSWARM_FILEDOWNLOADER_H

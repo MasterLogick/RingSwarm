@@ -10,10 +10,10 @@ namespace RingSwarm::proto {
         req.write(keyid);
         req.write<uint64_t>(chunkIndex);
         auto f = async::Future<core::Node *, uint64_t>::create();
-        transport->sendRequest(2, req, MAX_RESPONSE_SIZE)->then([&](ResponseHeader h) {
-            transport->readBuffer(h.responseLen)->then([f](transport::Buffer resp) {
-                auto swarmIndex = resp.read<uint64_t>();
-                auto *node = resp.read<core::Node *>();
+        transport->sendRequest(2, req, MAX_RESPONSE_SIZE)->then([this, f](ResponseHeader h) {
+            transport->readBuffer(h.responseLen)->then([f](auto resp) {
+                auto swarmIndex = resp->template read<uint64_t>();
+                auto *node = resp->template read<core::Node *>();
                 f->resolve(node, swarmIndex);
             });
         });
@@ -26,10 +26,10 @@ namespace RingSwarm::proto {
         uint8_t chunk;
         auto *node = storage::getNearestChunkNode(keyId, chunkIndex, &chunk);
         if (node != nullptr) {
-            ResponseBuffer resp(1 + node->getSerializedSize());
-            resp.write<uint8_t>(chunk);
-            resp.write(node);
-            transport->sendResponse(resp, 1, tag);
+            auto resp = std::make_shared<ResponseBuffer>(1 + node->getSerializedSize());
+            resp->write<uint8_t>(chunk);
+            resp->write(node);
+            transport->scheduleResponse(std::move(resp), 1, tag);
         } else {
             transport->sendError(tag);
         }

@@ -9,10 +9,9 @@ namespace RingSwarm::proto {
         RequestBuffer req(40);
         req.write(keyId);
         req.write<uint64_t>(chunkIndex);
-        return transport->sendRequest(3, req, MAX_RESPONSE_LENGTH)->then<core::ChunkLink *>([&](ResponseHeader h) {
-            return transport->readBuffer(h.responseLen)->then<core::ChunkLink *>([](transport::Buffer resp) {
-                return resp.read<core::ChunkLink *>();
-            });
+        return transport->sendShortRequest(3, req, MAX_RESPONSE_LENGTH)->
+                then<core::ChunkLink *>([](auto resp) {
+            return resp->template read<core::ChunkLink *>();
         });
 
     }
@@ -26,8 +25,8 @@ namespace RingSwarm::proto {
             return;
         }
         auto *link = chunk->link;
-        ResponseBuffer resp(link->getSerializedSize());
-        resp.write(link);
-        transport->sendResponse(resp, 1, tag);
+        auto resp = std::make_shared<ResponseBuffer>(link->getSerializedSize());
+        resp->write(link);
+        transport->scheduleResponse(std::move(resp), 1, tag);
     }
 }

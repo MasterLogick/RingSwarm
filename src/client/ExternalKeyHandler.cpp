@@ -1,5 +1,6 @@
 #include "ExternalKeyHandler.h"
 #include "../core/ConnectionManager.h"
+#include <boost/log/trivial.hpp>
 
 namespace RingSwarm::client {
     ExternalKeyHandler::ExternalKeyHandler(core::Id *keyId, core::PublicKey *key,
@@ -16,14 +17,18 @@ namespace RingSwarm::client {
 
         auto readSize = std::get<0>(zeroChunkNode->getChunk(keyId, 0, 0, &keyInfo, sizeof(core::KeyInfo))->await());
         if (readSize != sizeof(keyInfo)) {
-            //todo throw broken ring exception
+            BOOST_LOG_TRIVIAL(trace) << "malformed chunk";
         }
         if (keyInfo.type != keyInfo.ONE_FILE) {
-            //todo throw
+            BOOST_LOG_TRIVIAL(trace) << "unsupported chunk type";
         }
     }
 
     uint32_t ExternalKeyHandler::readData(void *buff, uint32_t len, uint64_t offset) {
         return std::get<0>(zeroChunkNode->getChunk(keyId, 0, offset + sizeof(core::KeyInfo), buff, len)->await());
+    }
+
+    ExternalKeyHandler::~ExternalKeyHandler() {
+
     }
 }

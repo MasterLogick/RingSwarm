@@ -26,11 +26,11 @@ namespace RingSwarm::transport {
         delete cypher;
     }
 
-    std::shared_ptr<async::Future<uint8_t *>> SecureOverlayTransport::rawRead(uint32_t size) {
-        return transport->rawRead(size)->then<uint8_t *>([cypher = this->cypher, size](uint8_t *data) {
-            cypher->decode(data, size);
+    std::shared_ptr<async::Future<void>> SecureOverlayTransport::rawRead(void *data, uint32_t size) {
+        return transport->rawRead(data, size)->then([this, data, size]() {
+            cypher->decode(static_cast<uint8_t *>(data), size);
             BOOST_LOG_TRIVIAL(trace) << "Secure overlay |<=== "
-                                     << boost::algorithm::hex(std::string(reinterpret_cast<const char *>(data), size));
+                                     << boost::algorithm::hex(std::string(static_cast<const char *>(data), size));
             return data;
         });
     }
@@ -62,26 +62,29 @@ namespace RingSwarm::transport {
             throw crypto::CryptoException();
         }
         transport->rawWrite(rawPubKey, rawPubKey->size());
-        return transport->rawRead(16)->then<SecureOverlayTransport *>([transport, ctx = ctx.release(),
-                                                                              remotePublicKey](
-                uint8_t *iv) {
+        //todo optimize
+        auto *iv = new uint8_t[16];
+        return transport->rawRead(iv, 16)->then<SecureOverlayTransport *>([transport, ctx = ctx.release(),
+                                                                                  remotePublicKey, iv]() {
             auto *cypher = new crypto::SymmetricCypher(
                     std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>(ctx, EVP_PKEY_CTX_free),
                     remotePublicKey, iv);
+            delete[] iv;
             return new SecureOverlayTransport(transport, cypher);
         });
     }
 
     std::shared_ptr<async::Future<SecureOverlayTransport *>>
     SecureOverlayTransport::createServerSide(Transport *transport) {
-        return transport->rawRead(core::PublicKey().size())->then<SecureOverlayTransport *>([transport](uint8_t *data) {
-            auto *remotePubKey = reinterpret_cast<core::PublicKey *>(data);
+        auto *remotePublicKey = new core::PublicKey();
+        return transport->rawRead(remotePublicKey->data(), remotePublicKey->size())->
+                then<SecureOverlayTransport *>([transport, remotePublicKey]() {
             uint8_t iv[16];
             if (RAND_bytes(iv, 16) != 1) {
                 throw crypto::CryptoException();
             }
             transport->rawWrite(iv, 16);
-            auto *cypher = new crypto::SymmetricCypher(crypto::initDeriveKeyContext(), remotePubKey, iv);
+            auto *cypher = new crypto::SymmetricCypher(crypto::initDeriveKeyContext(), remotePublicKey, iv);
             return new SecureOverlayTransport(transport, cypher);
         });
     }

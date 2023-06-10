@@ -23,4 +23,8 @@ namespace RingSwarm::client {
         zeroChunk = storage::getMappedChunk(keyId, 0);
         memcpy(&keyInfo, zeroChunk->getData(), sizeof(core::KeyInfo));
     }
+
+    CachedKeyHandler::~CachedKeyHandler() {
+
+    }
 }

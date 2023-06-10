@@ -146,4 +146,11 @@ namespace RingSwarm::transport {
     uint32_t Buffer::calcSize(core::Node *n) {
         return calcSize((core::PublicKey *) nullptr) + n->connectionInfo->getSerializedSize();
     }
+
+    Buffer::Buffer(const Buffer &buffer) : data(buffer.data), offset(buffer.offset), len(buffer.len) {
+    }
+
+    Buffer::Buffer(Buffer &&buffer) : data(buffer.data), offset(buffer.offset), len(buffer.len) {
+        buffer.data = nullptr;
+    }
 }

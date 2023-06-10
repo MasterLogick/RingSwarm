@@ -16,6 +16,8 @@ namespace RingSwarm::client {
         explicit CachedKeyHandler(core::Id *keyId);
 
         uint32_t readData(void *buff, uint32_t len, uint64_t offset) override;
+
+        ~CachedKeyHandler() override;
     };
 }
 

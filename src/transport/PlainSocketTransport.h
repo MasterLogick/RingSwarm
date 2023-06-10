@@ -12,15 +12,15 @@ namespace RingSwarm::transport {
         std::shared_ptr<uvw::tcp_handle> tcpHandler;
         transport::Buffer pending;
         transport::Buffer currentRequest;
-        std::shared_ptr<async::Future<uint8_t *>> currentFuture;
+        std::shared_ptr<async::Future<void>> currentFuture;
         async::Spinlock accessSpinlock;
-        std::queue<std::pair<std::shared_ptr<async::Future<uint8_t *>>, uint32_t >> readRequestQueue;
+        std::queue<std::tuple<std::shared_ptr<async::Future<void>>, void *, uint32_t >> readRequestQueue;
     public:
         PlainSocketTransport(std::string &host, int port);
 
         explicit PlainSocketTransport(const std::shared_ptr<uvw::tcp_handle> &handle);
 
-        std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) override;
+        std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override;
 
         void rawWrite(void *data, uint32_t len) override;
 

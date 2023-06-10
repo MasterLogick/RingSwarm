@@ -1,48 +1,55 @@
 #include "TransportServerSideWrapper.h"
 #include "ResponseHeader.h"
+#include "../transport/TransportBackendException.h"
 #include <boost/log/trivial.hpp>
 
 namespace RingSwarm::proto {
-    void TransportServerSideWrapper::startLongResponse(uint32_t size, uint8_t responseType, uint8_t tag) {
-        ResponseHeader d{};
-        d.responseLen = size;
-        d.responseType = responseType;
-        d.tag = tag;
-        responseSent = responseSent->then([&] {
-            rawWrite(&d, sizeof(ResponseHeader));
-            responseRemainderSize = size;
-            pendingLongResponse = async::Future<void>::create();
-            BOOST_LOG_TRIVIAL(trace) << "Started long response."
-                                     << "Payload: " << size << " bytes. Response type: " << responseType << ". Tag: "
-                                     << tag;
-            return pendingLongResponse;
+    std::shared_ptr<async::Future<LongResponseTransport *>> TransportServerSideWrapper::scheduleLongResponse(
+            uint32_t size,
+            uint8_t responseType,
+            uint8_t tag
+    ) {
+        auto lrt = async::Future<LongResponseTransport *>::create();
+        auto f = async::Future<void>::create();
+        lock.lock();
+        responseSent = responseSent->then([this, size, responseType, tag, f, lrt] {
+            ResponseHeader d{};
+            d.responseLen = size;
+            d.responseType = responseType;
+            d.tag = tag;
+            TransportWrapper::rawWrite(&d, sizeof(ResponseHeader));
+            if (size == 0) {
+                f->resolve();
+            }
+            BOOST_LOG_TRIVIAL(trace) << "Started long response. "
+                                     << "Payload: " << size << " bytes. Response type: " << ((int) responseType)
+                                     << ". Tag: " << ((int) tag);
+            lrt->resolve(new LongResponseTransport(transport, f, size));
+            return f;
         });
+        lock.unlock();
+        return lrt;
     }
 
-    void TransportServerSideWrapper::sendResponse(ResponseBuffer &resp, uint8_t responseType, uint8_t tag) {
-        auto *header = reinterpret_cast<ResponseHeader *>(resp.data);
-        header->responseLen = resp.len - sizeof(ResponseHeader);
-        header->responseType = responseType;
-        header->tag = tag;
-        responseSent = responseSent->then([&] {
+    void TransportServerSideWrapper::scheduleResponse(
+            std::shared_ptr<ResponseBuffer> resp, uint8_t responseType, uint8_t tag) {
+        lock.lock();
+        responseSent = responseSent->then([this, tag, resp, responseType] {
+            auto *header = reinterpret_cast<ResponseHeader *>(resp->data);
+            header->responseLen = resp->len - sizeof(ResponseHeader);
+            header->responseType = responseType;
+            header->tag = tag;
             //todo check if present
             activeTags.reset(tag);
-            rawWrite(resp.data, resp.len);
+            TransportWrapper::rawWrite(resp->data, resp->len);
             BOOST_LOG_TRIVIAL(trace) << "Sent response  |===> "
-                                     << "Payload: " << resp.len << " bytes. Response type: "
-                                     << responseType
-                                     << ". Tag: " << tag;
+                                     << "Payload: " << resp->len << " bytes. Response type: "
+                                     << ((int) responseType) << ". Tag: " << ((int) tag);
         });
+        lock.unlock();
     }
 
     void TransportServerSideWrapper::rawWrite(void *data, uint32_t len) {
-        TransportWrapper::rawWrite(data, len);
-        if (responseRemainderSize > 0) {
-            // todo assert(responseRemainderSize >= len)
-            responseRemainderSize -= len;
-            if (responseRemainderSize == 0) {
-                pendingLongResponse->resolve();
-            }
-        }
+        throw transport::TransportBackendException();
     }
-} // transport
+}

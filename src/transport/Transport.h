@@ -9,9 +9,9 @@
 namespace RingSwarm::transport {
     class Transport {
     public:
-        std::shared_ptr<async::Future<transport::Buffer>> readBuffer(uint32_t responseLength);
+        std::shared_ptr<async::Future<std::shared_ptr<transport::Buffer>>> readBuffer(uint32_t responseLength);
 
-        virtual std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) = 0;
+        virtual std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) = 0;
 
         virtual void rawWrite(void *data, uint32_t len) = 0;
 

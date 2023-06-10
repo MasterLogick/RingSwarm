@@ -15,13 +15,13 @@ namespace RingSwarm::proto {
 
     void ServerHandler::handleHandshake() {
         // todo add client verification
-        transport->rawRead(4)->then([&](uint8_t *d) {
-            auto *size = reinterpret_cast<uint32_t *>(d);
-            if (*size > 1024 * 1024) {
+        auto *headerSize = new uint32_t();
+        transport->rawRead(headerSize, 4)->then([this, headerSize]() {
+            if (*headerSize > 1024 * 1024) {
                 //todo throw TooLargeMessageException
             }
-            transport->readBuffer(*size)->then([&](transport::Buffer b) {
-                remote = b.read<core::Node *>();
+            transport->readBuffer(*headerSize)->then([this](auto b) {
+                remote = b->template read<core::Node *>();
                 BOOST_LOG_TRIVIAL(debug) << "Got handshake from " << remote->id->getHexRepresentation();
                 listenRequest();
             });

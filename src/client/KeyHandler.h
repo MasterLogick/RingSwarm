@@ -7,6 +7,8 @@ namespace RingSwarm::client {
     class KeyHandler {
     public:
         virtual uint32_t readData(void *buff, uint32_t len, uint64_t offset) = 0;
+
+        virtual ~KeyHandler() = default;
     };
 }
 

@@ -17,6 +17,8 @@ namespace RingSwarm::client {
         ExternalKeyHandler(core::Id *keyId, core::PublicKey *key, proto::ClientHandler *possibleKeySwarmNode);
 
         uint32_t readData(void *buff, uint32_t len, uint64_t offset) override;
+
+        ~ExternalKeyHandler() override;
     };
 }
 

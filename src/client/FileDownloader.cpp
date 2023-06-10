@@ -10,7 +10,7 @@
 #include "ExternalKeyHandler.h"
 
 namespace RingSwarm::client {
-    KeyHandler *getKeyHandler(core::Id *keyId) {
+    KeyHandler *createKeyHandler(core::Id *keyId) {
         auto *keySwarm = storage::getKeySwarm(keyId);
         if (keySwarm != nullptr) {
             BOOST_LOG_TRIVIAL(debug) << "File download: Local cache hit for " << keyId->getHexRepresentation();
@@ -36,37 +36,40 @@ namespace RingSwarm::client {
             }
         }
         threadCount = startingPoints.size();
-        std::thread pool[threadCount];
+        std::vector<std::shared_ptr<async::Future<void>>> futures;
+        futures.resize(threadCount);
         proto::ClientHandler *possibleKeySwarmNodeClient = nullptr;
         core::PublicKey *publicKey = nullptr;
         std::condition_variable keyFoundCondVar;
         std::mutex lockerMutex;
         for (int i = 0; i < threadCount; ++i) {
             std::function<void(core::PublicKey *, core::Node *, bool)> f;
-            f = [&hitFlag, &publicKey, &lockerMutex, &keyFoundCondVar, &f, keyId, i](core::PublicKey *key,
-                                                                                     core::Node *node,
-                                                                                     bool isKeyFound) {
+            f = [&hitFlag, &publicKey, &lockerMutex, &keyFoundCondVar, &f, keyId, i, &startingPoints, &possibleKeySwarmNodeClient](
+                    core::PublicKey *key,
+                    core::Node *node,
+                    bool isKeyFound) {
                 if (hitFlag.test()) return;
                 if (isKeyFound) {
                     if (hitFlag.test_and_set()) {
                         return;
                     }
                     publicKey = key;
+                    possibleKeySwarmNodeClient = startingPoints[i];
                     std::lock_guard<std::mutex> l(lockerMutex);
                     keyFoundCondVar.notify_one();
                 } else {
-                    std::get<0>(core::getOrConnect(node)->await())->getKey(keyId, i)->then(f);
+                    startingPoints[i] = std::get<0>(core::getOrConnect(node)->await());
+                    startingPoints[i]->getKey(keyId, i)->then(f);
+
                 }
             };
+            futures[i] = startingPoints[i]->getKey(keyId, i)->then(f);
         }
         BOOST_LOG_TRIVIAL(debug) << "Started " << keyId->getHexRepresentation() << " key search using "
                                  << threadCount << " threads";
         std::unique_lock<std::mutex> lock(lockerMutex);
         keyFoundCondVar.wait(lock, [&hitFlag] { return hitFlag.test(); });
         BOOST_LOG_TRIVIAL(debug) << "Found " << keyId->getHexRepresentation() << " key";
-        for (int i = 0; i < threadCount; ++i) {
-            pool[i].join();
-        }
         return new ExternalKeyHandler(keyId, publicKey, possibleKeySwarmNodeClient);
     }
 }

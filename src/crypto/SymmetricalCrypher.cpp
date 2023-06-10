@@ -59,65 +59,6 @@ namespace RingSwarm::crypto {
         }
     }
 
-
-/*    void SymmetricCypher::write(RingSwarm::transport::Transport *transport, void *data, uint32_t len) {
-        uint8_t buff[8192];
-        int size;
-        while (len > 8192) {
-            if (EVP_EncryptUpdate(cipher.get(), buff, &size, static_cast<const uint8_t *>(data), 8192) != 1) {
-                throw crypto::CryptoException();
-            }
-            if (size != 8192) {
-                throw crypto::CryptoException();
-            }
-            transport->rawWrite(buff, 8192);
-            len -= 8192;
-            data = static_cast<uint8_t *>(data) + 8192;
-        }
-        if (EVP_EncryptUpdate(cipher.get(), buff, &size, static_cast<const uint8_t *>(data), len) != 1) {
-            throw crypto::CryptoException();
-        }
-        if (size != len) {
-            throw crypto::CryptoException();
-        }
-        transport->rawWrite(buff, len);
-    }
-
-    uint32_t SymmetricCypher::rawNonBlockingRead(transport::Transport *transport, void *data, uint32_t len) {
-        uint32_t read = 0;
-        uint8_t buff[8192];
-        uint32_t size;
-        uint32_t tmpRead;
-        while (len > 8192) {
-            tmpRead = transport->rawNonBlockingRead(buff, 8192);
-            if (tmpRead == 0) {
-                return read;
-            }
-            read += tmpRead;
-            if (EVP_DecryptUpdate(decipher.get(), static_cast<uint8_t *>(data), reinterpret_cast<int *>(&size), buff,
-                                  tmpRead) != 1) {
-                throw crypto::CryptoException();
-            }
-            if (size != tmpRead) {
-                throw crypto::CryptoException();
-            }
-            len -= tmpRead;
-            data = static_cast<uint8_t *>(data) + tmpRead;
-        }
-        tmpRead = transport->rawNonBlockingRead(buff, len);
-        if (tmpRead == 0) {
-            return tmpRead;
-        }
-        read += tmpRead;
-        if (EVP_DecryptUpdate(decipher.get(), static_cast<uint8_t *>(data), reinterpret_cast<int *>(&size), buff,
-                              tmpRead) != 1) {
-            throw crypto::CryptoException();
-        }
-        if (size != tmpRead) {
-            throw crypto::CryptoException();
-        }
-        return read;
-    }*/
     void SymmetricCypher::encode(void *data, uint32_t size) {
         uint32_t outs;
         if (EVP_EncryptUpdate(cipher.get(), static_cast<uint8_t *>(data), reinterpret_cast<int *>(&outs),

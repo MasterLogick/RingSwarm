@@ -9,12 +9,10 @@ namespace RingSwarm::proto {
         RequestBuffer req(40);
         req.write(keyId);
         req.write<uint64_t>(chunkIndex);
-        return transport->sendRequest(7, req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([&](
-                ResponseHeader h) {
-            return transport->readBuffer(h.responseLen)->then<std::vector<core::Node *>>([](
-                    transport::Buffer resp) {
-                return resp.readVec<core::Node *>();
-            });
+        return transport->sendShortRequest(7, req, MAX_RESPONSE_SIZE)->
+                then<std::vector<core::Node *>>([](auto resp) {
+            return resp->template readVec<core::Node *>();
+
         });
     }
 
@@ -27,7 +25,7 @@ namespace RingSwarm::proto {
         } else {
             auto &nodeList = (*chunkSwarm->ring)[chunkIndex];
             if (std::none_of(nodeList.begin(), nodeList.end(),
-                             [&](auto node) -> bool { return node == remote; })) {
+                             [this](auto node) -> bool { return node == remote; })) {
                 nodeList.push_back(remote);
             }
             sendNodeListResponse(nodeList, 1, tag);

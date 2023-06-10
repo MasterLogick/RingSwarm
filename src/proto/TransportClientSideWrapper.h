@@ -11,8 +11,8 @@ namespace RingSwarm::proto {
             uint32_t maxResponseSize;
             std::shared_ptr<async::Future<ResponseHeader>> future;
         };
+        ResponseHeader nextHeader;
         uint32_t responseRemainderSize = 0;
-        std::atomic_uint8_t nextTag;
         async::Spinlock spinlock;
         std::map<uint8_t, Request> m;
 
@@ -20,12 +20,15 @@ namespace RingSwarm::proto {
 
     public:
 
-        explicit TransportClientSideWrapper(transport::Transport *transport) : transport::TransportWrapper(transport) {}
+        explicit TransportClientSideWrapper(transport::Transport *transport);
 
         std::shared_ptr<async::Future<ResponseHeader>> sendRequest(
                 uint8_t commandIndex, RequestBuffer &req, uint32_t maxResponseSize);
 
-        std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) override;
+        std::shared_ptr<async::Future<std::shared_ptr<transport::Buffer>>> sendShortRequest(
+                uint8_t commandIndex, RequestBuffer &req, uint32_t maxResponseSize);
+
+        std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override;
     };
 }
 

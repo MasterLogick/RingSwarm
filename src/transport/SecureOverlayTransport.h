@@ -19,7 +19,7 @@ namespace RingSwarm::transport {
 
         static std::shared_ptr<async::Future<SecureOverlayTransport *>> createServerSide(Transport *transport);
 
-        std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) override;
+        std::shared_ptr<async::Future<void>> rawRead(void* data, uint32_t size) override;
 
         void rawWrite(void *data, uint32_t len) override;
 

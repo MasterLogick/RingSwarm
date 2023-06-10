@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include "TaskManager.h"
 #include "Spinlock.h"
+#include <boost/log/trivial.hpp>
 
 namespace RingSwarm::async {
     template<class ...Args>
@@ -31,8 +32,14 @@ namespace RingSwarm::async {
         }
 
     public:
-        [[nodiscard]] static std::shared_ptr<Future<void>> create() {
+        static std::shared_ptr<Future<void>> create() {
             return std::shared_ptr<Future<void>>(new Future<void>());
+        }
+
+        static std::shared_ptr<Future<void>> createResolved() {
+            auto x = Future<void>::create();
+            x->resolve();
+            return x;
         }
 
         template<class T>
@@ -40,7 +47,7 @@ namespace RingSwarm::async {
             std::shared_ptr<Future<T>> a = Future<T>::create();
             //todo maybe copy function by value to local scope if lambda copies by reference
             then1([a, t]() {
-                a->resolve(t());
+                a->resolve(std::forward<T>(t()));
             });
             return a;
         }
@@ -68,6 +75,7 @@ namespace RingSwarm::async {
         }
 
         void resolve() {
+            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
             accessSpinlock.lock();
             if (resolved) {
                 accessSpinlock.unlock();
@@ -83,20 +91,19 @@ namespace RingSwarm::async {
         }
 
         void await() {
-            accessSpinlock.lock();
             if (!resolved) {
                 std::mutex m;
                 std::condition_variable cv;
                 std::unique_lock<std::mutex> ul(m);
-                then([&]() {
+                then1([&m, &cv, this]() {
                     std::lock_guard<std::mutex> l(m);
                     cv.notify_one();
+                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
                 });
-                accessSpinlock.unlock();
+                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
                 cv.wait(ul, [this]() { return resolved; });
-
+                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
             }
-            accessSpinlock.unlock();
         }
 
         bool isResolved() {
@@ -143,7 +150,7 @@ namespace RingSwarm::async {
             std::shared_ptr<Future<T>> a = Future<T>::create();
             //todo maybe copy function by value to local scope if lambda copies by reference
             then1([a, t](Args... args) {
-                a->resolve(t(std::forward<Args>(args)...));
+                a->resolve(std::forward<T>(t(std::forward<Args>(args)...)));
             });
             return a;
         }
@@ -171,10 +178,11 @@ namespace RingSwarm::async {
         }
 
         void resolve(Args... args) {
+            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
             accessSpinlock.lock();
             if (resolved) {
                 accessSpinlock.unlock();
-                //todo throw second resolve exception
+                // ignore further resolves
             } else {
                 resolved = true;
                 resolvedValues = std::make_tuple(std::forward<Args>(args)...);
@@ -190,20 +198,20 @@ namespace RingSwarm::async {
         }
 
         std::tuple<Args...> await() {
-            accessSpinlock.lock();
             if (!resolved) {
                 std::mutex m;
                 std::condition_variable cv;
                 std::unique_lock<std::mutex> ul(m);
-                then([&](Args... args) {
+                then1([&m, &cv, this](Args... args) {
                     std::lock_guard<std::mutex> l(m);
                     cv.notify_one();
+                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
                 });
-                accessSpinlock.unlock();
+                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
                 cv.wait(ul, [this]() { return resolved; });
+                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
                 return resolvedValues;
             }
-            accessSpinlock.unlock();
             return resolvedValues;
         }
 
@@ -211,6 +219,18 @@ namespace RingSwarm::async {
             return resolved;
         }
     };
+
+    template<class Iter, class ...Args>
+    std::shared_ptr<Future<Args...>> waitForAny(Iter begin, Iter end) {
+        auto f = Future<Args...>::create();
+        for (; begin != end; begin++) {
+            auto x = *begin;
+            x->then([f](Args... args) {
+                f->resolve(std::forward<Args>(args)...);
+            });
+        }
+        return f;
+    }
 }
 
 #endif //RINGSWARM_FUTURE_H

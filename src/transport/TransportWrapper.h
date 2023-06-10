@@ -8,10 +8,12 @@ namespace RingSwarm::transport {
     protected:
         Transport *transport;
     public:
+        TransportWrapper() = default;
+
         explicit TransportWrapper(Transport *transport) : transport(transport) {}
 
-        std::shared_ptr<async::Future<uint8_t *>> rawRead(uint32_t size) override {
-            return transport->rawRead(size);
+        std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override {
+            return transport->rawRead(data, size);
         }
 
         void rawWrite(void *data, uint32_t len) override {

@@ -11,15 +11,12 @@ namespace RingSwarm::proto {
         req.write<uint64_t>(chunkIndex);
         req.write<uint64_t>(offset);
         req.write<uint32_t>(length);
-        auto x = transport->rawRead(1)->then<uint32_t>([buffer](uint8_t *data) -> uint32_t {
-            memcpy(buffer, data, 1);
-            return 1;
-        });
-        return transport->sendRequest(4, req, length)->then<uint32_t>([&](
-                ResponseHeader h) {
-            return transport->rawRead(h.responseLen)->then<uint32_t>([buffer, h](uint8_t *data) {
-                memcpy(buffer, data, h.responseLen);
-                return h.responseLen;
+        return transport->sendRequest(4, req, length)->then<uint32_t>([this, buffer](ResponseHeader h) {
+            if (h.responseLen == 0) {
+                return async::Future<uint32_t>::createResolved(0);
+            }
+            return transport->rawRead(buffer, h.responseLen)->then<uint32_t>([rl = h.responseLen]() {
+                return rl;
             });
         });
     }
@@ -31,7 +28,7 @@ namespace RingSwarm::proto {
         auto maxLen = request.read<uint32_t>();
         auto chunk = storage::getMappedChunk(keyId, chunkIndex);
         if (chunk->getSize() <= offset) {
-            transport->startLongResponse(0, 1, tag);
+            transport->sendEmptyResponse(1, tag);
             return;
         }
         uint32_t actualSize;
@@ -40,7 +37,14 @@ namespace RingSwarm::proto {
         } else {
             actualSize = std::min<uint32_t>(maxLen, chunk->getSize() - offset);
         }
-        transport->startLongResponse(actualSize, 1, tag);
-        transport->rawWrite(reinterpret_cast<uint8_t *>(chunk->getData()) + offset, actualSize);
+        transport->scheduleLongResponse(actualSize, 1, tag)->then([actualSize, chunk, offset](auto lrt) {
+            uint32_t buffSize = 8192;
+            char buf[buffSize];
+            for (uint32_t i = 0, sz = buffSize; sz == buffSize; i += buffSize) {
+                sz = std::min<uint32_t>(actualSize - i, buffSize);
+                memcpy(buf, reinterpret_cast<uint8_t *>(chunk->getData()) + offset + i, sz);
+                lrt->rawWrite(buf, sz);
+            }
+        });
     }
 }

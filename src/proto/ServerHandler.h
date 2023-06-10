@@ -12,6 +12,7 @@
 
 namespace RingSwarm::proto {
     class ServerHandler {
+        RequestHeader nextHeader;
         TransportServerSideWrapper *transport;
         core::Node *remote;
 

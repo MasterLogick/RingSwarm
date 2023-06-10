@@ -70,7 +70,6 @@ namespace RingSwarm::fuse {
         filter(buff, ".", nullptr, 0, {});
         filter(buff, "..", nullptr, 0, {});
         for (const auto &item: mountedRings) {
-            //todo fix possible use-after-free in c_str. (all strings are freed before use)
             struct stat b{};
             b.st_mode = S_IFREG | S_IRUSR;
             b.st_size = 0;
@@ -123,21 +122,22 @@ namespace RingSwarm::fuse {
         auto *keyId = core::Id::fromHexRepresentation(path.c_str());
         if (std::any_of(mountedRings.begin(), mountedRings.end(),
                         [keyId](core::Id *id) { return *keyId == *id; })) {
-            auto *handler = client::getKeyHandler(keyId);
+            auto *handler = client::createKeyHandler(keyId);
             if (handler) {
                 openedKeys["/" + path] = handler;
+                info->direct_io = 1;
+                info->fh = reinterpret_cast<uint64_t>(handler);
                 return 0;
             }
             return -ENOENT;
         } else {
             return -ENOENT;
         }
-
     }
 
     int read(const char *c, char *buff, size_t len, off_t offset, struct fuse_file_info *fi) {
-        std::string path(c);
-        auto *handler = openedKeys[path];
+        BOOST_LOG_TRIVIAL(debug) << "FUSE read " << c;
+        auto *handler = reinterpret_cast<client::KeyHandler *>(fi->fh);
         if (handler == nullptr) {
             return EOF;
         }
@@ -147,20 +147,22 @@ namespace RingSwarm::fuse {
     int release(const char *c, struct fuse_file_info *fi) {
         std::string path(c);
         openedKeys.erase(openedKeys.find(path));
+        auto *handler = reinterpret_cast<client::KeyHandler *>(fi->fh);
+        delete handler;
         return 0;
     }
 
     void startFuse(std::string &mountPoint) {
         std::unique_lock<std::mutex> lock(fuseInitialisedMutex);
-        std::thread([&] {
+        std::thread([&mountPoint] {
             fuse_operations ops{.getattr=getattr, .open=open, .read=read, .release=release, .readdir=readdir, .init=init, .destroy=destroy/*, .access=access*/};
             char *d[] = {strdup("RingSwarm"),
                          strdup(mountPoint.c_str()),
                          strdup("-f"),
-                         strdup("-oallow_other")/*,
-                         strdup("-d")*/};
+                         strdup("-oallow_other"),
+                         strdup("-d")};
             cwdBeforeFuseStart = std::filesystem::current_path().string();
-            int ret = fuse_main(4, d, &ops, nullptr);
+            int ret = fuse_main(5, d, &ops, nullptr);
             if (ret != 0) {
                 std::cout << ret << std::endl;
             }

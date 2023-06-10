@@ -7,7 +7,13 @@ set(OPENSSL_USE_STATIC_LIBS ON)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost REQUIRED system log program_options)
+find_package(Boost REQUIRED
+        system
+        log
+        program_options
+        stacktrace_basic)
+
+find_package(Backtrace)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -142,7 +148,14 @@ add_executable(RingSwarm
         src/async/TaskManager.h
         src/async/Future.h
         src/proto/TransportServerSideWrapper.cpp
-        src/proto/TransportServerSideWrapper.h src/proto/TransportClientSideWrapper.cpp src/proto/TransportClientSideWrapper.h src/transport/TransportWrapper.h src/async/Spinlock.h src/transport/Transport.cpp src/async/EventLoop.h src/async/EventLoop.cpp)
+        src/proto/TransportServerSideWrapper.h
+        src/proto/TransportClientSideWrapper.cpp
+        src/proto/TransportClientSideWrapper.h
+        src/transport/TransportWrapper.h
+        src/async/Spinlock.h
+        src/transport/Transport.cpp
+        src/async/EventLoop.h
+        src/async/EventLoop.cpp src/proto/LongResponseTransport.cpp src/proto/LongResponseTransport.h)
 
 if (WIN32)
     target_compile_definitions(RingSwarm PRIVATE TGT_WINDOWS)
@@ -153,6 +166,18 @@ elseif (APPLE)
     target_compile_definitions(RingSwarm PRIVATE TGT_APPLE)
 endif ()
 
-target_compile_definitions(RingSwarm PRIVATE OPENSSL_NO_DEPRECATED)
-target_include_directories(RingSwarm PRIVATE ${OpenSSL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${sqlite3_SOURCE_DIR} ${fuse3_INCLUDE_DIRS} ${uvw_SOURCE_DIR}/src)
-target_link_libraries(RingSwarm PRIVATE OpenSSL::Crypto ${Boost_LIBRARIES} sqlite3 fuse3::fuse3 uvw::uvw-static uv::uv-static)
+target_compile_definitions(RingSwarm PRIVATE OPENSSL_NO_DEPRECATED BOOST_STACKTRACE_LINK)
+target_include_directories(RingSwarm PRIVATE
+        ${OpenSSL_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${sqlite3_SOURCE_DIR}
+        ${fuse3_INCLUDE_DIRS}
+        ${uvw_SOURCE_DIR}/src)
+target_link_libraries(RingSwarm PRIVATE
+        OpenSSL::Crypto
+        ${Boost_LIBRARIES}
+        sqlite3
+        fuse3::fuse3
+        uvw::uvw-static
+        uv::uv-static
+        ${Backtrace_LIBRARIES})

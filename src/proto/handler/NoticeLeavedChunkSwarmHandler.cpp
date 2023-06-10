@@ -21,7 +21,7 @@ namespace RingSwarm::proto {
             transport->sendError(tag);
         } else {
             auto &nodeList = (*chunkSwarm->ring)[chunkIndex];
-            if (std::erase_if(nodeList, [&](auto node) -> bool {
+            if (std::erase_if(nodeList, [this](auto node) -> bool {
                 return node == remote;
             }) == 0) {
                 transport->sendError(tag);

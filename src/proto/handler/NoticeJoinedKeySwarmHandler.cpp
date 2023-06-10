@@ -9,12 +9,9 @@ namespace RingSwarm::proto {
         RequestBuffer req(33);
         req.write(keyId);
         req.write<uint8_t>(index);
-        return transport->sendRequest(sizeof(ResponseHeader), req, MAX_RESPONSE_SIZE)->
-                then<std::vector<core::Node *>>([&](ResponseHeader h) {
-            return transport->readBuffer(h.responseLen)->then<std::vector<core::Node *>>([](
-                    transport::Buffer resp) {
-                return (resp.readVec<core::Node *>());
-            });
+        return transport->sendShortRequest(sizeof(ResponseHeader), req, MAX_RESPONSE_SIZE)->
+                then<std::vector<core::Node *>>([](auto resp) {
+            return resp->template readVec<core::Node *>();
         });
     }
 
@@ -27,7 +24,7 @@ namespace RingSwarm::proto {
         } else {
             auto &swarm = keySwarm->swarm;
             if (std::none_of(swarm.begin(), swarm.end(),
-                             [&](auto pair) -> bool { return *pair.second == *remote; })) {
+                             [this](auto pair) -> bool { return *pair.second == *remote; })) {
                 swarm[index] = remote;
             }
             //todo fix

@@ -57,6 +57,12 @@ namespace RingSwarm::transport {
 
         Buffer() : data(nullptr), offset(0), len(0) {}
 
+        Buffer(const Buffer &buffer);
+
+        Buffer(Buffer &&buffer);
+
+        Buffer &operator=(const Buffer &buffer) = default;
+
         explicit Buffer(uint32_t len, uint32_t offset = 0);
 
         explicit Buffer(uint8_t *ptr, uint32_t len) : data(ptr), offset(0), len(len) {}

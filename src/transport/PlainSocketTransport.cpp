@@ -22,6 +22,7 @@ namespace RingSwarm::transport {
         for (auto x = resp.second.get(); x != nullptr; x = x->ai_next) {
             if (x->ai_addr->sa_family == AF_INET) {
                 if (tcpHandler->connect(*x->ai_addr) == 0) {
+                    async::interruptEventLoop();
                     return;
                 }
             }
@@ -33,18 +34,19 @@ namespace RingSwarm::transport {
         setupHandler();
     }
 
-    std::shared_ptr<async::Future<uint8_t *>> PlainSocketTransport::rawRead(uint32_t size) {
+    std::shared_ptr<async::Future<void>> PlainSocketTransport::rawRead(void *data, uint32_t size) {
         accessSpinlock.lock();
         if (currentRequest.data == nullptr) {
-            currentRequest.data = new uint8_t[size];
+            currentRequest.data = static_cast<uint8_t *>(data);
             currentRequest.offset = 0;
             currentRequest.len = size;
-            currentFuture = async::Future<uint8_t *>::create();
+            currentFuture = async::Future<void>::create();
             accessSpinlock.unlock();
             tcpHandler->read();
+            async::interruptEventLoop();
             return currentFuture;
         } else {
-            auto x = readRequestQueue.emplace(async::Future<uint8_t *>::create(), size).first;
+            auto x = std::get<0>(readRequestQueue.emplace(async::Future<void>::create(), data, size));
             accessSpinlock.unlock();
             return x;
         }
@@ -81,45 +83,45 @@ namespace RingSwarm::transport {
             auto peer = handler.peer();
             BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket " << peer.ip << ":" << peer.port << " error " << evt.name();
         });
+        tcpHandler->set_allocator([this](auto *buf, auto, auto &) {
+            accessSpinlock.lock();
+            if (currentRequest.data != nullptr) {
+                *buf = uv_buf_init(reinterpret_cast<char *>(currentRequest.data + currentRequest.offset),
+                                   currentRequest.len - currentRequest.offset);
+            } else {
+                *buf = uv_buf_init(new char, 1);
+            }
+            accessSpinlock.unlock();
+        });
         tcpHandler->on<data_event>([this](auto &event, auto &) {
-            auto *data = reinterpret_cast<uint8_t *>(event.data.release());
-            uint32_t offset = 0;
-            while (true) {
-                uint32_t copySize = std::min<uint32_t>(event.length, currentRequest.len - currentRequest.offset);
-                memcpy(currentRequest.data, data, copySize);
-                currentRequest.offset += copySize;
-                offset += copySize;
+            accessSpinlock.lock();
+            if (currentRequest.data != nullptr) {
+                currentRequest.offset += event.length;
                 if (currentRequest.offset == currentRequest.len) {
                     BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |<=== "
                                              << boost::algorithm::hex(
                                                      std::string(reinterpret_cast<const char *>(currentRequest.data),
                                                                  currentRequest.len));
-                    currentFuture->resolve(currentRequest.data);
-                    accessSpinlock.lock();
+                    currentFuture->resolve();
                     if (!readRequestQueue.empty()) {
                         auto nextRequest = readRequestQueue.front();
                         readRequestQueue.pop();
-                        accessSpinlock.unlock();
-                        currentRequest.data = new uint8_t[nextRequest.second];
+                        currentRequest.data = static_cast<uint8_t *>(std::get<1>(nextRequest));
                         currentRequest.offset = 0;
-                        currentRequest.len = nextRequest.second;
-                        currentFuture = nextRequest.first;
+                        currentRequest.len = std::get<2>(nextRequest);
+                        currentFuture = std::get<0>(nextRequest);
                     } else {
-                        accessSpinlock.unlock();
+                        currentRequest.data = nullptr;
                         tcpHandler->stop();
-                        if (offset != event.length) {
-                            pending.data = data;
-                            pending.offset = offset;
-                            pending.len = event.length;
-                        }
-                        return;
                     }
-                } else {
-                    //data buffer is empty
-                    delete data;
-                    return;
+                }
+                event.data.release();
+            } else {
+                if (event.length == UV_ENOBUFS) {
+                    event.data.release();
                 }
             }
+            accessSpinlock.unlock();
         });
     }
 }

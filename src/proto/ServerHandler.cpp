@@ -24,34 +24,33 @@ namespace RingSwarm::proto {
         for (const auto &node: nodeList) {
             nodeListSize += node->getSerializedSize();
         }
-        ResponseBuffer resp(nodeListSize);
-        resp.write(nodeList);
-        transport->sendResponse(resp, responseType, tag);
+        auto resp = std::make_shared<ResponseBuffer>(nodeListSize);
+        resp->write(nodeList);
+        transport->scheduleResponse(std::move(resp), responseType, tag);
     }
 
     void ServerHandler::listenRequest() {
-        transport->rawRead(sizeof(RequestHeader))->then([&](uint8_t *data) {
-            auto h = *reinterpret_cast<RequestHeader *>(data);
+        transport->rawRead(&nextHeader, sizeof(RequestHeader))->then([this]() {
+            auto h = nextHeader;
             if (h.requestLength > MAX_REQUEST_LENGTH) {
-                //todo handle bad request length
+                BOOST_LOG_TRIVIAL(trace) << "Got too long header: " << h.requestLength;
             }
             if (h.method == 0) {
-                //todo handle exit
+                BOOST_LOG_TRIVIAL(trace) << "Got exit method";
             }
             if (h.method >= proto::ServerHandler::MethodsCount) {
-                //todo handle too large method
+                BOOST_LOG_TRIVIAL(trace) << "Got unknown command: " << (int) h.method;
             }
             if (transport->activeTags.test(h.tag)) {
-                //todo handle tags collision
+                BOOST_LOG_TRIVIAL(trace) << "Got tags collision: " << (int) h.tag;
             }
-            transport->readBuffer(h.requestLength)->then([&](transport::Buffer b) {
+            BOOST_LOG_TRIVIAL(trace) << "Got req header  |<=== " << ServerHandler::MethodNames[h.method] << " "
+                                     << h.requestLength << " bytes. Tag: " << ((int) h.tag);
+            transport->readBuffer(h.requestLength)->then([this, h](std::shared_ptr<transport::Buffer> b) {
                 listenRequest();
-                BOOST_LOG_TRIVIAL(trace) << "Got request    |<=== " << h.requestLength << " bytes";
-                BOOST_LOG_TRIVIAL(trace) << "Executing " << ServerHandler::MethodNames[h.method]
-                                         << " method handler";
-                (this->*ServerHandler::Methods[h.method])(b, h.tag);
-                BOOST_LOG_TRIVIAL(trace) << "Executed " << ServerHandler::MethodNames[h.method]
-                                         << " method handler";
+                BOOST_LOG_TRIVIAL(trace) << "Got req body   |<=== " << ServerHandler::MethodNames[h.method] << " "
+                                         << h.requestLength << " bytes. Tag: " << ((int) h.tag);
+                (this->*ServerHandler::Methods[h.method])(*b.get(), h.tag);
             });
         });
     }
@@ -60,7 +59,7 @@ namespace RingSwarm::proto {
         transport::SecureOverlayTransport::createServerSide(serverSide)->then([](auto *overlay) {
             auto *h = new ServerHandler(overlay);
             handlers.push_back(h);
-            h->listenRequest();
+            h->handleHandshake();
         });
 
     }

@@ -9,12 +9,9 @@ namespace RingSwarm::proto {
         RequestBuffer req(40);
         req.write(keyId);
         req.write<uint64_t>(chunkIndex);
-        return transport->sendRequest(9, req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([&](
-                ResponseHeader h) {
-            return transport->readBuffer(h.responseLen)->then<std::vector<core::Node *>>(
-                    [](transport::Buffer resp) {
-                        return resp.readVec<core::Node *>();
-                    });
+        return transport->sendShortRequest(9, req, MAX_RESPONSE_SIZE)->
+                then<std::vector<core::Node *>>([](auto resp) {
+            return resp->template readVec<core::Node *>();
         });
     }
 

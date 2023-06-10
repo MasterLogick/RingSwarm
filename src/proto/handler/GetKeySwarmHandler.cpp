@@ -8,10 +8,8 @@ namespace RingSwarm::proto {
         RequestBuffer req(32);
         req.write(keyId);
         auto f = async::Future<std::map<uint8_t, core::Node *>>::create();
-        transport->sendRequest(8, req, MAX_RESPONSE_SIZE)->then([&](ResponseHeader h) {
-            transport->readBuffer(h.responseLen)->then([f](transport::Buffer resp) {
-                f->resolve(resp.readMap<uint8_t, core::Node *>());
-            });
+        transport->sendShortRequest(8, req, MAX_RESPONSE_SIZE)->then([f](auto resp) {
+            f->resolve(resp->template readMap<uint8_t, core::Node *>());
         });
         return f;
     }
@@ -27,9 +25,9 @@ namespace RingSwarm::proto {
             for (const auto &item: nodeList) {
                 size += item.second->getSerializedSize() + 1;
             }
-            ResponseBuffer resp(4 + size);
-            resp.write(nodeList);
-            transport->sendResponse(resp, 1, tag);
+            auto resp = std::make_shared<ResponseBuffer>(4 + size);
+            resp->write(nodeList);
+            transport->scheduleResponse(std::move(resp), 1, tag);
         }
     }
 }

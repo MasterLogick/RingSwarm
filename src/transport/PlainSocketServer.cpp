@@ -17,7 +17,7 @@ namespace RingSwarm::transport {
         serverHandler->on<uvw::listen_event>([](auto &, auto &server) {
             auto socket = async::getEventLoop()->resource<uvw::tcp_handle>();
             server.accept(*socket);
-//            async::getEventLoop()->stop();
+            async::interruptEventLoop();
             auto peer = socket->peer();
             BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from " << peer.ip << ":" << peer.port;
             proto::ServerHandler::Handle(new PlainSocketTransport(socket));
@@ -46,6 +46,7 @@ namespace RingSwarm::transport {
     void PlainSocketServer::listen() {
         BOOST_LOG_TRIVIAL(debug) << "Plain tcp server starts listening";
         serverHandler->listen();
+        async::interruptEventLoop();
     }
 
     ConnectionInfo *PlainSocketServer::getConnectionInfo() {

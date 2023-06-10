@@ -54,7 +54,7 @@ int main(int argc, char **argv, char **envp) {
     storage::loadStorage(path.c_str());
     crypto::loadNodeKeys();
     std::filesystem::create_directory("./storage");
-    std::string fuseMP = "./fuse" + std::to_string(scenario);
+    std::string fuseMP = getenv("HOME") + std::string("/fuse") + std::to_string(scenario);
     try {
         std::filesystem::create_directory(fuseMP);
     } catch (std::filesystem::filesystem_error &e) {
@@ -83,17 +83,13 @@ int main(int argc, char **argv, char **envp) {
                                         new transport::PlainSocketConnectionInfo("localhost", port - 1));
             std::get<0>(core::getOrConnect(node)->await());
             fuse::mountRing(core::Id::fromHexRepresentation(
-                    "7fef93330a683562b30e768fa5e5b49604cec6585391b178a6326b4052ff0e5d"));
+                    "1c5884d02f13b6a75d73236f3adcc53f3d71ff27cc4626d7aa00529a79ea2efa"));
             break;
         }
         default:
             throw core::RingSwarmException();
     }
 
-    //todo run event loop in separate thread
-    while (true) {
-        async::getEventLoop()->run(uvw::details::uvw_run_mode::DEFAULT);
-    }
-//    std::cin.get();
+    std::cin.get();
     storage::closeStorage();
 }
