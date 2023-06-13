@@ -1,7 +1,9 @@
 #include <thread>
 #include "EventLoop.h"
+#include "../core/Thread.h"
 #include <uvw/tcp.h>
 #include <boost/log/trivial.hpp>
+#include <condition_variable>
 
 namespace RingSwarm::async {
     using namespace uvw;
@@ -13,23 +15,18 @@ namespace RingSwarm::async {
 
     std::shared_ptr<tcp_handle> client1;
     std::shared_ptr<tcp_handle> client2;
+    std::mutex writeLock;
+    bool written = false;
 
     void setEventHandlers(std::shared_ptr<tcp_handle> handle) {
         handle->on<connect_event>([](auto &, auto &) {
             BOOST_LOG_TRIVIAL(trace) << "interrupter handle connected";
-        });
-        handle->on<write_event>([](auto &, auto &) {
-//            BOOST_LOG_TRIVIAL(trace) << "interrupter handle sent data";
-        });
-        handle->on<data_event>([](auto &, auto &) {
-//            BOOST_LOG_TRIVIAL(trace) << "interrupter handle got data";
         });
         handle->on<close_event>([](auto &, auto &) {
             BOOST_LOG_TRIVIAL(trace) << "interrupter handle is closed";
         });
         handle->on<error_event>([](auto &err, auto &s) {
             auto a = client1;
-            auto b = client2;
             if (a.get() == &s) {
                 BOOST_LOG_TRIVIAL(trace) << "interrupter handle 1 error: " << err.what();
             } else {
@@ -62,13 +59,14 @@ namespace RingSwarm::async {
 
         client1->read();
         std::thread([] {
+            core::setThreadName("Event loop");
             async::getEventLoop()->run();
         }).detach();
     }
 
     void interruptEventLoop() {
+        std::lock_guard<std::mutex> l(writeLock);
         char c = 0;
-        client1->write(&c, 1);
-//        BOOST_LOG_TRIVIAL(trace) << "event loop interrupted";
+        while (client1->try_write(&c, 1) == UV_EAGAIN);
     }
 }

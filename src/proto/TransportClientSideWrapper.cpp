@@ -32,13 +32,12 @@ namespace RingSwarm::proto {
         header->method = commandIndex;
         header->tag = tag;
         rawWrite(req.data, req.len);
-        BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " << proto::ServerHandler::MethodNames[commandIndex]
-                                 << " " << req.len - sizeof(RequestHeader) << " bytes. Tag: " << ((int) tag);
+        /*BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " << proto::ServerHandler::MethodNames[commandIndex]
+                                 << " " << req.len - sizeof(RequestHeader) << " bytes. Tag: " << ((int) tag);*/
         return f;
     }
 
     void TransportClientSideWrapper::runResponseHandlerIteration() {
-        BOOST_LOG_TRIVIAL(trace) << "runResponseHandlerIteration";
         transport::TransportWrapper::rawRead(&nextHeader, sizeof(ResponseHeader))->then([this]() {
             if (responseRemainderSize != 0) {
                 BOOST_LOG_TRIVIAL(trace) << "undefined behaviour";
@@ -49,16 +48,16 @@ namespace RingSwarm::proto {
                 auto r = m[header.tag];
                 m.erase(header.tag);
                 if (header.responseLen > r.maxResponseSize) {
-                    BOOST_LOG_TRIVIAL(trace) << "Got too long response: " << header.responseLen << " bytes. Max: "
-                                             << r.maxResponseSize << " bytes";
+                    /*BOOST_LOG_TRIVIAL(trace) << "Got too long response: " << header.responseLen << " bytes. Max: "
+                                             << r.maxResponseSize << " bytes";*/
                 }
                 responseRemainderSize = header.responseLen;
                 spinlock.unlock();
                 if (header.responseLen == 0) {
                     runResponseHandlerIteration();
                 }
-                BOOST_LOG_TRIVIAL(trace) << "Got resp header|<=== Payload: " << header.responseLen << " bytes. Type: "
-                                         << ((int) header.responseType) << " Tag: " << ((int) header.tag);
+                /*BOOST_LOG_TRIVIAL(trace) << "Got resp header|<=== Payload: " << header.responseLen << " bytes. Type: "
+                                         << ((int) header.responseType) << " Tag: " << ((int) header.tag);*/
                 r.future->resolve(header);
             } else {
                 spinlock.unlock();
@@ -72,7 +71,7 @@ namespace RingSwarm::proto {
             // todo assert(size <= responseRemainderSize)
             responseRemainderSize -= size;
             if (responseRemainderSize == 0) {
-                BOOST_LOG_TRIVIAL(trace) << "read response buffer";
+//                BOOST_LOG_TRIVIAL(trace) << "read response buffer";
                 spinlock.lock();
                 runResponseHandlerIteration();
                 spinlock.unlock();

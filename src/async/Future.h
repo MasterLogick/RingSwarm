@@ -75,7 +75,7 @@ namespace RingSwarm::async {
         }
 
         void resolve() {
-            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
+//            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
             accessSpinlock.lock();
             if (resolved) {
                 accessSpinlock.unlock();
@@ -98,11 +98,11 @@ namespace RingSwarm::async {
                 then1([&m, &cv, this]() {
                     std::lock_guard<std::mutex> l(m);
                     cv.notify_one();
-                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
+//                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
                 });
-                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
+//                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
                 cv.wait(ul, [this]() { return resolved; });
-                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
+//                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
             }
         }
 
@@ -178,7 +178,7 @@ namespace RingSwarm::async {
         }
 
         void resolve(Args... args) {
-            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
+//            BOOST_LOG_TRIVIAL(trace) << "resolved " << this;
             accessSpinlock.lock();
             if (resolved) {
                 accessSpinlock.unlock();
@@ -205,11 +205,11 @@ namespace RingSwarm::async {
                 then1([&m, &cv, this](Args... args) {
                     std::lock_guard<std::mutex> l(m);
                     cv.notify_one();
-                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
+//                    BOOST_LOG_TRIVIAL(trace) << "notified " << this;
                 });
-                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
+//                BOOST_LOG_TRIVIAL(trace) << "wait " << this;
                 cv.wait(ul, [this]() { return resolved; });
-                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
+//                BOOST_LOG_TRIVIAL(trace) << "waited " << this;
                 return resolvedValues;
             }
             return resolvedValues;

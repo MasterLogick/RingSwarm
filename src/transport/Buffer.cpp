@@ -22,7 +22,7 @@ namespace RingSwarm::transport {
     }
 
     Buffer::~Buffer() {
-        delete data;
+        delete[] data;
     }
 
     template<>

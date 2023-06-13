@@ -53,9 +53,11 @@ namespace RingSwarm::transport {
     }
 
     void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |===> "
-                                 << boost::algorithm::hex(std::string(static_cast<char *>(data), len));
-        tcpHandler->write(static_cast<char *>(data), len);
+        std::lock_guard<std::mutex> l(writeLock);
+        /*BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |===> "
+                                 << boost::algorithm::hex(std::string(static_cast<char *>(data), len));*/
+        while (tcpHandler->try_write(static_cast<char *>(data), len) == UV_EAGAIN);
+
     }
 
     void PlainSocketTransport::close() {
@@ -98,10 +100,10 @@ namespace RingSwarm::transport {
             if (currentRequest.data != nullptr) {
                 currentRequest.offset += event.length;
                 if (currentRequest.offset == currentRequest.len) {
-                    BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |<=== "
+                    /*BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |<=== "
                                              << boost::algorithm::hex(
                                                      std::string(reinterpret_cast<const char *>(currentRequest.data),
-                                                                 currentRequest.len));
+                                                                 currentRequest.len));*/
                     currentFuture->resolve();
                     if (!readRequestQueue.empty()) {
                         auto nextRequest = readRequestQueue.front();

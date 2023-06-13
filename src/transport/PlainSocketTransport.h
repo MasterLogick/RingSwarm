@@ -15,6 +15,10 @@ namespace RingSwarm::transport {
         std::shared_ptr<async::Future<void>> currentFuture;
         async::Spinlock accessSpinlock;
         std::queue<std::tuple<std::shared_ptr<async::Future<void>>, void *, uint32_t >> readRequestQueue;
+        std::mutex writeLock;
+/*        std::mutex waitLock;
+        std::condition_variable writeCV;
+        bool written = false;*/
     public:
         PlainSocketTransport(std::string &host, int port);
 

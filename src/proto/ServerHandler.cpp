@@ -44,12 +44,12 @@ namespace RingSwarm::proto {
             if (transport->activeTags.test(h.tag)) {
                 BOOST_LOG_TRIVIAL(trace) << "Got tags collision: " << (int) h.tag;
             }
-            BOOST_LOG_TRIVIAL(trace) << "Got req header  |<=== " << ServerHandler::MethodNames[h.method] << " "
-                                     << h.requestLength << " bytes. Tag: " << ((int) h.tag);
+            /*BOOST_LOG_TRIVIAL(trace) << "Got req header  |<=== " << ServerHandler::MethodNames[h.method] << " "
+                                     << h.requestLength << " bytes. Tag: " << ((int) h.tag);*/
             transport->readBuffer(h.requestLength)->then([this, h](std::shared_ptr<transport::Buffer> b) {
                 listenRequest();
-                BOOST_LOG_TRIVIAL(trace) << "Got req body   |<=== " << ServerHandler::MethodNames[h.method] << " "
-                                         << h.requestLength << " bytes. Tag: " << ((int) h.tag);
+                /*BOOST_LOG_TRIVIAL(trace) << "Got req body   |<=== " << ServerHandler::MethodNames[h.method] << " "
+                                         << h.requestLength << " bytes. Tag: " << ((int) h.tag);*/
                 (this->*ServerHandler::Methods[h.method])(*b.get(), h.tag);
             });
         });

@@ -38,7 +38,7 @@ namespace RingSwarm::proto {
             actualSize = std::min<uint32_t>(maxLen, chunk->getSize() - offset);
         }
         transport->scheduleLongResponse(actualSize, 1, tag)->then([actualSize, chunk, offset](auto lrt) {
-            uint32_t buffSize = 8192;
+            uint32_t buffSize = 1024 * 1024;
             char buf[buffSize];
             for (uint32_t i = 0, sz = buffSize; sz == buffSize; i += buffSize) {
                 sz = std::min<uint32_t>(actualSize - i, buffSize);

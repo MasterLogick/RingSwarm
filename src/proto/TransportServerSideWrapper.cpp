@@ -21,9 +21,9 @@ namespace RingSwarm::proto {
             if (size == 0) {
                 f->resolve();
             }
-            BOOST_LOG_TRIVIAL(trace) << "Started long response. "
+            /*BOOST_LOG_TRIVIAL(trace) << "Started long response. "
                                      << "Payload: " << size << " bytes. Response type: " << ((int) responseType)
-                                     << ". Tag: " << ((int) tag);
+                                     << ". Tag: " << ((int) tag);*/
             lrt->resolve(new LongResponseTransport(transport, f, size));
             return f;
         });
@@ -42,9 +42,9 @@ namespace RingSwarm::proto {
             //todo check if present
             activeTags.reset(tag);
             TransportWrapper::rawWrite(resp->data, resp->len);
-            BOOST_LOG_TRIVIAL(trace) << "Sent response  |===> "
+            /*BOOST_LOG_TRIVIAL(trace) << "Sent response  |===> "
                                      << "Payload: " << resp->len << " bytes. Response type: "
-                                     << ((int) responseType) << ". Tag: " << ((int) tag);
+                                     << ((int) responseType) << ". Tag: " << ((int) tag);*/
         });
         lock.unlock();
     }

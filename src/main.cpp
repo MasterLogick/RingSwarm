@@ -6,18 +6,22 @@
 #include "core/RingSwarmException.h"
 #include <boost/program_options.hpp>
 #include <boost/algorithm/hex.hpp>
-#include "client/FileUploader.h"
 #include "core/Node.h"
 #include "core/ConnectionManager.h"
 #include "transport/connectionInfo/PlainSocketConnectionInfo.h"
 #include <filesystem>
 #include "fuse/FuseController.h"
 #include "async/EventLoop.h"
+#include "core/Thread.h"
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
 
 namespace po = boost::program_options;
 using namespace RingSwarm;
 
 int main(int argc, char **argv, char **envp) {
+    core::setThreadName("Main");
     po::options_description desc("Options");
     std::string host;
     int port;
@@ -50,6 +54,10 @@ int main(int argc, char **argv, char **envp) {
         return 0;
     }
 
+    boost::log::core::get()->set_filter(
+            boost::log::trivial::severity >= boost::log::trivial::trace
+    );
+
     std::string path = "ring-swarm-" + std::to_string(scenario) + ".sqlite3";
     storage::loadStorage(path.c_str());
     crypto::loadNodeKeys();
@@ -65,15 +73,14 @@ int main(int argc, char **argv, char **envp) {
     async::initEventLoop();
     auto *server = new transport::PlainSocketServer(host, port);
     core::Node::thisNode->connectionInfo = server->getConnectionInfo();
-    std::thread([server] { server->listen(); }).detach();
+    server->listen();
 
-
-    async::runTaskHandlers(std::max<int>(1, std::thread::hardware_concurrency()));
+    async::runTaskHandlers(/*std::max<int>(1, std::thread::hardware_concurrency())*/1);
 
     switch (scenario) {
         case 1: {
-            auto d = client::uploadFile("./testFile", 3);
-            fuse::mountRing(d);
+//            auto d = client::uploadFile("/home/user/Videos/2023-06-07 15-11-20.mp4", 3);
+//            fuse::mountRing(d);
             break;
         }
         case 2: {
@@ -83,7 +90,7 @@ int main(int argc, char **argv, char **envp) {
                                         new transport::PlainSocketConnectionInfo("localhost", port - 1));
             std::get<0>(core::getOrConnect(node)->await());
             fuse::mountRing(core::Id::fromHexRepresentation(
-                    "1c5884d02f13b6a75d73236f3adcc53f3d71ff27cc4626d7aa00529a79ea2efa"));
+                    "48c8bf6da8054cc700f519421c9b199c0e3025b525e7a6b786dbc5af5f01cf2c"));
             break;
         }
         default:
@@ -92,4 +99,9 @@ int main(int argc, char **argv, char **envp) {
 
     std::cin.get();
     storage::closeStorage();
+    async::getEventLoop()->stop();
+    async::interruptEventLoop();
+    fuse::stopFuse();
+    BOOST_LOG_TRIVIAL(trace) << "aefesfesfesd";
+    exit(0);
 }

@@ -11,12 +11,11 @@
 
 namespace RingSwarm::transport {
     void SecureOverlayTransport::rawWrite(void *data, uint32_t len) {
-        BOOST_LOG_TRIVIAL(trace) << "Secure overlay |===> "
-                                 << boost::algorithm::hex(std::string(static_cast<char *>(data), len));
+        /*BOOST_LOG_TRIVIAL(trace) << "Secure overlay |===> "
+                                 << boost::algorithm::hex(std::string(static_cast<char *>(data), len));*/
         cypher->encode(data, len);
         transport->rawWrite(data, len);
     }
-
 
     void SecureOverlayTransport::close() {
         transport->close();
@@ -29,8 +28,8 @@ namespace RingSwarm::transport {
     std::shared_ptr<async::Future<void>> SecureOverlayTransport::rawRead(void *data, uint32_t size) {
         return transport->rawRead(data, size)->then([this, data, size]() {
             cypher->decode(static_cast<uint8_t *>(data), size);
-            BOOST_LOG_TRIVIAL(trace) << "Secure overlay |<=== "
-                                     << boost::algorithm::hex(std::string(static_cast<const char *>(data), size));
+            /*BOOST_LOG_TRIVIAL(trace) << "Secure overlay |<=== "
+                                     << boost::algorithm::hex(std::string(static_cast<const char *>(data), size));*/
             return data;
         });
     }
@@ -43,11 +42,11 @@ namespace RingSwarm::transport {
     std::shared_ptr<async::Future<SecureOverlayTransport *>> SecureOverlayTransport::createClientSide(
             Transport *transport, core::PublicKey *remotePublicKey) {
         std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> keyPair(EVP_EC_gen(SN_secp256k1), EVP_PKEY_free);
-        auto *rawPubKey = new core::PublicKey();
-        size_t rawPubKeyLen = rawPubKey->size();
+        core::PublicKey rawPubKey;
+        size_t rawPubKeyLen = rawPubKey.size();
         if (EVP_PKEY_get_octet_string_param(keyPair.get(),
                                             OSSL_PKEY_PARAM_PUB_KEY,
-                                            rawPubKey->data(),
+                                            rawPubKey.data(),
                                             rawPubKeyLen,
                                             &rawPubKeyLen) != 1) {
             throw crypto::CryptoException();
@@ -61,7 +60,7 @@ namespace RingSwarm::transport {
         if (EVP_PKEY_derive_init(ctx.get()) != 1) {
             throw crypto::CryptoException();
         }
-        transport->rawWrite(rawPubKey, rawPubKey->size());
+        transport->rawWrite(rawPubKey.data(), rawPubKey.size());
         //todo optimize
         auto *iv = new uint8_t[16];
         return transport->rawRead(iv, 16)->then<SecureOverlayTransport *>([transport, ctx = ctx.release(),

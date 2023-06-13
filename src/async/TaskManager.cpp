@@ -1,4 +1,5 @@
 #include "TaskManager.h"
+#include "../core/Thread.h"
 #include <list>
 #include <thread>
 #include <mutex>
@@ -19,7 +20,8 @@ namespace RingSwarm::async {
 
     void runTaskHandlers(int threadCount) {
         for (int i = 0; i < threadCount; ++i) {
-            std::thread([] {
+            std::thread([](int i) {
+                core::setThreadName(("Task runner " + std::to_string(i)).c_str());
                 while (true) {
                     std::unique_lock<std::mutex> l(taskReadyLock);
                     condVar.wait(l, [] { return !readyTasks.empty(); });
@@ -29,7 +31,7 @@ namespace RingSwarm::async {
                     //todo try catch exceptions
                     taskInstance();
                 }
-            }).detach();
+            }, i).detach();
         }
     }
 }

@@ -1,6 +1,5 @@
 #include "HashCrypto.h"
 #include "CryptoException.h"
-#include <c++/12/memory>
 #include <openssl/evp.h>
 
 namespace RingSwarm::crypto {
