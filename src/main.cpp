@@ -13,15 +13,17 @@
 #include "fuse/FuseController.h"
 #include "async/EventLoop.h"
 #include "core/Thread.h"
+#include "client/FileUploader.h"
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
+#include <fstream>
 
 namespace po = boost::program_options;
 using namespace RingSwarm;
 
 int main(int argc, char **argv, char **envp) {
-    core::setThreadName("Main");
+    core::setThreadName("RingSwarm");
     po::options_description desc("Options");
     std::string host;
     int port;
@@ -80,7 +82,8 @@ int main(int argc, char **argv, char **envp) {
     switch (scenario) {
         case 1: {
 //            auto d = client::uploadFile("/home/user/Videos/2023-06-07 15-11-20.mp4", 3);
-//            fuse::mountRing(d);
+            fuse::mountRing(core::Id::fromHexRepresentation(
+                    "e8f0a96cdfdd4bf16e92b1d3b6c306d4e60c013338ea4fead9c7dfa82ae55dfc"));
             break;
         }
         case 2: {
@@ -90,7 +93,8 @@ int main(int argc, char **argv, char **envp) {
                                         new transport::PlainSocketConnectionInfo("localhost", port - 1));
             std::get<0>(core::getOrConnect(node)->await());
             fuse::mountRing(core::Id::fromHexRepresentation(
-                    "48c8bf6da8054cc700f519421c9b199c0e3025b525e7a6b786dbc5af5f01cf2c"));
+                    "e8f0a96cdfdd4bf16e92b1d3b6c306d4e60c013338ea4fead9c7dfa82ae55dfc"));
+            std::ifstream file("/home/user/Videos/2023-06-07 15-11-20.mp4");
             break;
         }
         default:

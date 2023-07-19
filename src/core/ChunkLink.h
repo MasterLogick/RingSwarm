@@ -10,15 +10,19 @@ namespace RingSwarm::core {
         Id *const keyId;
         const uint64_t chunkIndex;
         Id *const dataHash;
+        const uint64_t dataSize;
         crypto::Signature *const sign;
 
         constexpr uint32_t getSerializedSize() {
-            return 32 + 8 + 32 + sign->size();
+            return 32 + 8 + 32 + 8 + sign->size();
         }
 
-        static ChunkLink *createChunkLink(crypto::KeyPair &keyPair,
-                                          uint64_t chunkIndex,
-                                          Id *dataHash);
+        static ChunkLink *createChunkLink(
+                crypto::KeyPair &keyPair,
+                uint64_t chunkIndex,
+                Id *dataHash,
+                uint64_t dataSize
+        );
     };
 }
 

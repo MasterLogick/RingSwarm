@@ -15,7 +15,9 @@ namespace RingSwarm::client {
     public:
         explicit CachedKeyHandler(core::Id *keyId);
 
-        uint32_t readData(void *buff, uint32_t len, uint64_t offset) override;
+        std::shared_ptr<async::Future<void *, uint32_t>> readData(uint32_t len, uint64_t offset) override;
+
+        uint64_t getDataSize() override;
 
         ~CachedKeyHandler() override;
     };

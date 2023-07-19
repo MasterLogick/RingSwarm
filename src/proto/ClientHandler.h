@@ -22,7 +22,7 @@ namespace RingSwarm::proto {
 
         std::shared_ptr<async::Future<core::Node *, uint64_t>> getNearestChunk(core::Id *keyid, uint64_t chunkIndex);
 
-        std::shared_ptr<async::Future<core::ChunkLink *>> getChunkLink(core::Id *resp, uint64_t chunkIndex);
+        std::shared_ptr<async::Future<core::ChunkLink *>> getChunkLink(core::Id *keyId, uint64_t chunkIndex);
 
         std::shared_ptr<async::Future<uint32_t>> getChunk(
                 core::Id *keyId, uint64_t chunkIndex, uint64_t offset, void *buffer, uint32_t length);

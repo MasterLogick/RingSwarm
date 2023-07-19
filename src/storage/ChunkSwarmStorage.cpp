@@ -11,7 +11,7 @@ namespace RingSwarm::storage {
 
     ChunkIndexedStorage<core::ChunkSwarm *> chunkSwarmStorage;
     const char *hostedChunkSelect =
-            "select key_id, chunk_index, data_hash, sign\n"
+            "select key_id, chunk_index, data_hash, data_size, sign\n"
             "from chunk_link\n"
             "where key_id = :key_id\n"
             "  and chunk_index = :chunk_index;";
@@ -27,12 +27,13 @@ namespace RingSwarm::storage {
             return nullptr;
         }
         auto sign = new crypto::Signature();
-        auto blobSign = hostedChunkSelectStatement.getBlob(3);
+        auto blobSign = hostedChunkSelectStatement.getBlob(4);
         std::copy(blobSign.begin(), blobSign.end(), sign->begin());
         auto *link = new core::ChunkLink(
                 hostedChunkSelectStatement.getId(0),
                 hostedChunkSelectStatement.getInt64(1),
                 hostedChunkSelectStatement.getId(2),
+                hostedChunkSelectStatement.getInt64(3),
                 sign
         );
         auto *retVal = new core::ChunkSwarm(link, getChunkRing(keyId));
@@ -83,8 +84,8 @@ namespace RingSwarm::storage {
     }
 
     const char *chunkLinkInsert =
-            "insert into chunk_link (key_id, chunk_index, data_hash, sign)\n"
-            "values (:key_id, :chunk_index, :data_hash, :sign);";
+            "insert into chunk_link (key_id, chunk_index, data_hash, data_size, sign)\n"
+            "values (:key_id, :chunk_index, :data_hash, :data_size, :sign);";
 
     void storeChunkSwarm(core::ChunkSwarm *chunkSwarm) {
         if (chunkSwarmStorage.contains(std::pair(chunkSwarm->link->keyId, chunkSwarm->link->chunkIndex))) {
@@ -101,6 +102,7 @@ namespace RingSwarm::storage {
         chunkLinkInsertStatement.bindId(":key_id", link->keyId);
         chunkLinkInsertStatement.bindInt64(":chunk_index", link->chunkIndex);
         chunkLinkInsertStatement.bindId(":data_hash", link->dataHash);
+        chunkLinkInsertStatement.bindInt64(":data_size", link->dataSize);
         chunkLinkInsertStatement.bindSignature(":sign", link->sign);
         chunkLinkInsertStatement.execute();
         storeChunkRing(chunkSwarm->link->keyId, chunkSwarm->ring);

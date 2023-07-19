@@ -13,7 +13,9 @@ if (fuse3_INCLUDE_DIR AND EXISTS "${fuse3_INCLUDE_DIR}/fuse3/fuse_common.h")
     string(REGEX REPLACE "^.*USE_MINOR_VERSION[\t ]+([0-9]+).*$" "\\1" fuse3_MINOR_VERSION "${fuse3_common}")
     set(fuse3_VERSION "${fuse3_MAJOR_VERSION}.${fuse3_MINOR_VERSION}")
 endif ()
-
+if (fuse3_INCLUDE_DIR)
+    set(fuse3_INCLUDE_DIR "${fuse3_INCLUDE_DIR}/fuse3")
+endif ()
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(fuse3
         REQUIRED_VARS fuse3_LIBRARY fuse3_INCLUDE_DIR
         VERSION_VAR fuse3_VERSION)

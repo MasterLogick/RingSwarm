@@ -31,7 +31,7 @@ namespace RingSwarm::client {
         fclose(chunkFile);
         auto chunk = storage::getMappedChunk(keyId, 0);
         auto *dataHash = crypto::hashData(chunk->getData(), chunk->getSize());
-        auto *link = core::ChunkLink::createChunkLink(keyPair, 0, dataHash);
+        auto *link = core::ChunkLink::createChunkLink(keyPair, 0, dataHash, chunk->getSize());
         std::map<uint8_t, core::Node *> keySwarmNodes;
         for (int i = 0; i < minSwarmSize; ++i) {
             keySwarmNodes[i] = core::Node::thisNode;

@@ -18,6 +18,7 @@ namespace RingSwarm::storage {
             "    key_id      blob,\n"
             "    chunk_index integer,\n"
             "    data_hash   blob,\n"
+            "    data_size   integer,\n"
             "    sign        blob,\n"
             "    primary key (key_id, chunk_index)\n"
             ");\n"

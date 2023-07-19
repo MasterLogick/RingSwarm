@@ -157,7 +157,12 @@ add_executable(RingSwarm
         src/async/EventLoop.h
         src/async/EventLoop.cpp
         src/proto/LongResponseTransport.cpp
-        src/proto/LongResponseTransport.h src/core/Thread.h src/core/Thread.h src/core/Thread.cpp)
+        src/proto/LongResponseTransport.h
+        src/core/Thread.h
+        src/core/Thread.h
+        src/core/Thread.cpp
+        src/Assert.h
+        src/Assert.h)
 
 if (WIN32)
     target_compile_definitions(RingSwarm PRIVATE TGT_WINDOWS)

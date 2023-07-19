@@ -1,5 +1,6 @@
 #include <cstring>
 #include "Id.h"
+#include <boost/algorithm/hex.hpp>
 
 namespace RingSwarm::core {
     bool Id::operator==(const Id &rhs) const {
@@ -39,9 +40,7 @@ namespace RingSwarm::core {
 
     Id *Id::fromHexRepresentation(const char *hex) {
         auto *id = new Id();
-        for (int i = 0; i < 32; ++i) {
-            id->hash[i] = 16 * hexCharToInt(hex[i * 2]) + hexCharToInt(hex[i * 2 + 1]);
-        }
+        boost::algorithm::unhex(hex, id->hash);
         return id;
     }
 

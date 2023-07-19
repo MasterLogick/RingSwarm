@@ -11,12 +11,17 @@ namespace RingSwarm::client {
         core::PublicKey *key;
         proto::ClientHandler *keySwarmNode;
         proto::ClientHandler *zeroChunkNode;
+        core::ChunkLink *zeroChunk;
         core::KeyInfo keyInfo;
+
+        std::map<uint64_t, uint8_t *> data;
     public:
 
         ExternalKeyHandler(core::Id *keyId, core::PublicKey *key, proto::ClientHandler *possibleKeySwarmNode);
 
-        uint32_t readData(void *buff, uint32_t len, uint64_t offset) override;
+        std::shared_ptr<async::Future<void *, uint32_t>> readData(uint32_t len, uint64_t offset) override;
+
+        uint64_t getDataSize() override;
 
         ~ExternalKeyHandler() override;
     };
