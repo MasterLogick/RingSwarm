@@ -6,7 +6,7 @@
 namespace RingSwarm::async {
 std::shared_ptr<uvw::loop> &getEventLoop();
 
-void initEventLoop();
+bool initEventLoop();
 
 void interruptEventLoop();
 }// namespace RingSwarm::async
