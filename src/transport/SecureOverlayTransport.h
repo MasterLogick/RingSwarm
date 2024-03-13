@@ -4,29 +4,29 @@
 #include "Transport.h"
 
 namespace RingSwarm::crypto {
-    class SymmetricCypher;
+class SymmetricCypher;
 }
 namespace RingSwarm::transport {
-    class SecureOverlayTransport : public Transport {
-        Transport *transport;
-        crypto::SymmetricCypher *cypher;
+class SecureOverlayTransport : public Transport {
+    Transport *transport;
+    crypto::SymmetricCypher *cypher;
 
-        SecureOverlayTransport(Transport *transport, crypto::SymmetricCypher *cypher);
+    SecureOverlayTransport(Transport *transport, crypto::SymmetricCypher *cypher);
 
-    public:
-        static std::shared_ptr<async::Future<SecureOverlayTransport *>> createClientSide(
-                Transport *transport, core::PublicKey *remotePublicKey);
+public:
+    static std::shared_ptr<async::Future<SecureOverlayTransport *>> createClientSide(
+            Transport *transport, core::PublicKey *remotePublicKey);
 
-        static std::shared_ptr<async::Future<SecureOverlayTransport *>> createServerSide(Transport *transport);
+    static std::shared_ptr<async::Future<SecureOverlayTransport *>> createServerSide(Transport *transport);
 
-        std::shared_ptr<async::Future<void>> rawRead(void* data, uint32_t size) override;
+    std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override;
 
-        void rawWrite(void *data, uint32_t len) override;
+    void rawWrite(void *data, uint32_t len) override;
 
-        void close() override;
+    void close() override;
 
-        ~SecureOverlayTransport() override;
-    };
-}
+    ~SecureOverlayTransport() override;
+};
+}// namespace RingSwarm::transport
 
-#endif //RINGSWARM_SECUREOVERLAYTRANSPORT_H
+#endif//RINGSWARM_SECUREOVERLAYTRANSPORT_H

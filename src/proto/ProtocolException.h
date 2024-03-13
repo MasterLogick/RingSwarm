@@ -4,8 +4,8 @@
 #include <exception>
 
 namespace RingSwarm::proto {
-    class ProtocolException : public std::exception {
-    };
-}
+class ProtocolException : public std::exception {
+};
+}// namespace RingSwarm::proto
 
-#endif //RINGSWARM_PROTOCOLEXCEPTION_H
+#endif//RINGSWARM_PROTOCOLEXCEPTION_H

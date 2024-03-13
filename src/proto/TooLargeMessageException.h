@@ -4,8 +4,8 @@
 #include "ProtocolException.h"
 
 namespace RingSwarm::proto {
-    class TooLargeMessageException : public ProtocolException {
-    };
-}
+class TooLargeMessageException : public ProtocolException {
+};
+}// namespace RingSwarm::proto
 
-#endif //RINGSWARM_TOOLARGEMESSAGEEXCEPTION_H
+#endif//RINGSWARM_TOOLARGEMESSAGEEXCEPTION_H

@@ -1,15 +1,15 @@
 #ifndef RINGSWARM_FUSECONTROLLER_H
 #define RINGSWARM_FUSECONTROLLER_H
 
-#include <string>
 #include "../core/Id.h"
+#include <string>
 
 namespace RingSwarm::fuse {
-    void startFuse(std::string &mountPoint);
+void startFuse(std::string &mountPoint);
 
-    void mountRing(core::Id *keyId);
+void mountRing(core::Id *keyId);
 
-    void stopFuse();
-}
+void stopFuse();
+}// namespace RingSwarm::fuse
 
-#endif //RINGSWARM_FUSECONTROLLER_H
+#endif//RINGSWARM_FUSECONTROLLER_H

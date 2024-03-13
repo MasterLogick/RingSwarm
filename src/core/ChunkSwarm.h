@@ -1,19 +1,19 @@
 #ifndef RINGSWARM_CHUNKSWARM_H
 #define RINGSWARM_CHUNKSWARM_H
 
-#include <string>
-#include <map>
-#include <vector>
-#include "Id.h"
 #include "ChunkLink.h"
-#include "Node.h"
 #include "ChunkRing.h"
+#include "Id.h"
+#include "Node.h"
+#include <map>
+#include <string>
+#include <vector>
 
 namespace RingSwarm::core {
-    struct ChunkSwarm {
-        ChunkLink *link;
-        ChunkRing *ring;
-    };
-}
+struct ChunkSwarm {
+    ChunkLink *link;
+    ChunkRing *ring;
+};
+}// namespace RingSwarm::core
 
-#endif //RINGSWARM_CHUNKSWARM_H
+#endif//RINGSWARM_CHUNKSWARM_H

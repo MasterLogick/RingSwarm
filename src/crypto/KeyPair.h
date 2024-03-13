@@ -5,21 +5,22 @@
 #include <openssl/types.h>
 
 namespace RingSwarm::core {
-    class PublicKey;
+class PublicKey;
 }
 namespace RingSwarm::crypto {
-    class Signature;
+class Signature;
 
-    struct KeyPair {
-        core::PublicKey *const publicKey;
-        EVP_PKEY *privateKey;
-    public:
-        KeyPair();
+struct KeyPair {
+    core::PublicKey *const publicKey;
+    EVP_PKEY *privateKey;
 
-        Signature *signData(void *data, size_t size);
+public:
+    KeyPair();
 
-        ~KeyPair();
-    };
-}
+    Signature *signData(void *data, size_t size);
 
-#endif //RINGSWARM_KEYPAIR_H
+    ~KeyPair();
+};
+}// namespace RingSwarm::crypto
+
+#endif//RINGSWARM_KEYPAIR_H

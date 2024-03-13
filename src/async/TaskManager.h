@@ -4,9 +4,9 @@
 #include <functional>
 
 namespace RingSwarm::async {
-    void addTask(const std::function<void(void)> &task);
+void addTask(const std::function<void(void)> &task);
 
-    void runTaskHandlers(int threadCount);
-}
+void runTaskHandlers(int threadCount);
+}// namespace RingSwarm::async
 
-#endif //RINGSWARM_TASKMANAGER_H
+#endif//RINGSWARM_TASKMANAGER_H

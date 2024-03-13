@@ -1,6 +1,6 @@
 #include "Signature.h"
 
 namespace RingSwarm {
-    namespace crypto {
-    } // RingSwarm
-} // crypto
+namespace crypto {
+}// namespace crypto
+}// namespace RingSwarm

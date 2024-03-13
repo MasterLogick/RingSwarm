@@ -5,10 +5,10 @@
 #include "RequestHeader.h"
 
 namespace RingSwarm::proto {
-    class RequestBuffer : public transport::Buffer {
-    public:
-        RequestBuffer(uint32_t len) : Buffer(len + sizeof(RequestHeader), sizeof(RequestHeader)) {}
-    };
-}
+class RequestBuffer : public transport::Buffer {
+public:
+    RequestBuffer(uint32_t len) : Buffer(len + sizeof(RequestHeader), sizeof(RequestHeader)) {}
+};
+}// namespace RingSwarm::proto
 
-#endif //RINGSWARM_REQUESTBUFFER_H
+#endif//RINGSWARM_REQUESTBUFFER_H

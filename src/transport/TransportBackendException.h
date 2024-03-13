@@ -4,8 +4,8 @@
 #include "../core/RingSwarmException.h"
 
 namespace RingSwarm::transport {
-    class TransportBackendException : public core::RingSwarmException {
-    };
-}
+class TransportBackendException : public core::RingSwarmException {
+};
+}// namespace RingSwarm::transport
 
-#endif //RINGSWARM_TRANSPORTBACKENDEXCEPTION_H
+#endif//RINGSWARM_TRANSPORTBACKENDEXCEPTION_H

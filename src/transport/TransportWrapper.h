@@ -4,30 +4,31 @@
 #include "Transport.h"
 
 namespace RingSwarm::transport {
-    class TransportWrapper : public Transport {
-    protected:
-        Transport *transport;
-    public:
-        TransportWrapper() = default;
+class TransportWrapper : public Transport {
+protected:
+    Transport *transport;
 
-        explicit TransportWrapper(Transport *transport) : transport(transport) {}
+public:
+    TransportWrapper() = default;
 
-        std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override {
-            return transport->rawRead(data, size);
-        }
+    explicit TransportWrapper(Transport *transport) : transport(transport) {}
 
-        void rawWrite(void *data, uint32_t len) override {
-            transport->rawWrite(data, len);
-        }
+    std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override {
+        return transport->rawRead(data, size);
+    }
 
-        void close() override {
-            transport->close();
-        }
+    void rawWrite(void *data, uint32_t len) override {
+        transport->rawWrite(data, len);
+    }
 
-        ~TransportWrapper() override {
-            delete transport;
-        }
-    };
-}
+    void close() override {
+        transport->close();
+    }
 
-#endif //RINGSWARM_TRANSPORTWRAPPER_H
+    ~TransportWrapper() override {
+        delete transport;
+    }
+};
+}// namespace RingSwarm::transport
+
+#endif//RINGSWARM_TRANSPORTWRAPPER_H

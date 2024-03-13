@@ -1,6 +1,6 @@
 #include "KeyInfo.h"
 
 namespace RingSwarm {
-    namespace core {
-    } // RingSwarm
-} // core
+namespace core {
+}// namespace core
+}// namespace RingSwarm

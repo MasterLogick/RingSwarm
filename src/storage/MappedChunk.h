@@ -4,25 +4,25 @@
 #include <cstdint>
 
 namespace RingSwarm::storage {
-    class MappedChunk {
-        uint64_t len;
-        void *data;
-    public:
-//        MappedChunk();
+class MappedChunk {
+    uint64_t len;
+    void *data;
 
-        MappedChunk(void *ptr, uint64_t len) : data(ptr), len(len) {
-        };
+public:
+    //        MappedChunk();
 
-        void *getData() {
-            return data;
-        };
+    MappedChunk(void *ptr, uint64_t len) : data(ptr), len(len){};
 
-        uint64_t getSize() {
-            return len;
-        }
-
-        ~MappedChunk();
+    void *getData() {
+        return data;
     };
-}
 
-#endif //RINGSWARM_MAPPEDCHUNK_H
+    uint64_t getSize() {
+        return len;
+    }
+
+    ~MappedChunk();
+};
+}// namespace RingSwarm::storage
+
+#endif//RINGSWARM_MAPPEDCHUNK_H

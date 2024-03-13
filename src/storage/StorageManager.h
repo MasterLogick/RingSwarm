@@ -5,11 +5,11 @@ class sqlite3;
 
 namespace RingSwarm::storage {
 
-    extern ::sqlite3 *dbConnection;
+extern ::sqlite3 *dbConnection;
 
-    void loadStorage(const char* dbPath);
+void loadStorage(const char *dbPath);
 
-    void closeStorage();
-}
+void closeStorage();
+}// namespace RingSwarm::storage
 
-#endif //RINGSWARM_STORAGEMANAGER_H
+#endif//RINGSWARM_STORAGEMANAGER_H

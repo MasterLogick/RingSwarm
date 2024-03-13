@@ -29,7 +29,7 @@ set(BUILD_UVW_LIBS ON)
 FetchContent_Declare(
         uvw
         GIT_REPOSITORY https://github.com/MasterLogick/uvw.git
-        GIT_TAG b5eea8f01de1ce126ba9993390731e820cdcc1bc
+        GIT_TAG 4956c1512538bdc33ca933cb2788a7b8f79377ca
         GIT_SHALLOW true
 )
 

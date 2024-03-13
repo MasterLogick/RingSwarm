@@ -4,20 +4,22 @@
 #include <atomic>
 
 namespace RingSwarm::async {
-    class Spinlock {
-        std::atomic_flag flag;
-    public:
-        Spinlock() : flag(false) {}
+class Spinlock {
+    std::atomic_flag flag;
 
-        void lock() {
-            while (flag.test_and_set());
-        }
+public:
+    Spinlock() : flag(false) {}
 
-        void unlock() {
-            flag.clear();
-        }
-    };
+    void lock() {
+        while (flag.test_and_set())
+            ;
+    }
 
-} // async
+    void unlock() {
+        flag.clear();
+    }
+};
 
-#endif //RINGSWARM_SPINLOCK_H
+}// namespace RingSwarm::async
+
+#endif//RINGSWARM_SPINLOCK_H

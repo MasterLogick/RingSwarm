@@ -4,11 +4,11 @@
 #include "../core/Node.h"
 
 namespace RingSwarm::storage {
-    core::Node *getNode(core::Id *nodeId);
+core::Node *getNode(core::Id *nodeId);
 
-    void storeNode(core::Node *node);
+void storeNode(core::Node *node);
 
-    void storeThisNode();
-}
+void storeThisNode();
+}// namespace RingSwarm::storage
 
-#endif //RINGSWARM_NODESTORAGE_H
+#endif//RINGSWARM_NODESTORAGE_H

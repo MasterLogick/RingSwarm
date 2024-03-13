@@ -4,7 +4,7 @@
 #include "../core/Id.h"
 
 namespace RingSwarm::client {
-    core::Id *uploadFile(const char *filePath, uint8_t minSwarmSize);
+core::Id *uploadFile(const char *filePath, uint8_t minSwarmSize);
 }
 
-#endif //RINGSWARM_FILEUPLOADER_H
+#endif//RINGSWARM_FILEUPLOADER_H

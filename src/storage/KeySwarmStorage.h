@@ -5,10 +5,10 @@
 #include "../core/KeySwarm.h"
 
 namespace RingSwarm::storage {
-    core::KeySwarm *getKeySwarm(core::Id *keyId);
+core::KeySwarm *getKeySwarm(core::Id *keyId);
 
-    std::vector<core::Id *> getAllStoredKeySwarms();
+std::vector<core::Id *> getAllStoredKeySwarms();
 
-    void storeKeySwarm(core::KeySwarm *keySwarm);
-}
-#endif //RINGSWARM_KEYSWARMSTORAGE_H
+void storeKeySwarm(core::KeySwarm *keySwarm);
+}// namespace RingSwarm::storage
+#endif//RINGSWARM_KEYSWARMSTORAGE_H

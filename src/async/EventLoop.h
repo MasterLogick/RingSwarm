@@ -4,11 +4,11 @@
 #include <uvw/loop.h>
 
 namespace RingSwarm::async {
-    std::shared_ptr<uvw::loop> &getEventLoop();
+std::shared_ptr<uvw::loop> &getEventLoop();
 
-    void initEventLoop();
+void initEventLoop();
 
-    void interruptEventLoop();
-}
+void interruptEventLoop();
+}// namespace RingSwarm::async
 
-#endif //RINGSWARM_EVENTLOOP_H
+#endif//RINGSWARM_EVENTLOOP_H

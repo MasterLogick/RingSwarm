@@ -4,8 +4,8 @@
 #include "../core/RingSwarmException.h"
 
 namespace RingSwarm::crypto {
-    class CryptoException : public core::RingSwarmException {
-    };
-}
+class CryptoException : public core::RingSwarmException {
+};
+}// namespace RingSwarm::crypto
 
-#endif //RINGSWARM_CRYPTOEXCEPTION_H
+#endif//RINGSWARM_CRYPTOEXCEPTION_H

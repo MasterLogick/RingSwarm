@@ -4,9 +4,8 @@
 #include "../core/RingSwarmException.h"
 
 namespace RingSwarm::storage {
-    class StorageException : public core::RingSwarmException {
+class StorageException : public core::RingSwarmException {
+};
+}// namespace RingSwarm::storage
 
-    };
-}
-
-#endif //RINGSWARM_STORAGEEXCEPTION_H
+#endif//RINGSWARM_STORAGEEXCEPTION_H

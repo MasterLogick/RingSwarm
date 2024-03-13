@@ -5,24 +5,25 @@
 #include <string>
 
 namespace RingSwarm::transport {
-    class PlainSocketConnectionInfo : public ConnectionInfo {
-        std::string host;
+class PlainSocketConnectionInfo : public ConnectionInfo {
+    std::string host;
 
-        uint32_t port;
-    public:
-        PlainSocketConnectionInfo(std::string &&host, uint32_t port);
+    uint32_t port;
 
-        PlainSocketConnectionInfo(std::string &host, uint32_t port);
+public:
+    PlainSocketConnectionInfo(std::string &&host, uint32_t port);
 
-        Transport *openConnection() override;
+    PlainSocketConnectionInfo(std::string &host, uint32_t port);
 
-        uint32_t getSerializedSize() override;
+    Transport *openConnection() override;
 
-        void serialize(Buffer &buffer) override;
+    uint32_t getSerializedSize() override;
 
-        static ConnectionInfo *parseConnectionInfo(Buffer &buffer);
-    };
+    void serialize(Buffer &buffer) override;
 
-} // transport
+    static ConnectionInfo *parseConnectionInfo(Buffer &buffer);
+};
 
-#endif //RINGSWARM_PLAINSOCKETCONNECTIONINFO_H
+}// namespace RingSwarm::transport
+
+#endif//RINGSWARM_PLAINSOCKETCONNECTIONINFO_H

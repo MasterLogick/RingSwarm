@@ -2,13 +2,13 @@
 #include <sys/mman.h>
 
 namespace RingSwarm::storage {
-    MappedChunk::~MappedChunk() {
+MappedChunk::~MappedChunk() {
 #ifdef TGT_LINUX
-        munmap(data, len);
+    munmap(data, len);
 #endif
 #ifdef TGT_WINDOWS
 #endif
 #ifdef TGT_APPLE
 #endif
-    }
 }
+}// namespace RingSwarm::storage

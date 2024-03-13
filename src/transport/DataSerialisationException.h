@@ -4,8 +4,8 @@
 #include "../core/RingSwarmException.h"
 
 namespace RingSwarm::transport {
-    class DataSerialisationException : public core::RingSwarmException {
-    };
-}
+class DataSerialisationException : public core::RingSwarmException {
+};
+}// namespace RingSwarm::transport
 
-#endif //RINGSWARM_DATASERIALISATIONEXCEPTION_H
+#endif//RINGSWARM_DATASERIALISATIONEXCEPTION_H
