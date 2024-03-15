@@ -144,9 +144,8 @@ add_executable(RingSwarm
         src/client/KeyHandler.h
         src/client/CachedKeyHandler.cpp
         src/client/CachedKeyHandler.h
-        src/async/TaskManager.cpp
-        src/async/TaskManager.h
-        src/async/Future.h
+        src/async/ThreadPool.cpp
+        src/async/ThreadPool.h
         src/proto/TransportServerSideWrapper.cpp
         src/proto/TransportServerSideWrapper.h
         src/proto/TransportClientSideWrapper.cpp
@@ -162,7 +161,14 @@ add_executable(RingSwarm
         src/core/Thread.h
         src/core/Thread.cpp
         src/Assert.h
-        src/Assert.h)
+        src/Assert.h
+        src/async/ChainedAwaitObject.h
+        src/async/Coroutine.h
+        src/async/FinalAwait.cpp
+        src/async/FinalAwait.h
+        src/async/Promise.h
+        src/async/coroutine.h
+)
 
 if (WIN32)
     target_compile_definitions(RingSwarm PRIVATE TGT_WINDOWS)

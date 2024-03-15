@@ -6,20 +6,20 @@
 #include <iostream>
 
 namespace RingSwarm::async {
-template<class RetType>
+template<class... RetTypes>
 class Coroutine {
-    std::coroutine_handle<Promise<RetType>> handle;
+    std::coroutine_handle<Promise<RetTypes...>> handle;
 
 public:
-    explicit Coroutine(std::coroutine_handle<Promise<RetType>> handle) : handle(std::move(handle)) {
+    explicit Coroutine(std::coroutine_handle<Promise<RetTypes...>> handle) : handle(std::move(handle)) {
         std::cout << "coroutine common constructor" << std::endl;
     }
 
-    Coroutine(const Coroutine<RetType> &c) = delete;
+    Coroutine(const Coroutine<RetTypes...> &c) = delete;
 
-    Coroutine<RetType> &operator=(const Coroutine<RetType> &) = delete;
+    Coroutine<RetTypes...> &operator=(const Coroutine<RetTypes...> &) = delete;
 
-    Coroutine(Coroutine<RetType> &&c) noexcept {
+    Coroutine(Coroutine<RetTypes...> &&c) noexcept {
         handle = c.handle;
         c.handle = nullptr;
     }
@@ -31,7 +31,7 @@ public:
         std::cout << "coroutine delete" << std::endl;
     }
 
-    const std::coroutine_handle<Promise<RetType>> &getHandle() const {
+    const std::coroutine_handle<Promise<RetTypes...>> &getHandle() const {
         return handle;
     }
 };

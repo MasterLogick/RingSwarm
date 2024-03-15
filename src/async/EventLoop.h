@@ -8,7 +8,7 @@ std::shared_ptr<uvw::loop> &getEventLoop();
 
 bool initEventLoop();
 
-void interruptEventLoop();
+void withEventLoopLock(std::function<void(void)> f);
 }// namespace RingSwarm::async
 
 #endif//RINGSWARM_EVENTLOOP_H
