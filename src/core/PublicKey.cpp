@@ -6,11 +6,11 @@
 
 namespace RingSwarm::core {
 
-Id *PublicKey::getId() {
+std::shared_ptr<Id> PublicKey::getId() {
     return crypto::hashData(this);
 }
 
-bool PublicKey::verifyData(std::vector<char> &data, crypto::Signature *sign) {
+bool PublicKey::verifyData(std::vector<char> &pl, crypto::Signature *sign) {
     OSSL_PARAM params[] = {
             OSSL_PARAM_utf8_string(OSSL_PKEY_PARAM_GROUP_NAME, (void *) SN_secp256k1, strlen(SN_secp256k1)),
             OSSL_PARAM_octet_string(OSSL_PKEY_PARAM_PUB_KEY, this->data(), size()),
@@ -36,10 +36,10 @@ bool PublicKey::verifyData(std::vector<char> &data, crypto::Signature *sign) {
     if (EVP_DigestVerifyInit(mdCtx.get(), nullptr, EVP_sha3_256(), nullptr, publicKey.get()) != 1) {
         throw crypto::CryptoException();
     }
-    if (EVP_DigestVerifyUpdate(mdCtx.get(), data.data(), data.size()) != 1) {
+    if (EVP_DigestVerifyUpdate(mdCtx.get(), pl.data(), pl.size()) != 1) {
         throw crypto::CryptoException();
     }
 
-    return EVP_DigestVerifyFinal(mdCtx.get(), cbegin(), size()) == 1;
+    return EVP_DigestVerifyFinal(mdCtx.get(), sign->data(), size()) == 1;
 }
 }// namespace RingSwarm::core

@@ -1,12 +1,10 @@
 #include "ClientHandler.h"
 
 namespace RingSwarm::proto {
-ClientHandler::ClientHandler(transport::Transport *transport, core::Node *remote) : transport(new TransportClientSideWrapper(transport)),
-                                                                                    remote(remote) {
-    handshake();
-}
+ClientHandler::ClientHandler(std::unique_ptr<transport::Transport> transport, core::Node &remote)
+    : clientSideWrapper(std::move(transport)), remote(remote) {}
 
-core::Node *ClientHandler::getRemote() {
+core::Node &ClientHandler::getRemote() {
     return remote;
 }
 }// namespace RingSwarm::proto

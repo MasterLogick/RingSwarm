@@ -9,7 +9,7 @@ ClientHandler::getChunkLink(core::Id *keyId, uint64_t chunkIndex) {
     RequestBuffer req(40);
     req.write(keyId);
     req.write<uint64_t>(chunkIndex);
-    return transport->sendShortRequest(3, req, MAX_RESPONSE_LENGTH)->then<core::ChunkLink *>([](auto resp) {
+    return transport->sendSmallRequest(3, req, MAX_RESPONSE_LENGTH)->then<core::ChunkLink *>([](auto resp) {
         return resp->template read<core::ChunkLink *>();
     });
 }

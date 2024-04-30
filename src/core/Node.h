@@ -2,23 +2,23 @@
 #define RINGSWARM_NODE_H
 
 #include "../crypto/AsymmetricalCrypto.h"
-#include "../transport/connectionInfo/ConnectionInfo.h"
 #include "Id.h"
 #include <memory>
 
 namespace RingSwarm::core {
 struct Node {
-    Id *id;
-    core::PublicKey *publicKey;
-    transport::ConnectionInfo *connectionInfo;
+    std::shared_ptr<Id> id;
+    std::shared_ptr<core::PublicKey> publicKey;
+
+    Node() = default;
+
+    Node(const std::shared_ptr<core::PublicKey> &publicKey) : id(publicKey->getId()), publicKey(publicKey) {}
 
     int getSerializedSize();
 
     bool operator==(Node &rhs) const;
 
     bool operator!=(Node &rhs) const;
-
-    static Node *thisNode;
 };
 }// namespace RingSwarm::core
 

@@ -324,11 +324,12 @@ void startFuse(std::string &mountPoint) {
             .copy_file_range = nullptr,
             .lseek = nullptr};
     nextInode.store(FUSE_ROOT_ID + 1);
-    char *d[] = {strdup("RingSwarm"),
-                 strdup("-oallow_other") /*,
+    char *d[] = {
+            strdup("RingSwarm"),
+            /*strdup("-oallow_other") /*,
                      strdup("-d")*/
     };
-    fuse_args args = FUSE_ARGS_INIT(2, d);
+    fuse_args args = FUSE_ARGS_INIT(sizeof(d) / sizeof(d[0]), d);
     session = fuse_session_new(&args, &ops, sizeof(fuse_lowlevel_ops), nullptr);
     if (session == nullptr) {
         throw FuseException();

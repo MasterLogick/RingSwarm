@@ -12,11 +12,11 @@
 extern "C" void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
 
 namespace RingSwarm::crypto {
-void loadNodeKeys();
+//void loadNodeKeys();
 
-KeyPair genKeyPair();
+//KeyPair genKeyPair();
 
-std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext();
+//std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext();
 
 }// namespace RingSwarm::crypto
 

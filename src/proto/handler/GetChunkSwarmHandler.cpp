@@ -9,7 +9,7 @@ std::shared_ptr<async::Future<std::vector<core::Node *>>> ClientHandler::getChun
     RequestBuffer req(40);
     req.write(keyId);
     req.write<uint64_t>(chunkIndex);
-    return transport->sendShortRequest(9, req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([](auto resp) {
+    return transport->sendSmallRequest(9, req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([](auto resp) {
         return resp->template readVec<core::Node *>();
     });
 }

@@ -31,7 +31,7 @@ core::KeySwarm *getKeySwarm(core::Id *keyId) {
         Statement keySwarmNodeSelectStatement(dbConnection, keySwarmNodeSelect);
         keySwarmNodeSelectStatement.bindId(":key_id", keyId);
         while (keySwarmNodeSelectStatement.nextRow()) {
-            auto *nodeId = keySwarmNodeSelectStatement.getId(0);
+            auto nodeId = keySwarmNodeSelectStatement.getId(0);
             auto *node = storage::getNode(nodeId);
             if (node == nullptr) {
                 delete nodeId;

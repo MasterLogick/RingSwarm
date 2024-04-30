@@ -1,4 +1,5 @@
 #include "NodeStorage.h"
+#include "../transport/Buffer.h"
 #include "ClonedEntityException.h"
 #include "KeyIndexedStorages.h"
 #include "Statement.h"
@@ -22,15 +23,14 @@ core::Node *getNode(core::Id *nodeId) {
         return nullptr;
     }
     transport::Buffer b(nodeSelectStatement.getBlob(1));
-    auto *node = new core::Node(nodeId, nodeSelectStatement.getPublicKey(0),
-                                transport::ConnectionInfo::parseConnectionInfo(b));
+    auto *node = new core::Node(nodeId, nodeSelectStatement.getPublicKey(0));
     nodeStorage[nodeId] = node;
     return node;
 }
 
 const char *nodeInsert =
         "insert into node (node_id, pub_key, connection_info)\n"
-        "values (:node_id, :pub_key, :connection_info);";
+        "values (:node_id, :pub_key);";
 
 void storeNode(core::Node *node) {
     if (nodeStorage.contains(node->id)) {
@@ -45,13 +45,6 @@ void storeNode(core::Node *node) {
     Statement nodeInsertStatement(dbConnection, nodeInsert);
     nodeInsertStatement.bindId(":node_id", node->id);
     nodeInsertStatement.bindPublicKey(":pub_key", node->publicKey);
-    transport::Buffer b(node->connectionInfo->getSerializedSize());
-    node->connectionInfo->serialize(b);
-    nodeInsertStatement.bindBlob(":connection_info", b.toBlob());
     nodeInsertStatement.execute();
-}
-
-void storeThisNode() {
-    nodeStorage[core::Node::thisNode->id] = core::Node::thisNode;
 }
 }// namespace RingSwarm::storage

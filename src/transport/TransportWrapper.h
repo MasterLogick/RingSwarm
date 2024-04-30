@@ -6,14 +6,12 @@
 namespace RingSwarm::transport {
 class TransportWrapper : public Transport {
 protected:
-    Transport *transport;
+    std::unique_ptr<Transport> transport;
 
 public:
-    TransportWrapper() = default;
+    explicit TransportWrapper(std::unique_ptr<Transport> wrappedTransport) : transport(std::move(wrappedTransport)) {}
 
-    explicit TransportWrapper(Transport *transport) : transport(transport) {}
-
-    std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override {
+    async::Coroutine<> rawRead(void *data, uint32_t size) override {
         return transport->rawRead(data, size);
     }
 
@@ -25,9 +23,7 @@ public:
         transport->close();
     }
 
-    ~TransportWrapper() override {
-        delete transport;
-    }
+    ~TransportWrapper() override = default;
 };
 }// namespace RingSwarm::transport
 

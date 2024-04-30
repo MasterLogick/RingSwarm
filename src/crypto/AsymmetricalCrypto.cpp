@@ -91,11 +91,6 @@ void loadNodeKeys() {
     std::string serializedPrivKey = core::getSetting("private key");
     loadPubKey(serializedPubKey);
     loadPrivKey(serializedPrivKey);
-    core::Node::thisNode->id = hashData(nodePubKey);
-    core::Node::thisNode->publicKey = nodePubKey;
-    storage::storeThisNode();
-    BOOST_LOG_TRIVIAL(debug) << "Loaded node keys. ID: " << core::Node::thisNode->id->getHexRepresentation()
-                             << " Pub key: " << serializedPubKey;
 }
 
 std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> initDeriveKeyContext() {

@@ -1,47 +1,93 @@
 #include "EventLoop.h"
 
+#include "../Assert.h"
 #include "../core/Thread.h"
+#include "EventLoopLock.h"
 
 #include <condition_variable>
 #include <thread>
 
 #include <boost/log/trivial.hpp>
 #include <uvw/pipe.h>
+#include <uvw/tcp.h>
 
 namespace RingSwarm::async {
 using namespace uvw;
-std::shared_ptr<loop> eventLoop;
 
-std::shared_ptr<loop> &getEventLoop() {
-    return eventLoop;
-}
+EventLoop *EventLoop::mainEventLoop = nullptr;
 
-std::shared_ptr<pipe_handle> reader;
-std::shared_ptr<pipe_handle> writer;
-std::mutex writeLock;
-bool written = false;
+char smallBuffer[1024];
 
-bool initEventLoop() {
-    eventLoop = loop::create();
+bool EventLoop::run() {
+    Assert(uvwEventLoop == nullptr, "event loop re-entrance detected");
+    uvwEventLoop = loop::create();
     uv_file fds[2];
     if (uv_pipe(fds, UV_NONBLOCK_PIPE, UV_NONBLOCK_PIPE) != 0) {
+        uvwEventLoop = nullptr;
         return false;
     }
-    reader = eventLoop->resource<pipe_handle>();
+    reader = uvwEventLoop->resource<pipe_handle>();
     reader->open(fds[0]);
-    reader->read();
-    writer = eventLoop->resource<pipe_handle>();
+    reader->on<data_event>([](auto &event, auto &handler) {
+        event.data.release();
+    });
+    reader->read<[](auto &p, auto suggested) { return std::pair<char *, decltype(suggested)>{smallBuffer, sizeof(smallBuffer)}; }>();
+    writer = uvwEventLoop->resource<pipe_handle>();
     writer->open(fds[1]);
-    std::thread([] {
-        core::setThreadName("Event loop");
-        async::getEventLoop()->run();
-    }).detach();
+    eventLoopThread = std::thread([this] {
+        core::setThreadName("RingSwarm - libuv event loop");
+        while (!stopping) {
+            eventLoopEnteredLock.lock();
+            loopRunResult = uvwEventLoop->run(uvw::loop::run_mode::ONCE);
+            eventLoopEnteredLock.unlock();
+            eventLoopExitedLock.lock();
+            eventLoopExitedLock.unlock();
+        }
+    });
+    auto ell = acquireEventLoopLock();
     return true;
 }
 
-void interruptEventLoop() {
-    std::lock_guard<std::mutex> l(writeLock);
+int EventLoop::stop() {
+    Assert(uvwEventLoop != nullptr && uvwEventLoop->alive(), "event loop must be alive");
+    stopping = true;
+    {
+        auto ell = acquireEventLoopLock();
+        uvwEventLoop->stop();
+    }
+    eventLoopThread.join();
+    return loopRunResult;
+}
+
+EventLoopLock EventLoop::acquireEventLoopLock() {
+    Assert(uvwEventLoop != nullptr && uvwEventLoop->alive(), "event loop must be alive");
+    auto id = std::this_thread::get_id();
+    if (currentExitedLockOwner == id || eventLoopThread.get_id() == id) return EventLoopLock(nullptr);
+    eventLoopExitedLock.lock();
+    EventLoopLock lg(this);
+    currentExitedLockOwner = id;
     char c = 0;
-    while (writer->try_write(&c, 1) == UV_EAGAIN) {}
+    int rc;
+    do {
+        rc = writer->try_write(&c, 1);
+    } while (rc == UV_EAGAIN);
+    Assert(rc == 1, "incorrect bytes written count");
+    eventLoopEnteredLock.lock();
+    eventLoopEnteredLock.unlock();
+    return std::move(lg);
+}
+std::shared_ptr<uvw::tcp_handle> EventLoop::createTcpSocket() {
+    Assert(uvwEventLoop != nullptr, "event loop must be initialized");
+    acquireEventLoopLock();
+    return uvwEventLoop->resource<uvw::tcp_handle>();
+}
+std::shared_ptr<uvw::get_addr_info_req> EventLoop::createAddrInfoReq() {
+    Assert(uvwEventLoop != nullptr, "event loop must be initialized");
+    acquireEventLoopLock();
+    return uvwEventLoop->resource<uvw::get_addr_info_req>();
+}
+void EventLoop::unlockEventLoop() {
+    currentExitedLockOwner = std::thread::id();
+    eventLoopExitedLock.unlock();
 }
 }// namespace RingSwarm::async

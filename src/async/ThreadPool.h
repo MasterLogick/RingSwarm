@@ -8,6 +8,8 @@
 
 namespace RingSwarm::async {
 class ThreadPool {
+    static ThreadPool *defaultThreadPool;
+
     std::vector<std::thread> pool;
     std::vector<void *> tasks;
     std::mutex popLock;
@@ -17,7 +19,13 @@ class ThreadPool {
     bool stopFlag = false;
 
 public:
-    explicit ThreadPool(int threadNum);
+    static ThreadPool *getDefaultThreadPool() {
+        return defaultThreadPool;
+    }
+    static void setDefaultThreadPool(ThreadPool *pool) {
+        defaultThreadPool = pool;
+    }
+    explicit ThreadPool(unsigned int threadNum);
 
     void resumeCoroutine(void *handle);
 

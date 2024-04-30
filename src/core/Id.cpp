@@ -38,14 +38,20 @@ char hexCharToInt(char c) {
     }
 }
 
-Id *Id::fromHexRepresentation(const char *hex) {
-    auto *id = new Id();
+std::shared_ptr<Id> Id::fromHexRepresentation(const char *hex) {
+    std::shared_ptr<Id> id;
     boost::algorithm::unhex(hex, id->hash);
     return id;
 }
 
-Id *Id::fromBlob(std::vector<char> blob) {
-    auto *id = new Id();
+std::shared_ptr<Id> Id::fromBlob(std::vector<char> blob) {
+    std::shared_ptr<Id> id;
+    memcpy(id->hash, blob.data(), 32);
+    return id;
+}
+
+std::shared_ptr<Id> Id::fromBlob(std::vector<char> &blob) {
+    std::shared_ptr<Id> id;
     memcpy(id->hash, blob.data(), 32);
     return id;
 }

@@ -1,7 +1,7 @@
 #ifndef RINGSWARM_PLAINSOCKETSERVER_H
 #define RINGSWARM_PLAINSOCKETSERVER_H
 
-#include "connectionInfo/ConnectionInfo.h"
+#include "../async/coroutine.h"
 #include <boost/asio/awaitable.hpp>
 #include <string>
 #include <uvw/tcp.h>
@@ -9,16 +9,17 @@
 namespace RingSwarm::transport {
 class PlainSocketConnectionInfo;
 
+class PlainSocketTransport;
+
 class PlainSocketServer {
     std::shared_ptr<uvw::tcp_handle> serverHandler;
-    PlainSocketConnectionInfo *connectionInfo;
+    std::function<void(std::unique_ptr<PlainSocketTransport>)> listenHandler;
 
 public:
-    PlainSocketServer(std::string &host, int port);
+    PlainSocketServer(std::string host, int port);
+    ~PlainSocketServer();
 
-    void listen();
-
-    RingSwarm::transport::ConnectionInfo *getConnectionInfo();
+    int listen(std::function<void(std::unique_ptr<PlainSocketTransport>)> handler);
 };
 }// namespace RingSwarm::transport
 

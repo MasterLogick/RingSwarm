@@ -3,7 +3,7 @@
 #include <openssl/evp.h>
 
 namespace RingSwarm::crypto {
-core::Id *hashData(void *data, size_t size) {
+std::shared_ptr<core::Id> hashData(void *data, size_t size) {
     std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> ctx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
     if (ctx == nullptr) {
         throw CryptoException();
@@ -14,10 +14,9 @@ core::Id *hashData(void *data, size_t size) {
     if (EVP_DigestUpdate(ctx.get(), data, size) != 1) {
         throw CryptoException();
     }
-    auto *id = new core::Id();
+    auto id = std::make_shared<core::Id>();
     uint out;
     if (EVP_DigestFinal_ex(ctx.get(), id->hash, &out) != 1) {
-        delete id;
         throw CryptoException();
     }
     return id;

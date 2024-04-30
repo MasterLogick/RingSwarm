@@ -7,7 +7,7 @@ namespace RingSwarm::proto {
 struct ResponseHeader {
     uint32_t responseLen;
     uint8_t responseType;
-    uint8_t tag;
+    uint16_t tag;
 } __attribute__((packed));
 }// namespace RingSwarm::proto
 

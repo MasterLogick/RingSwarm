@@ -3,7 +3,7 @@
 
 namespace RingSwarm::core {
 int Node::getSerializedSize() {
-    return publicKey->size() + connectionInfo->getSerializedSize();
+    return publicKey->size();
 }
 
 bool Node::operator==(Node &rhs) const {
@@ -13,6 +13,4 @@ bool Node::operator==(Node &rhs) const {
 bool Node::operator!=(Node &rhs) const {
     return !(*this == rhs);
 }
-
-Node *Node::thisNode = new Node();
 }// namespace RingSwarm::core

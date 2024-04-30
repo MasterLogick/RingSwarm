@@ -2,8 +2,8 @@
 #define RINGSWARM_SYMMETRICALCRYPHER_H
 
 #include "../transport/Transport.h"
-#include <openssl/types.h>
 #include <openssl/evp.h>
+#include <openssl/types.h>
 #include <vector>
 
 namespace RingSwarm::crypto {
@@ -13,14 +13,11 @@ class SymmetricCypher {
 
 public:
     SymmetricCypher(std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> ctx,
-                    core::PublicKey *serializedPublicKey, const uint8_t *iv);
+                    core::PublicKey &serializedPublicKey, const uint8_t *iv);
 
-    void encode(void *data, uint32_t size);
-    //        void write(RingSwarm::transport::Transport *transport, void *data, uint32_t len);
+    void encode(void *output, void *input, uint32_t size);
 
-    //        uint32_t rawNonBlockingRead(transport::Transport *transport, void *data, uint32_t len);
-
-    void decode(uint8_t *data, uint32_t size);
+    void decode(void *output, void *input, uint32_t size);
 };
 }// namespace RingSwarm::crypto
 

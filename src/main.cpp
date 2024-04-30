@@ -1,29 +1,57 @@
 #include "async/EventLoop.h"
-#include "client/FileUploader.h"
-#include "core/ConnectionManager.h"
-#include "core/Node.h"
-#include "core/RingSwarmException.h"
-#include "core/Thread.h"
-#include "crypto/AsymmetricalCrypto.h"
-#include "fuse/FuseController.h"
-#include "storage/StorageManager.h"
-#include "transport/PlainSocketServer.h"
-#include "transport/connectionInfo/PlainSocketConnectionInfo.h"
-#include <boost/algorithm/hex.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/program_options.hpp>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <thread>
+#include "async/ThreadPool.h"
+#include "core/NodeContext.h"
+#include "proto/RequestHeader.h"
+#include "transport/PlainSocketTransport.h"
 
-namespace po = boost::program_options;
 using namespace RingSwarm;
 
+async::Coroutine<> test() {
+    transport::PlainSocketTransport client;
+    int conn = co_await client.connect("localhost", 12345);
+    if (conn != 0) {
+        co_return;
+    }
+    proto::RequestHeader rh{
+            .requestLength = 0,
+            .method = RingSwarm::proto::CommandId_GetKey,
+            .tag = 1};
+    client.rawWrite(&rh, sizeof(rh));
+
+    char c;
+    co_await client.rawRead(&c, 1);
+    BOOST_LOG_TRIVIAL(trace) << "Read data: " << c;
+}
+
 int main(int argc, char **argv, char **envp) {
-    core::setThreadName("RingSwarm");
+    async::ThreadPool::setDefaultThreadPool(new async::ThreadPool(1));
+    async::EventLoop::setMainEventLoop(new async::EventLoop());
+    auto mainEventLoopRunRes = async::EventLoop::getMainEventLoop()->run();
+    if (!mainEventLoopRunRes) {
+        BOOST_LOG_TRIVIAL(error) << "Main event loop initialization failed";
+        return -1;
+    }
+
+    core::NodeContext ctx;
+    ctx.addServer("0.0.0.0", 12345);
+
+    //    transport::PlainSocketServer server("0.0.0.0", 12345);
+    //    int err = server.listen([](std::unique_ptr<transport::PlainSocketTransport> sock) {
+    //        std::cout << "Connected!!!" << std::endl;
+    //        char c = '#';
+    //        sock->rawWrite(&c, 1);
+    //    });
+    //    if (err) {
+    //        BOOST_LOG_TRIVIAL(error) << "Server listen error: " << err;
+    //        return -1;
+    //    }
+    async::Coroutine<> c = test();
+    async::ThreadPool::getDefaultThreadPool()->waitEmpty();
+    while (!c.getHandle().done()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    async::EventLoop::getMainEventLoop()->stop();
+    async::ThreadPool::getDefaultThreadPool()->blockingStop();
+    BOOST_LOG_TRIVIAL(trace) << "end";
+    /*core::setThreadName("RingSwarm");
     po::options_description desc("Options");
     std::string host;
     int port;
@@ -67,14 +95,15 @@ int main(int argc, char **argv, char **envp) {
     } catch (std::filesystem::filesystem_error &e) {
         system(("fusermount3 -uz " + fuseMP).c_str());
     }
-    RingSwarm::fuse::startFuse(fuseMP);
+//    RingSwarm::fuse::startFuse(fuseMP);
 
     async::initEventLoop();
     auto *server = new transport::PlainSocketServer(host, port);
     core::Node::thisNode->connectionInfo = server->getConnectionInfo();
     server->listen();
 
-    async::runTaskHandlers(/*std::max<int>(1, std::thread::hardware_concurrency())*/ 1);
+    async::runTaskHandlers(*/
+    /*std::max<int>(1, std::thread::hardware_concurrency())*/ /* 1);
 
     switch (scenario) {
         case 1: {
@@ -104,5 +133,5 @@ int main(int argc, char **argv, char **envp) {
     async::interruptEventLoop();
     fuse::stopFuse();
     BOOST_LOG_TRIVIAL(trace) << "aefesfesfesd";
-    exit(0);
+    exit(0);*/
 }

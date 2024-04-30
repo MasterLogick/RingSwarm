@@ -1,53 +1,48 @@
 #include "PlainSocketServer.h"
+#include "../Assert.h"
 #include "../async/EventLoop.h"
 #include "../proto/ServerHandler.h"
 #include "PlainSocketTransport.h"
-#include "connectionInfo/PlainSocketConnectionInfo.h"
-#include <boost/asio/ip/tcp.hpp>
 #include <boost/log/trivial.hpp>
 #include <thread>
-#include <uvw/dns.h>
 
 namespace RingSwarm::transport {
-using namespace uvw;
 
-PlainSocketServer::PlainSocketServer(std::string &host, int port) : connectionInfo(new PlainSocketConnectionInfo(host, port)),
-                                                                    serverHandler(async::getEventLoop()->resource<tcp_handle>()) {
-    serverHandler->on<uvw::listen_event>([](auto &, auto &server) {
-        auto socket = async::getEventLoop()->resource<uvw::tcp_handle>();
-        server.accept(*socket);
-        async::interruptEventLoop();
-        auto peer = socket->peer();
-        BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from " << peer.ip << ":" << peer.port;
-        proto::ServerHandler::Handle(new PlainSocketTransport(socket));
+PlainSocketServer::PlainSocketServer(std::string host, int port) {
+    auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
+    serverHandler = async::EventLoop::getMainEventLoop()->createTcpSocket();
+    serverHandler->on<uvw::error_event>([](auto &event, auto &) {
+        BOOST_LOG_TRIVIAL(error) << "Plain tcp server error: " << event.what();
     });
-    serverHandler->on<error_event>([](auto &evt, auto &) {
-        BOOST_LOG_TRIVIAL(debug) << "Plain tcp server error: " << evt.what();
-    });
-    addrinfo hints;
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-    auto req = async::getEventLoop()->resource<get_addr_info_req>();
-    auto resp = req->addr_info_sync(host, std::to_string(port), &hints);
-    if (resp.first) {
-        for (auto x = resp.second.get(); x != nullptr; x = x->ai_next) {
-            if (serverHandler->bind(*resp.second->ai_addr) == 0) {
-                return;
-            }
-        }
+
+    int err = serverHandler->bind(host, port);
+    if (err != 0) {
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp server could not bind on " << host << ":" << port << ". err: " << err;
+        //todo handle
     }
-    BOOST_LOG_TRIVIAL(trace) << "Plain tcp server could not listed on " << host << ":" << port;
 }
 
-void PlainSocketServer::listen() {
+int PlainSocketServer::listen(std::function<void(std::unique_ptr<PlainSocketTransport>)> handler) {
+    Assert(listenHandler == nullptr, "server listen handler must be null before listening");
+    listenHandler = std::move(handler);
+    auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
     BOOST_LOG_TRIVIAL(debug) << "Plain tcp server starts listening";
-    serverHandler->listen();
-    async::interruptEventLoop();
+    serverHandler->on<uvw::listen_event>([this](auto &event, uvw::tcp_handle &server) {
+        auto socket = async::EventLoop::getMainEventLoop()->createTcpSocket();
+        server.accept(*socket);
+        auto peer = socket->peer();
+        auto sock = socket->sock();
+        BOOST_LOG_TRIVIAL(debug) << "Plain tcp server accepted connection from " << peer.ip << ":" << peer.port << " to " << sock.ip << ":" << sock.port;
+        listenHandler(std::make_unique<PlainSocketTransport>(socket));
+    });
+    int err = serverHandler->listen();
+    if (err != 0) {
+        BOOST_LOG_TRIVIAL(error) << "Plain tcp server error: " << err;
+    }
+    return err;
 }
-
-ConnectionInfo *PlainSocketServer::getConnectionInfo() {
-    return connectionInfo;
+PlainSocketServer::~PlainSocketServer() {
+    auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
+    serverHandler->close();
 }
 }// namespace RingSwarm::transport

@@ -9,7 +9,7 @@ std::shared_ptr<async::Future<std::vector<core::Node *>>> ClientHandler::noticeJ
     RequestBuffer req(33);
     req.write(keyId);
     req.write<uint8_t>(index);
-    return transport->sendShortRequest(sizeof(ResponseHeader), req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([](auto resp) {
+    return transport->sendSmallRequest(sizeof(ResponseHeader), req, MAX_RESPONSE_SIZE)->then<std::vector<core::Node *>>([](auto resp) {
         return resp->template readVec<core::Node *>();
     });
 }

@@ -4,7 +4,7 @@
 #include "../transport/Buffer.h"
 #include "../transport/Transport.h"
 #include "RequestHeader.h"
-#include "TransportServerSideWrapper.h"
+#include "ServerResponseState.h"
 #include <map>
 #include <memory>
 #include <set>
@@ -12,49 +12,61 @@
 
 namespace RingSwarm::proto {
 class ServerHandler {
-    RequestHeader nextHeader;
-    TransportServerSideWrapper *transport;
-    core::Node *remote;
+    std::vector<std::reference_wrapper<ServerResponseState>> finishedHandlers;
+    std::map<uint16_t, ServerResponseState> pendingResponses;
+    std::unique_ptr<transport::Transport> transport;
+    core::Node &remote;
+    std::mutex lock;
+    bool listening;
 
-    void listenRequest();
+    async::Coroutine<> handleRequest(ServerResponseState &serverRespState);
 
-    void errorStop();
+    async::Coroutine<> stubHandler(ServerResponseState &serverRespState);
 
-    void sendNodeListResponse(std::vector<core::Node *> &nodeList, uint8_t responseType, uint8_t tag);
+    /*    async::Coroutine<> handleGetKey(ServerResponseState &request);
 
-    void handleHandshake();
+    async::Coroutine<> handleGetNearestChunk(ServerResponseState &request);
 
-    void handleGetKey(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleGetChunkLink(ServerResponseState &request);
 
-    void handleGetNearestChunk(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleGetChunk(ServerResponseState &request);
 
-    void handleGetChunkLink(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleDragIntoKeySwarm(ServerResponseState &request);
 
-    void handleGetChunk(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleNoticeJoinedKeySwarm(ServerResponseState &request);
 
-    void handleDragIntoKeySwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleNoticeJoinedChunkSwarm(ServerResponseState &request);
 
-    void handleNoticeJoinedKeySwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleGetKeySwarm(ServerResponseState &request);
 
-    void handleNoticeJoinedChunkSwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleGetChunkSwarm(ServerResponseState &request);
 
-    void handleGetKeySwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleNoticeLeavedChunkSwarm(ServerResponseState &request);
 
-    void handleGetChunkSwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleSubscribeOnChunkChange(ServerResponseState &request);
 
-    void handleNoticeLeavedChunkSwarm(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleChunkChangeEvent(ServerResponseState &request);
 
-    void handleSubscribeOnChunkChange(transport::Buffer &request, uint8_t tag);
+    async::Coroutine<> handleUnsubscribeOnChunkChange(ServerResponseState &request);*/
 
-    void handleChunkChangeEvent(transport::Buffer &request, uint8_t tag);
-
-    void handleUnsubscribeOnChunkChange(transport::Buffer &request, uint8_t tag);
-
-    typedef void (ServerHandler::*RequestHandler)(transport::Buffer &buffer, uint8_t);
+    typedef async::Coroutine<> (ServerHandler::*RequestHandler)(ServerResponseState &);
 
     constexpr static RequestHandler Methods[] = {
-            nullptr,
-            &ServerHandler::handleGetKey,
+            &ServerHandler::stubHandler,// end connection handle
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            &ServerHandler::stubHandler,
+            /*          &ServerHandler::handleGetKey,
             &ServerHandler::handleGetNearestChunk,
             &ServerHandler::handleGetChunkLink,
             &ServerHandler::handleGetChunk,
@@ -66,30 +78,14 @@ class ServerHandler {
             &ServerHandler::handleNoticeLeavedChunkSwarm,
             &ServerHandler::handleSubscribeOnChunkChange,
             &ServerHandler::handleChunkChangeEvent,
-            &ServerHandler::handleUnsubscribeOnChunkChange};
+            &ServerHandler::handleUnsubscribeOnChunkChange*/
+    };
 
-    explicit ServerHandler(transport::Transport *transport);
+    static_assert(sizeof(Methods) == sizeof(Methods[0]) * CommandId_COMMAND_COUNT, "command handlers count mismatch with command id count");
 
 public:
-    constexpr static uint16_t MethodsCount = 14;
-    static_assert(sizeof(Methods) == sizeof(RequestHandler) * MethodsCount);
-    constexpr static const char *MethodNames[] = {
-            nullptr,
-            "GetKey",
-            "GetNearestChunk",
-            "GetChunkLink",
-            "GetChunk",
-            "DragIntoKeySwarm",
-            "NoticeJoinedKeySwarm",
-            "NoticeJoinedChunkSwarm",
-            "GetKeySwarm",
-            "GetChunkSwarm",
-            "NoticeLeavedChunkSwarm",
-            "SubscribeOnChunkChange",
-            "ChunkChangeEvent",
-            "UnsubscribeOnChunkChange"};
-
-    static void Handle(transport::Transport *serverSide);
+    explicit ServerHandler(std::unique_ptr<transport::Transport> transport, core::Node &remote);
+    async::Coroutine<> listen();
 };
 }// namespace RingSwarm::proto
 

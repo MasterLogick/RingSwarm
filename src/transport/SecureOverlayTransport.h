@@ -6,26 +6,28 @@
 namespace RingSwarm::crypto {
 class SymmetricCypher;
 }
+
 namespace RingSwarm::transport {
 class SecureOverlayTransport : public Transport {
-    Transport *transport;
-    crypto::SymmetricCypher *cypher;
+    std::unique_ptr<Transport> transport;
+    std::unique_ptr<crypto::SymmetricCypher> cypher;
+    std::vector<char> buffer;
 
-    SecureOverlayTransport(Transport *transport, crypto::SymmetricCypher *cypher);
+    SecureOverlayTransport(std::unique_ptr<Transport> transport, std::unique_ptr<crypto::SymmetricCypher> cypher);
 
 public:
-    static std::shared_ptr<async::Future<SecureOverlayTransport *>> createClientSide(
-            Transport *transport, core::PublicKey *remotePublicKey);
+    static async::Coroutine<std::unique_ptr<SecureOverlayTransport>> createClientSide(
+            std::unique_ptr<Transport> transport, core::PublicKey &remotePublicKey);
 
-    static std::shared_ptr<async::Future<SecureOverlayTransport *>> createServerSide(Transport *transport);
+    static async::Coroutine<std::unique_ptr<SecureOverlayTransport>, std::shared_ptr<core::PublicKey>> createServerSide(std::unique_ptr<Transport> transport);
 
-    std::shared_ptr<async::Future<void>> rawRead(void *data, uint32_t size) override;
+    async::Coroutine<> rawRead(void *data, uint32_t size) override;
 
     void rawWrite(void *data, uint32_t len) override;
 
     void close() override;
 
-    ~SecureOverlayTransport() override;
+    ~SecureOverlayTransport() override = default;
 };
 }// namespace RingSwarm::transport
 

@@ -1,6 +1,5 @@
 #include "Buffer.h"
 #include "../core/Node.h"
-#include "../crypto/AsymmetricalCrypto.h"
 #include "../crypto/HashCrypto.h"
 #include "DataSerialisationException.h"
 #include <cstring>
@@ -9,7 +8,11 @@
 namespace RingSwarm::transport {
 
 Buffer::Buffer(uint32_t len, uint32_t offset) {
-    data = new uint8_t[len];
+    if (len > 0) {
+        data = new uint8_t[len];
+    } else {
+        data = nullptr;
+    }
     this->len = len;
     this->offset = offset;
 }
@@ -26,18 +29,18 @@ Buffer::~Buffer() {
 }
 
 template<>
-core::Id *Buffer::read<core::Id *>() {
+std::shared_ptr<core::Id> Buffer::read<std::shared_ptr<core::Id>>() {
     if (len - offset < 32) {
         throw DataSerialisationException();
     }
-    auto *d = new core::Id();
+    auto d = std::make_shared<core::Id>();
     std::memcpy(d->hash, data + offset, 32);
     offset += 32;
     return d;
 }
 
 template<>
-void Buffer::write(core::Id *id) {
+void Buffer::write(std::shared_ptr<core::Id> id) {
     if (len - offset < 32) {
         throw DataSerialisationException();
     }
@@ -74,37 +77,35 @@ void Buffer::write(crypto::Signature *sign) {
 }
 
 template<>
-core::PublicKey *Buffer::read<core::PublicKey *>() {
-    auto *key = new core::PublicKey();
+std::shared_ptr<core::PublicKey> Buffer::read<std::shared_ptr<core::PublicKey>>() {
+    auto key = std::make_shared<core::PublicKey>();
     readData(reinterpret_cast<char *>(key->data()), key->size());
     return key;
 }
 
 template<>
-void Buffer::write(core::PublicKey *publicKey) {
+void Buffer::write(std::shared_ptr<core::PublicKey> publicKey) {
     writeData(reinterpret_cast<char *>(publicKey->data()), publicKey->size());
 }
 
 template<>
 core::Node *Buffer::read<core::Node *>() {
     auto *node = new core::Node();
-    node->publicKey = read<core::PublicKey *>();
-    node->connectionInfo = ConnectionInfo::parseConnectionInfo(*this);
-    node->id = crypto::hashData(node->publicKey);
+    node->publicKey = read<std::shared_ptr<core::PublicKey>>();
+    node->id = crypto::hashData(*node->publicKey);
     return node;
 }
 
 template<>
 void Buffer::write(core::Node *node) {
     write(node->publicKey);
-    node->connectionInfo->serialize(*this);
 }
 
 template<>
 core::ChunkLink *Buffer::read<core::ChunkLink *>() {
-    auto *keyId = read<core::Id *>();
+    auto keyId = read<std::shared_ptr<core::Id>>();
     auto chunkIndex = read<uint64_t>();
-    auto *dataHash = read<core::Id *>();
+    auto dataHash = read<std::shared_ptr<core::Id>>();
     auto dataSize = read<uint64_t>();
     auto sign = read<crypto::Signature *>();
     return new core::ChunkLink(keyId, chunkIndex, dataHash, dataSize, sign);
@@ -145,13 +146,17 @@ std::vector<char> Buffer::toBlob() {
 }
 
 uint32_t Buffer::calcSize(core::Node *n) {
-    return calcSize((core::PublicKey *) nullptr) + n->connectionInfo->getSerializedSize();
-}
-
-Buffer::Buffer(const Buffer &buffer) : data(buffer.data), offset(buffer.offset), len(buffer.len) {
+    return calcSize((core::PublicKey *) nullptr);
 }
 
 Buffer::Buffer(Buffer &&buffer) : data(buffer.data), offset(buffer.offset), len(buffer.len) {
     buffer.data = nullptr;
+}
+Buffer &Buffer::operator=(Buffer &&buffer) noexcept {
+    data = buffer.data;
+    offset = buffer.offset;
+    len = buffer.len;
+    buffer.data = nullptr;
+    return *this;
 }
 }// namespace RingSwarm::transport

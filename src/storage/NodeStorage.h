@@ -7,8 +7,6 @@ namespace RingSwarm::storage {
 core::Node *getNode(core::Id *nodeId);
 
 void storeNode(core::Node *node);
-
-void storeThisNode();
 }// namespace RingSwarm::storage
 
 #endif//RINGSWARM_NODESTORAGE_H

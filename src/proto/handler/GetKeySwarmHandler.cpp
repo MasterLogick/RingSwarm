@@ -8,7 +8,7 @@ std::shared_ptr<async::Future<std::map<uint8_t, core::Node *>>> ClientHandler::g
     RequestBuffer req(32);
     req.write(keyId);
     auto f = async::Future<std::map<uint8_t, core::Node *>>::create();
-    transport->sendShortRequest(8, req, MAX_RESPONSE_SIZE)->then([f](auto resp) {
+    transport->sendSmallRequest(8, req, MAX_RESPONSE_SIZE)->then([f](auto resp) {
         f->resolve(resp->template readMap<uint8_t, core::Node *>());
     });
     return f;

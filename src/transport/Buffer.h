@@ -58,11 +58,11 @@ class Buffer {
 public:
     Buffer() : data(nullptr), offset(0), len(0) {}
 
-    Buffer(const Buffer &buffer);
+    Buffer(const Buffer &buffer) = delete;
 
     Buffer(Buffer &&buffer);
 
-    Buffer &operator=(const Buffer &buffer) = default;
+    Buffer &operator=(Buffer &&buffer) noexcept ;
 
     explicit Buffer(uint32_t len, uint32_t offset = 0);
 

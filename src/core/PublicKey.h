@@ -8,11 +8,11 @@
 #include <cstdint>
 
 namespace RingSwarm::core {
-class PublicKey : public std::array<uint8_t, 33> {
+class PublicKey : public std::vector<uint8_t> {
 public:
-    Id *getId();
+    std::shared_ptr<Id> getId();
 
-    bool verifyData(std::vector<char> &data, crypto::Signature *sign);
+    bool verifyData(std::vector<char> &pl, crypto::Signature *sign);
 };
 }// namespace RingSwarm::core
 

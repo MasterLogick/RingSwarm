@@ -59,7 +59,7 @@ public:
 
     core::PublicKey *getPublicKey(int n);
 
-    core::Id *getId(int n) {
+    std::shared_ptr<core::Id> getId(int n) {
         return core::Id::fromBlob(getBlob(n));
     }
 

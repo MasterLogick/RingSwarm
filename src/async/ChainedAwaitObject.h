@@ -15,16 +15,13 @@ protected:
 
 public:
     explicit ChainedAwaitObjectBase(Coroutine<AwaitedRetTypes...> c) : c(std::move(c)) {
-        std::cout << "chained await object constructor" << std::endl;
     }
 
     bool await_ready() noexcept {
-        std::cout << "chained await object await_ready" << std::endl;
         return c.getHandle().done();
     }
 
     void await_suspend(std::coroutine_handle<Promise<RetTypes...>> h) {
-        std::cout << "chained await object await_suspend" << std::endl;
         c.getHandle().promise().setNextCoro(h.address());
     }
 };
@@ -38,8 +35,7 @@ public:
     ChainedAwaitObject(Coroutine<AwaitedRetTypes...> c) : ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(c)) {}
 
     std::tuple<AwaitedRetTypes...> await_resume() noexcept {
-        std::cout << "chained await object await_resume" << std::endl;
-        return ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::c.getHandle().promise().val;
+        return std::move(ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::c.getHandle().promise().val);
     }
 };
 
@@ -50,8 +46,7 @@ public:
     ChainedAwaitObject(Coroutine<AwaitedRetType> c) : ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>(std::move(c)) {}
 
     AwaitedRetType await_resume() noexcept {
-        std::cout << "chained await object await_resume" << std::endl;
-        return ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::c.getHandle().promise().val;
+        return std::move(ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::c.getHandle().promise().val);
     }
 };
 
@@ -61,7 +56,6 @@ public:
     ChainedAwaitObject(Coroutine<> c);
 
     void await_resume() noexcept {
-        std::cout << "chained await object await_resume" << std::endl;
     }
 };
 }// namespace RingSwarm::async

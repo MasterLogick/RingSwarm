@@ -2,6 +2,6 @@
 #define RINGSWARM_ASSERT_H
 
 
-#define Assert(expr) assert(expr)
+#define Assert(expr, msg) assert((expr) && (msg))
 
 #endif//RINGSWARM_ASSERT_H

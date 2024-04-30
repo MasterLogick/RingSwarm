@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -18,9 +19,12 @@ struct Id {
 
     std::string getHexRepresentation();
 
-    static Id *fromHexRepresentation(const char *hex);
+    static std::shared_ptr<Id> fromHexRepresentation(const char *hex);
 
-    static Id *fromBlob(std::vector<char> blob);
+    static std::shared_ptr<Id> fromBlob(std::vector<char> blob);
+
+    static std::shared_ptr<Id> fromBlob(std::vector<char> &blob);
+
 
     class Comparator {
     public:
@@ -29,7 +33,7 @@ struct Id {
         }
     };
 
-    static core::Id *getBiggestId() {
+    static std::shared_ptr<core::Id> getBiggestId() {
         return fromHexRepresentation("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     }
 };

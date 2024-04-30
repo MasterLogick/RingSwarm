@@ -4,20 +4,21 @@
 #include <coroutine>
 #include <iostream>
 
+#include <boost/log/trivial.hpp>
+
 namespace RingSwarm::async {
 class FinalAwait {
+    void *nextCoro;
+
 public:
     FinalAwait(void *nextCoro) : nextCoro(nextCoro) {
-        std::cout << "final await constructor" << std::endl;
     }
 
     bool await_ready() noexcept {
-        std::cout << "final await await_ready" << std::endl;
         return false;
     }
 
     std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) {
-        std::cout << "final await await_suspend" << std::endl;
         if (nextCoro != nullptr) {
             return std::coroutine_handle<>::from_address(nextCoro);
         } else {
@@ -26,14 +27,12 @@ public:
     }
 
     void await_resume() noexcept {
-        std::cerr << "===========PANIC===========" << std::endl
-                  << "Called unreachable function" << std::endl
-                  << "FinalAwait::await_resume();" << std::endl
-                  << "===========PANIC===========" << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "===========PANIC===========";
+        BOOST_LOG_TRIVIAL(error) << "Called unreachable function";
+        BOOST_LOG_TRIVIAL(error) << "FinalAwait::await_resume();";
+        BOOST_LOG_TRIVIAL(error) << "===========PANIC===========";
         std::abort();
     }
-
-    void *nextCoro;
 };
 }// namespace RingSwarm::async
 

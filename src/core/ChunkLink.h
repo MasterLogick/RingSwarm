@@ -7,9 +7,9 @@
 
 namespace RingSwarm::core {
 struct ChunkLink {
-    Id *const keyId;
+    std::shared_ptr<Id> const keyId;
     const uint64_t chunkIndex;
-    Id *const dataHash;
+    std::shared_ptr<Id> const dataHash;
     const uint64_t dataSize;
     crypto::Signature *const sign;
 
@@ -20,7 +20,7 @@ struct ChunkLink {
     static ChunkLink *createChunkLink(
             crypto::KeyPair &keyPair,
             uint64_t chunkIndex,
-            Id *dataHash,
+            std::shared_ptr<Id> dataHash,
             uint64_t dataSize);
 };
 }// namespace RingSwarm::core

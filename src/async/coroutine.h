@@ -10,12 +10,20 @@ class ChainedAwaitObject;
 
 template<class...>
 class Promise;
+
+template<class...>
+class GetCoroutineHandleAwaitObject;
+
+template<class...>
+class SuspendThisCoroutineAwaitObject;
 }// namespace RingSwarm::async
 
 #include "ChainedAwaitObject.h"
 #include "Coroutine.h"
 #include "FinalAwait.h"
+#include "GetCoroutineHandleAwaitObject.h"
 #include "Promise.h"
+#include "SuspendThisCoroutineAwaitObject.h"
 
 #include "ChainedAwaitObjectImpl.h"
 

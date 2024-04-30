@@ -1,11 +1,15 @@
 #include "ThreadPool.h"
+#include "../core/Thread.h"
 #include <coroutine>
 #include <iostream>
 
 namespace RingSwarm::async {
-ThreadPool::ThreadPool(int threadNum) {
-    for (int i = 0; i < threadNum; ++i) {
-        pool.emplace_back([this] {
+ThreadPool *ThreadPool::defaultThreadPool = nullptr;
+ThreadPool::ThreadPool(unsigned int threadNum) {
+    for (unsigned int i = 0; i < threadNum; ++i) {
+        pool.emplace_back([this, i] {
+            std::string threadName = "RingSwarm - worker thread " + std::to_string(i);
+            core::setThreadName(threadName.c_str());
             while (!stopFlag) {
                 void *task;
                 {

@@ -9,58 +9,61 @@ class PromiseBase {
 public:
     template<class... AwaitedRetTypes>
     ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...> await_transform(Coroutine<AwaitedRetTypes...> h) {
-        std::cout << "coroutine promise await transform" << std::endl;
         return ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(h));
     }
 
+    template<class... AwaitedRetTypes>
+    GetCoroutineHandleAwaitObject<AwaitedRetTypes...> await_transform(GetCoroutineHandleAwaitObject<AwaitedRetTypes...> h) {
+        return std::move(h);
+    }
+
+    template<class... AwaitedRetTypes>
+    SuspendThisCoroutineAwaitObject<AwaitedRetTypes...> await_transform(SuspendThisCoroutineAwaitObject<AwaitedRetTypes...> h) {
+        return std::move(h);
+    }
+
     std::suspend_never initial_suspend() noexcept {
-        std::cout << "coroutine promise initial_suspend" << std::endl;
         return {};
     }
 
     FinalAwait final_suspend() noexcept {
-        std::cout << "coroutine promise final_suspend" << std::endl;
         return {nextCoro};
     }
 
     void unhandled_exception() {
-        std::cout << "coroutine promise unhandled_exception" << std::endl;
+        auto a = std::current_exception();
+        std::abort();
     }
 
     void setNextCoro(void *coro) {
-        std::cout << "coroutine promise setNextCoro" << std::endl;
         nextCoro = coro;
     }
 };
 
 template<class... RetTypes>
 class Promise : public PromiseBase<RetTypes...> {
+public:
     std::tuple<RetTypes...> val;
 
-public:
     Coroutine<RetTypes...> get_return_object() {
-        std::cout << "coroutine promise get_return_object" << std::endl;
         return Coroutine<RetTypes...>(std::coroutine_handle<Promise<RetTypes...>>::from_promise(*this));
     }
 
-    void return_value(RetTypes... v) {
-        std::cout << "coroutine promise return_value" << std::endl;
-        val = {std::move(v)...};
+    void return_value(std::tuple<RetTypes...> v) {
+        val = std::move(v);
     }
 };
 
 template<class RetType>
 class Promise<RetType> : public PromiseBase<RetType> {
+public:
     RetType val;
 
-public:
     Coroutine<RetType> get_return_object() {
-        std::cout << "coroutine promise get_return_object" << std::endl;
         return Coroutine<RetType>(std::coroutine_handle<Promise<RetType>>::from_promise(*this));
     }
 
     void return_value(RetType v) {
-        std::cout << "coroutine promise return_value" << std::endl;
         val = std::move(v);
     }
 };
@@ -69,12 +72,10 @@ template<>
 class Promise<> : public PromiseBase<> {
 public:
     Coroutine<> get_return_object() {
-        std::cout << "coroutine promise get_return_object" << std::endl;
         return Coroutine<>(std::coroutine_handle<Promise<>>::from_promise(*this));
     }
 
     void return_void() {
-        std::cout << "coroutine promise return_value" << std::endl;
     }
 };
 
