@@ -11,18 +11,18 @@ class ChainedAwaitObjectBase;
 template<typename... AwaitedRetTypes, typename... RetTypes>
 class ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...> {
 protected:
-    Coroutine<AwaitedRetTypes...> c;
+    Coroutine<AwaitedRetTypes...> innerCoroutine;
 
 public:
-    explicit ChainedAwaitObjectBase(Coroutine<AwaitedRetTypes...> c) : c(std::move(c)) {
+    explicit ChainedAwaitObjectBase(Coroutine<AwaitedRetTypes...> innerCoroutine) : innerCoroutine(std::move(innerCoroutine)) {
     }
 
     bool await_ready() noexcept {
-        return c.getHandle().done();
+        return innerCoroutine.getHandle().done();
     }
 
     void await_suspend(std::coroutine_handle<Promise<RetTypes...>> h) {
-        c.getHandle().promise().setNextCoro(h.address());
+        innerCoroutine.getHandle().promise().setNextCoro(h.address());
     }
 };
 
@@ -32,30 +32,33 @@ class ChainedAwaitObject;
 template<typename... AwaitedRetTypes, typename... RetTypes>
 class ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...> {
 public:
-    ChainedAwaitObject(Coroutine<AwaitedRetTypes...> c) : ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(c)) {}
+    explicit ChainedAwaitObject(Coroutine<AwaitedRetTypes...> innerCoroutine) : ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(innerCoroutine)) {}
 
-    std::tuple<AwaitedRetTypes...> await_resume() noexcept {
-        return std::move(ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::c.getHandle().promise().val);
+    AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...> await_resume() noexcept {
+        auto &promise = ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::innerCoroutine.getHandle().promise();
+        return AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(promise.moveValue()), promise.getAndClearExceptionPtr());
     }
 };
-
 
 template<class AwaitedRetType, class... RetTypes>
 class ChainedAwaitObject<Coroutine<AwaitedRetType>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...> {
 public:
-    ChainedAwaitObject(Coroutine<AwaitedRetType> c) : ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>(std::move(c)) {}
+    explicit ChainedAwaitObject(Coroutine<AwaitedRetType> innerCoroutine) : ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>(std::move(innerCoroutine)) {}
 
-    AwaitedRetType await_resume() noexcept {
-        return std::move(ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::c.getHandle().promise().val);
+    AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...> await_resume() noexcept {
+        auto &promise = ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::innerCoroutine.getHandle().promise();
+        return AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...>(std::move(promise.moveValue()), promise.getAndClearExceptionPtr());
     }
 };
 
 template<class... RetTypes>
 class ChainedAwaitObject<Coroutine<>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<>, RetTypes...> {
 public:
-    ChainedAwaitObject(Coroutine<> c);
+    explicit ChainedAwaitObject(Coroutine<> innerCoroutine);
 
-    void await_resume() noexcept {
+    AwaitResumeResult<Coroutine<>, RetTypes...> await_resume() noexcept {
+        auto &promise = ChainedAwaitObjectBase<Coroutine<>, RetTypes...>::innerCoroutine.getHandle().promise();
+        return AwaitResumeResult<Coroutine<>, RetTypes...>(promise.getAndClearExceptionPtr());
     }
 };
 }// namespace RingSwarm::async

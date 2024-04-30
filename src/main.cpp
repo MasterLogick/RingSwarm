@@ -18,9 +18,9 @@ async::Coroutine<> test() {
             .tag = 1};
     client.rawWrite(&rh, sizeof(rh));
 
-    char c;
-    co_await client.rawRead(&c, 1);
-    BOOST_LOG_TRIVIAL(trace) << "Read data: " << c;
+//    char c;
+//    co_await client.rawRead(&c, 1);
+//    BOOST_LOG_TRIVIAL(trace) << "Read data: " << c;
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -46,8 +46,8 @@ int main(int argc, char **argv, char **envp) {
     //        return -1;
     //    }
     async::Coroutine<> c = test();
-    async::ThreadPool::getDefaultThreadPool()->waitEmpty();
     while (!c.getHandle().done()) { std::this_thread::sleep_for(std::chrono::milliseconds(100)); }
+    async::ThreadPool::getDefaultThreadPool()->waitEmpty();
     async::EventLoop::getMainEventLoop()->stop();
     async::ThreadPool::getDefaultThreadPool()->blockingStop();
     BOOST_LOG_TRIVIAL(trace) << "end";

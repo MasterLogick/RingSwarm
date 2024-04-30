@@ -16,6 +16,9 @@ class GetCoroutineHandleAwaitObject;
 
 template<class...>
 class SuspendThisCoroutineAwaitObject;
+
+template<class...>
+class AwaitResumeResult;
 }// namespace RingSwarm::async
 
 #include "ChainedAwaitObject.h"
@@ -25,6 +28,7 @@ class SuspendThisCoroutineAwaitObject;
 #include "Promise.h"
 #include "SuspendThisCoroutineAwaitObject.h"
 
+#include "AwaitResumeResult.h"
 #include "ChainedAwaitObjectImpl.h"
 
 template<class... RetValues, class... ArgTypes>

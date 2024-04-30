@@ -1,10 +1,12 @@
 #ifndef RINGSWARM_SRC_ASYNC_PROMISE_H
 #define RINGSWARM_SRC_ASYNC_PROMISE_H
 
+#include "../Assert.h"
 namespace RingSwarm::async {
 template<class... RetTypes>
 class PromiseBase {
     void *nextCoro = nullptr;
+    std::exception_ptr exceptionPtr;
 
 public:
     template<class... AwaitedRetTypes>
@@ -31,20 +33,33 @@ public:
     }
 
     void unhandled_exception() {
-        auto a = std::current_exception();
-        std::abort();
+        exceptionPtr = std::current_exception();
+    }
+
+    void raiseException(auto ex) {
+        exceptionPtr = std::make_exception_ptr(ex);
+    }
+
+    std::exception_ptr getAndClearExceptionPtr() {
+        std::exception_ptr d = exceptionPtr;
+        exceptionPtr = nullptr;
+        return d;
     }
 
     void setNextCoro(void *coro) {
         nextCoro = coro;
     }
+
+    ~PromiseBase() {
+        Assert(!exceptionPtr, "unhandled exception on promise destroy");
+    }
 };
 
 template<class... RetTypes>
 class Promise : public PromiseBase<RetTypes...> {
-public:
     std::tuple<RetTypes...> val;
 
+public:
     Coroutine<RetTypes...> get_return_object() {
         return Coroutine<RetTypes...>(std::coroutine_handle<Promise<RetTypes...>>::from_promise(*this));
     }
@@ -52,19 +67,27 @@ public:
     void return_value(std::tuple<RetTypes...> v) {
         val = std::move(v);
     }
+
+    std::tuple<RetTypes...> &&moveValue() {
+        return std::move(val);
+    }
 };
 
 template<class RetType>
 class Promise<RetType> : public PromiseBase<RetType> {
-public:
     RetType val;
 
+public:
     Coroutine<RetType> get_return_object() {
         return Coroutine<RetType>(std::coroutine_handle<Promise<RetType>>::from_promise(*this));
     }
 
     void return_value(RetType v) {
         val = std::move(v);
+    }
+
+    RetType &&moveValue() {
+        return std::move(val);
     }
 };
 

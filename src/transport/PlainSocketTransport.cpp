@@ -1,6 +1,7 @@
 #include "PlainSocketTransport.h"
 #include "../Assert.h"
 #include "../async/EventLoop.h"
+#include "ClosedTransportException.h"
 #include <boost/algorithm/hex.hpp>
 #include <boost/log/trivial.hpp>
 #include <memory>
@@ -59,21 +60,39 @@ async::Coroutine<> PlainSocketTransport::rawRead(void *data, uint32_t size) {
     Assert(!readFlag.test_and_set(), "simultaneous read on tcp socket");
 #endif
     if (size == 0) {
+#ifndef NDEBUG
         readFlag.clear();
+#endif
         co_return;
     }
     readBufferData = static_cast<char *>(data);
     readBufferOffset = 0;
     readBufferSize = size;
     co_await async::Coroutine<>::suspendThis([this](std::coroutine_handle<async::Promise<>> h) {
-        readPromiseHandle = h;
         auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
+        if (tcpHandler->closing()) {
+            raiseClosedTransportException(h);
+            return static_cast<std::coroutine_handle<>>(h);
+        }
+        readPromiseHandle = h;
         tcpHandler->read<[](const uvw::tcp_handle &handler, auto preferredSize) {
             auto *pst = *static_cast<PlainSocketTransport **>(handler.data().get());
             return std::make_pair(pst->readBufferData + pst->readBufferOffset, pst->readBufferSize - pst->readBufferOffset);
         }>();
-        return std::noop_coroutine();
+        return static_cast<std::coroutine_handle<>>(std::noop_coroutine());
     });
+}
+
+void PlainSocketTransport::raiseClosedTransportException(std::coroutine_handle<async::Promise<>> h) {
+    readBufferOffset = 0;
+    readBufferSize = 0;
+    readBufferData = nullptr;
+    readPromiseHandle = nullptr;
+#ifndef NDEBUG
+    Assert(readFlag.test(), "read flag must be raised");
+    readFlag.clear();
+#endif
+    h.promise().raiseException(ClosedTransportException());
 }
 
 void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
@@ -101,22 +120,37 @@ PlainSocketTransport::~PlainSocketTransport() {
 void PlainSocketTransport::setupHandler() {
     tcpHandler->data(std::make_shared<PlainSocketTransport *>(this));
     tcpHandler->on<uvw::end_event>([this](auto &, auto &handler) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket ended connection to " << peerAddress.ip << ":" << peerAddress.port;
+        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket closed connection from " << peerAddress.ip << ":" << peerAddress.port;
+        if (readPromiseHandle) {
+            auto h = readPromiseHandle;
+            raiseClosedTransportException(readPromiseHandle);
+            async::Coroutine<>::scheduleCoroutineResume(h);
+        }
     });
     tcpHandler->on<uvw::close_event>([this](auto &ev, auto &handler) {
         BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket closed connection to " << peerAddress.ip << ":" << peerAddress.port;
+        if (readPromiseHandle) {
+            auto h = readPromiseHandle;
+            raiseClosedTransportException(readPromiseHandle);
+            async::Coroutine<>::scheduleCoroutineResume(h);
+        }
     });
     tcpHandler->on<uvw::error_event>([this](auto &evt, auto &handler) {
         BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket " << peerAddress.ip << ":" << peerAddress.port << " error " << evt.name();
+        if (readPromiseHandle) {
+            auto h = readPromiseHandle;
+            raiseClosedTransportException(readPromiseHandle);
+            async::Coroutine<>::scheduleCoroutineResume(h);
+        }
     });
     tcpHandler->on<uvw::data_event>([this](auto &event, auto &handler) {
+        event.data.release();
         if (event.length == UV_ENOBUFS) {
-            event.data.release();
             handler.stop();
             return;
-        } else {
+        } else if (((ssize_t) event.length) > 0) {
+            Assert(readPromiseHandle, "must have pending request to process data event");
             readBufferOffset += event.length;
-            event.data.release();
             if (readBufferOffset == readBufferSize) {
                 readBufferData = nullptr;
                 readBufferOffset = 0;

@@ -7,11 +7,17 @@
 
 namespace RingSwarm::core {
 class RingSwarmException : public std::exception {
+    std::string reason;
+
 public:
-    RingSwarmException() {
-        std::cout << boost::stacktrace::stacktrace();
+    RingSwarmException() = default;
+
+    explicit RingSwarmException(std::string reason) : reason(std::move(reason)) {
+    }
+
+    [[nodiscard]] const char *what() const noexcept override {
+        return reason.c_str();
     }
 };
 }// namespace RingSwarm::core
-
 #endif//RINGSWARM_RINGSWARMEXCEPTION_H

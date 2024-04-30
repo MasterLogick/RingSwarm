@@ -40,6 +40,8 @@ public:
 
 private:
     void setupHandler();
+
+    void raiseClosedTransportException(std::coroutine_handle<async::Promise<>> h);
 };
 }// namespace RingSwarm::transport
 

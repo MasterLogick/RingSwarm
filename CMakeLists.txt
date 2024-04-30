@@ -164,12 +164,14 @@ add_executable(RingSwarm
         src/transport/SecureOverlayTransport.h
         src/transport/Transport.cpp
         src/transport/Transport.h
-        src/transport/TransportBackendException.h
         src/transport/TransportWrapper.h
         src/async/EventLoopLock.h
         src/async/EventLoopLock.cpp
         src/core/NodeContext.cpp
         src/core/NodeContext.h
+        src/transport/TransportException.h
+        src/transport/ClosedTransportException.h
+        src/async/AwaitResumeResult.h
 )
 
 if (WIN32)
