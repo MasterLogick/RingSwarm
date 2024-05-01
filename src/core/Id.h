@@ -25,18 +25,19 @@ struct Id {
 
     static std::shared_ptr<Id> fromBlob(std::vector<char> &blob);
 
-
     class Comparator {
     public:
-        bool operator()(Id *const lhs, Id *const rhs) const {
+        bool operator()(Id * const lhs, Id * const rhs) const {
             return memcmp(lhs->hash, rhs->hash, 32) < 0;
         }
     };
 
     static std::shared_ptr<core::Id> getBiggestId() {
-        return fromHexRepresentation("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        return fromHexRepresentation(
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        );
     }
 };
 }// namespace RingSwarm::core
 
-#endif//RINGSWARM_ID_H
+#endif// RINGSWARM_ID_H

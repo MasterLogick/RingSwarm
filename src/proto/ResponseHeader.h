@@ -11,4 +11,4 @@ struct ResponseHeader {
 } __attribute__((packed));
 }// namespace RingSwarm::proto
 
-#endif//RINGSWARM_RESPONSEHEADER_H
+#endif// RINGSWARM_RESPONSEHEADER_H

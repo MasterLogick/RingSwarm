@@ -12,4 +12,4 @@ void loadStorage(const char *dbPath);
 void closeStorage();
 }// namespace RingSwarm::storage
 
-#endif//RINGSWARM_STORAGEMANAGER_H
+#endif// RINGSWARM_STORAGEMANAGER_H

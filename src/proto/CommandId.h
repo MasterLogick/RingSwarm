@@ -21,23 +21,24 @@ enum CommandId : uint8_t {
     CommandId_UnsubscribeOnChunkChange = 13,
     CommandId_COMMAND_COUNT = 14,
 };
+
 constexpr static const char *MethodNames[] = {
-        nullptr,
-        "GetKey",
-        "GetNearestChunk",
-        "GetChunkLink",
-        "GetChunk",
-        "DragIntoKeySwarm",
-        "NoticeJoinedKeySwarm",
-        "NoticeJoinedChunkSwarm",
-        "GetKeySwarm",
-        "GetChunkSwarm",
-        "NoticeLeavedChunkSwarm",
-        "SubscribeOnChunkChange",
-        "ChunkChangeEvent",
-        "UnsubscribeOnChunkChange"};
+    nullptr,
+    "GetKey",
+    "GetNearestChunk",
+    "GetChunkLink",
+    "GetChunk",
+    "DragIntoKeySwarm",
+    "NoticeJoinedKeySwarm",
+    "NoticeJoinedChunkSwarm",
+    "GetKeySwarm",
+    "GetChunkSwarm",
+    "NoticeLeavedChunkSwarm",
+    "SubscribeOnChunkChange",
+    "ChunkChangeEvent",
+    "UnsubscribeOnChunkChange"
+};
 
 }// namespace RingSwarm::proto
 
-
-#endif//RINGSWARM_SRC_PROTO_COMMANDID_H
+#endif// RINGSWARM_SRC_PROTO_COMMANDID_H

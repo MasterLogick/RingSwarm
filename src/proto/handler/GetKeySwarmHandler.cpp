@@ -3,14 +3,17 @@
 #include "../ServerHandler.h"
 
 #define MAX_RESPONSE_SIZE (256 * 8 * 1024)
+
 namespace RingSwarm::proto {
-std::shared_ptr<async::Future<std::map<uint8_t, core::Node *>>> ClientHandler::getKeySwarm(core::Id *keyId) {
+std::shared_ptr<async::Future<std::map<uint8_t, core::Node *>>>
+ClientHandler::getKeySwarm(core::Id *keyId) {
     RequestBuffer req(32);
     req.write(keyId);
     auto f = async::Future<std::map<uint8_t, core::Node *>>::create();
-    transport->sendSmallRequest(8, req, MAX_RESPONSE_SIZE)->then([f](auto resp) {
-        f->resolve(resp->template readMap<uint8_t, core::Node *>());
-    });
+    transport->sendSmallRequest(8, req, MAX_RESPONSE_SIZE)
+        ->then([f](auto resp) {
+            f->resolve(resp->template readMap<uint8_t, core::Node *>());
+        });
     return f;
 }
 

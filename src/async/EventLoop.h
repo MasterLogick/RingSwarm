@@ -2,10 +2,12 @@
 #define RINGSWARM_EVENTLOOP_H
 
 #include "EventLoopLock.h"
-#include <thread>
+
 #include <uvw/dns.h>
 #include <uvw/loop.h>
 #include <uvw/tcp.h>
+
+#include <thread>
 
 namespace RingSwarm::async {
 class EventLoop {
@@ -28,6 +30,7 @@ public:
     static EventLoop *getMainEventLoop() {
         return mainEventLoop;
     }
+
     static void setMainEventLoop(EventLoop *eventLoop) {
         mainEventLoop = eventLoop;
     }
@@ -45,4 +48,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-#endif//RINGSWARM_EVENTLOOP_H
+#endif// RINGSWARM_EVENTLOOP_H

@@ -1,4 +1,5 @@
 #include "ChunkStorage.h"
+
 #include "KeyIndexedStorages.h"
 #include "StorageException.h"
 
@@ -18,12 +19,14 @@
 namespace RingSwarm::storage {
 ChunkIndexedStorage<std::shared_ptr<MappedChunk>> mappedChunks;
 
-std::shared_ptr<MappedChunk> getMappedChunk(core::Id *keyId, uint64_t chunkIndex) {
+std::shared_ptr<MappedChunk>
+getMappedChunk(core::Id *keyId, uint64_t chunkIndex) {
     auto p = std::pair(keyId, chunkIndex);
     if (mappedChunks.contains(p)) {
         return mappedChunks[p];
     }
-    std::string path = "./storage/" + keyId->getHexRepresentation() + "." + std::to_string(chunkIndex);
+    std::string path = "./storage/" + keyId->getHexRepresentation() + "." +
+                       std::to_string(chunkIndex);
 #ifdef TGT_LINUX
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {

@@ -1,4 +1,5 @@
 #include "Node.h"
+
 #include "../crypto/AsymmetricalCrypto.h"
 
 namespace RingSwarm::core {

@@ -21,6 +21,7 @@ template<class...>
 class AwaitResumeResult;
 }// namespace RingSwarm::async
 
+#include "AwaitResumeResult.h"
 #include "ChainedAwaitObject.h"
 #include "Coroutine.h"
 #include "FinalAwait.h"
@@ -28,12 +29,13 @@ class AwaitResumeResult;
 #include "Promise.h"
 #include "SuspendThisCoroutineAwaitObject.h"
 
-#include "AwaitResumeResult.h"
+// separate impl header
 #include "ChainedAwaitObjectImpl.h"
 
 template<class... RetValues, class... ArgTypes>
-struct std::coroutine_traits<RingSwarm::async::Coroutine<RetValues...>, ArgTypes...> {
+struct std::
+    coroutine_traits<RingSwarm::async::Coroutine<RetValues...>, ArgTypes...> {
     using promise_type = RingSwarm::async::Promise<RetValues...>;
 };
 
-#endif//RINGSWARM_SRC_ASYNC_COROUTINE_H
+#endif// RINGSWARM_SRC_ASYNC_COROUTINE_H

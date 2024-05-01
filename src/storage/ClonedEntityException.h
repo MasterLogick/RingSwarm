@@ -4,8 +4,7 @@
 #include "StorageException.h"
 
 namespace RingSwarm::storage {
-class ClonedEntityException : public StorageException {
-};
+class ClonedEntityException : public StorageException {};
 }// namespace RingSwarm::storage
 
-#endif//RINGSWARM_CLONEDENTITYEXCEPTION_H
+#endif// RINGSWARM_CLONEDENTITYEXCEPTION_H

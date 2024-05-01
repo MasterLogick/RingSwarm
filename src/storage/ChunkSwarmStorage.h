@@ -7,8 +7,12 @@
 namespace RingSwarm::storage {
 core::ChunkSwarm *getHostedChunkSwarm(core::Id *keyId, uint64_t index);
 
-core::Node *getNearestChunkNode(core::Id *keyId, uint64_t chunkIndex, uint8_t *retSwarmIndex);
+core::Node *getNearestChunkNode(
+    core::Id *keyId,
+    uint64_t chunkIndex,
+    uint8_t *retSwarmIndex
+);
 
 void storeChunkSwarm(core::ChunkSwarm *chunkSwarm);
 }// namespace RingSwarm::storage
-#endif//RINGSWARM_CHUNKSWARMSTORAGE_H
+#endif// RINGSWARM_CHUNKSWARMSTORAGE_H

@@ -2,6 +2,7 @@
 #define RINGSWARM_RINGSWARMEXCEPTION_H
 
 #include <boost/stacktrace.hpp>
+
 #include <exception>
 #include <iostream>
 
@@ -12,12 +13,12 @@ class RingSwarmException : public std::exception {
 public:
     RingSwarmException() = default;
 
-    explicit RingSwarmException(std::string reason) : reason(std::move(reason)) {
-    }
+    explicit RingSwarmException(std::string reason)
+        : reason(std::move(reason)) {}
 
     [[nodiscard]] const char *what() const noexcept override {
         return reason.c_str();
     }
 };
 }// namespace RingSwarm::core
-#endif//RINGSWARM_RINGSWARMEXCEPTION_H
+#endif// RINGSWARM_RINGSWARMEXCEPTION_H

@@ -2,6 +2,7 @@
 #define RINGSWARM_TRANSPORTCLIENTSIDEWRAPPER_H
 
 #include "../transport/TransportWrapper.h"
+
 #include "ClientRequestState.h"
 #include "CommandId.h"
 #include "RequestBuffer.h"
@@ -22,16 +23,24 @@ class ClientTransport {
     async::Coroutine<> waitForAnyResponse();
 
 public:
-    explicit ClientTransport(std::unique_ptr<transport::Transport> clientTransport);
+    explicit ClientTransport(
+        std::unique_ptr<transport::Transport> clientTransport
+    );
 
     async::Coroutine<ResponseHeader> sendRequest(
-            CommandId commandId, RequestBuffer &req, uint32_t maxResponseSize);
+        CommandId commandId,
+        RequestBuffer &req,
+        uint32_t maxResponseSize
+    );
 
     async::Coroutine<transport::Buffer> sendSmallRequest(
-            CommandId commandId, RequestBuffer &req, uint32_t maxResponseSize);
+        CommandId commandId,
+        RequestBuffer &req,
+        uint32_t maxResponseSize
+    );
 
     async::Coroutine<> rawRead(void *data, uint32_t size);
 };
 }// namespace RingSwarm::proto
 
-#endif//RINGSWARM_TRANSPORTCLIENTSIDEWRAPPER_H
+#endif// RINGSWARM_TRANSPORTCLIENTSIDEWRAPPER_H

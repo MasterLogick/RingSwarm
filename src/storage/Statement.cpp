@@ -1,14 +1,18 @@
 #include "Statement.h"
+
 #include "StorageException.h"
+
 #include <boost/log/trivial.hpp>
+
 #include <sqlite3.h>
 
 namespace RingSwarm::storage {
 Statement::Statement(sqlite3 *connection, const char *sql) {
-    if ((sqlite3_prepare_v2(connection, sql, -1, &statement, nullptr)) != SQLITE_OK) {
-
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 \"" << sql << "\" prepare error: "
-                                 << sqlite3_errmsg(connection);
+    if ((sqlite3_prepare_v2(connection, sql, -1, &statement, nullptr)) !=
+        SQLITE_OK) {
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 \"" << sql
+            << "\" prepare error: " << sqlite3_errmsg(connection);
         throw StorageException();
     }
 }
@@ -23,9 +27,16 @@ void Statement::bindText(const char *label, std::string value) {
         BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
         throw StorageException();
     }
-    if ((sqlite3_bind_text(statement, index, value.c_str(), value.length(), SQLITE_TRANSIENT)) != SQLITE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
-                                 << sqlite3_errmsg(sqlite3_db_handle(statement));
+    if ((sqlite3_bind_text(
+            statement,
+            index,
+            value.c_str(),
+            value.length(),
+            SQLITE_TRANSIENT
+        )) != SQLITE_OK) {
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 bind \"" << label << "\"=\"" << value
+            << "\": " << sqlite3_errmsg(sqlite3_db_handle(statement));
         throw StorageException();
     }
 }
@@ -37,8 +48,9 @@ void Statement::bindInt64(const char *label, uint64_t value) {
         throw StorageException();
     }
     if ((sqlite3_bind_int64(statement, index, value)) != SQLITE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
-                                 << sqlite3_errmsg(sqlite3_db_handle(statement));
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 bind \"" << label << "\"=\"" << value
+            << "\": " << sqlite3_errmsg(sqlite3_db_handle(statement));
         throw StorageException();
     }
 }
@@ -50,8 +62,9 @@ void Statement::bindInt32(const char *label, uint32_t value) {
         throw StorageException();
     }
     if ((sqlite3_bind_int(statement, index, value)) != SQLITE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind \"" << label << "\"=\"" << value << "\": "
-                                 << sqlite3_errmsg(sqlite3_db_handle(statement));
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 bind \"" << label << "\"=\"" << value
+            << "\": " << sqlite3_errmsg(sqlite3_db_handle(statement));
         throw StorageException();
     }
 }
@@ -62,9 +75,11 @@ void Statement::bindBlob(const char *label, const void *blob, int size) {
         BOOST_LOG_TRIVIAL(error) << "SQLITE3 wrong index: " << label;
         throw StorageException();
     }
-    if ((sqlite3_bind_blob(statement, index, blob, size, SQLITE_TRANSIENT)) != SQLITE_OK) {
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 bind blob \"" << label << "\": "
-                                 << sqlite3_errmsg(sqlite3_db_handle(statement));
+    if ((sqlite3_bind_blob(statement, index, blob, size, SQLITE_TRANSIENT)) !=
+        SQLITE_OK) {
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 bind blob \"" << label
+            << "\": " << sqlite3_errmsg(sqlite3_db_handle(statement));
         throw StorageException();
     }
 }
@@ -76,7 +91,9 @@ bool Statement::nextRow() {
     } else if (err == SQLITE_DONE) {
         return false;
     } else {
-        BOOST_LOG_TRIVIAL(error) << "SQLITE3 step error: " << sqlite3_errmsg(sqlite3_db_handle(statement));
+        BOOST_LOG_TRIVIAL(error)
+            << "SQLITE3 step error: "
+            << sqlite3_errmsg(sqlite3_db_handle(statement));
         throw StorageException();
     }
 }
@@ -94,20 +111,23 @@ uint64_t Statement::getInt64(int n) {
 }
 
 std::vector<char> Statement::getBlob(int n) {
-    auto *ptr = reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
+    auto *ptr =
+        reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
     int size = sqlite3_column_bytes(statement, n);
     return {ptr, ptr + size};
 }
 
 crypto::Signature *Statement::getSignature(int n) {
-    auto *ptr = reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
+    auto *ptr =
+        reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
     auto *sign = new crypto::Signature();
     memcpy(sign->data(), ptr, sign->size());
     return sign;
 }
 
 core::PublicKey *Statement::getPublicKey(int n) {
-    auto *ptr = reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
+    auto *ptr =
+        reinterpret_cast<const char *>(sqlite3_column_blob(statement, n));
     auto *sign = new core::PublicKey();
     memcpy(sign->data(), ptr, sign->size());
     return sign;

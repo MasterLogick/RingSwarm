@@ -2,8 +2,11 @@
 #define RINGSWARM_SRC_PROTO_CLIENTREQUESTSTATE_H
 
 #include "../async/coroutine.h"
+
 #include "ResponseHeader.h"
+
 #include <coroutine>
+
 namespace RingSwarm {
 namespace proto {
 
@@ -17,4 +20,4 @@ struct ClientRequestState {
 }// namespace proto
 }// namespace RingSwarm
 
-#endif//RINGSWARM_SRC_PROTO_CLIENTREQUESTSTATE_H
+#endif// RINGSWARM_SRC_PROTO_CLIENTREQUESTSTATE_H

@@ -1,17 +1,19 @@
 #include "NodeStorage.h"
+
 #include "../transport/Buffer.h"
+
 #include "ClonedEntityException.h"
 #include "KeyIndexedStorages.h"
 #include "Statement.h"
 #include "StorageManager.h"
+
 #include <map>
 
 namespace RingSwarm::storage {
 KeyIndexedStorage<core::Node *> nodeStorage;
-const char *nodeSelect =
-        "select pub_key, connection_info\n"
-        "from node\n"
-        "where node_id = :node_id;";
+const char *nodeSelect = "select pub_key, connection_info\n"
+                         "from node\n"
+                         "where node_id = :node_id;";
 
 core::Node *getNode(core::Id *nodeId) {
     if (nodeStorage.contains(nodeId)) {
@@ -29,8 +31,8 @@ core::Node *getNode(core::Id *nodeId) {
 }
 
 const char *nodeInsert =
-        "insert into node (node_id, pub_key, connection_info)\n"
-        "values (:node_id, :pub_key);";
+    "insert into node (node_id, pub_key, connection_info)\n"
+    "values (:node_id, :pub_key);";
 
 void storeNode(core::Node *node) {
     if (nodeStorage.contains(node->id)) {

@@ -14,7 +14,8 @@ public:
         return false;
     }
 
-    std::coroutine_handle<> await_suspend(std::coroutine_handle<Promise<RetTypes...>> h) {
+    std::coroutine_handle<>
+    await_suspend(std::coroutine_handle<Promise<RetTypes...>> h) {
         this->handle = h;
         return h;
     }
@@ -25,5 +26,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-
-#endif//RINGSWARM_SRC_ASYNC_GETCOROUTINEHANDLEAWAITOBJECT_H
+#endif// RINGSWARM_SRC_ASYNC_GETCOROUTINEHANDLEAWAITOBJECT_H

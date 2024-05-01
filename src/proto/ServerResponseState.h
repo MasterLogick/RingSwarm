@@ -9,4 +9,4 @@ struct ServerResponseState {
 };
 }// namespace RingSwarm::proto
 
-#endif//RINGSWARM_SRC_PROTO_SERVERRESPONSESTATE_H
+#endif// RINGSWARM_SRC_PROTO_SERVERRESPONSESTATE_H

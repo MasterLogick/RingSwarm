@@ -5,6 +5,7 @@
 
 namespace RingSwarm::async {
 class EventLoop;
+
 class EventLoopLock {
     EventLoop *el;
 
@@ -22,5 +23,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-
-#endif//RINGSWARM_SRC_ASYNC_EVENTLOOPLOCK_H
+#endif// RINGSWARM_SRC_ASYNC_EVENTLOOPLOCK_H

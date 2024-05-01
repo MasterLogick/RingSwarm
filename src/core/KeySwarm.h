@@ -3,6 +3,7 @@
 
 #include "ChunkRing.h"
 #include "Node.h"
+
 #include <map>
 #include <vector>
 
@@ -15,4 +16,4 @@ struct KeySwarm {
 };
 }// namespace RingSwarm::core
 
-#endif//RINGSWARM_KEYSWARM_H
+#endif// RINGSWARM_KEYSWARM_H

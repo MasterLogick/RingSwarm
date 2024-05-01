@@ -3,6 +3,7 @@
 
 #include "FinalAwait.h"
 #include "ThreadPool.h"
+
 #include <coroutine>
 #include <functional>
 #include <iostream>
@@ -21,14 +22,15 @@ public:
         return SuspendThisCoroutineAwaitObject<RetTypes...>(std::move(f));
     }
 
-    static void scheduleCoroutineResume(std::coroutine_handle<Promise<RetTypes...>> f) {
+    static void
+    scheduleCoroutineResume(std::coroutine_handle<Promise<RetTypes...>> f) {
         ThreadPool::getDefaultThreadPool()->resumeCoroutine(f.address());
     }
 
     Coroutine() = default;
 
-    explicit Coroutine(std::coroutine_handle<Promise<RetTypes...>> handle) : handle(std::move(handle)) {
-    }
+    explicit Coroutine(std::coroutine_handle<Promise<RetTypes...>> handle)
+        : handle(std::move(handle)) {}
 
     Coroutine(const Coroutine<RetTypes...> &c) = delete;
 
@@ -60,4 +62,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-#endif//COROUTINES_COROUTINE_H
+#endif// COROUTINES_COROUTINE_H

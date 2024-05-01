@@ -2,6 +2,7 @@
 #define RINGSWARM_REQUESTHEADER_H
 
 #include "CommandId.h"
+
 #include <cstdint>
 
 namespace RingSwarm::proto {
@@ -12,4 +13,4 @@ struct RequestHeader {
 } __attribute__((packed));
 }// namespace RingSwarm::proto
 
-#endif//RINGSWARM_REQUESTHEADER_H
+#endif// RINGSWARM_REQUESTHEADER_H

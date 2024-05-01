@@ -2,6 +2,7 @@
 #define RINGSWARM_HASHCRYPTO_H
 
 #include "../core/Id.h"
+
 #include <memory>
 
 namespace RingSwarm::crypto {
@@ -16,4 +17,4 @@ std::shared_ptr<core::Id> hashData(auto *data) {
 }
 }// namespace RingSwarm::crypto
 
-#endif//RINGSWARM_HASHCRYPTO_H
+#endif// RINGSWARM_HASHCRYPTO_H

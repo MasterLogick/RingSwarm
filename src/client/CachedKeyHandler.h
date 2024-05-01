@@ -4,6 +4,7 @@
 #include "../core/Id.h"
 #include "../core/KeyInfo.h"
 #include "../storage/MappedChunk.h"
+
 #include "KeyHandler.h"
 
 #include <memory>
@@ -16,7 +17,8 @@ class CachedKeyHandler : public KeyHandler {
 public:
     explicit CachedKeyHandler(core::Id *keyId);
 
-    std::shared_ptr<async::Future<void *, uint32_t>> readData(uint32_t len, uint64_t offset) override;
+    std::shared_ptr<async::Future<void *, uint32_t>>
+    readData(uint32_t len, uint64_t offset) override;
 
     uint64_t getDataSize() override;
 
@@ -24,4 +26,4 @@ public:
 };
 }// namespace RingSwarm::client
 
-#endif//RINGSWARM_CACHEDKEYHANDLER_H
+#endif// RINGSWARM_CACHEDKEYHANDLER_H

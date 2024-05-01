@@ -22,9 +22,11 @@ public:
     static ThreadPool *getDefaultThreadPool() {
         return defaultThreadPool;
     }
+
     static void setDefaultThreadPool(ThreadPool *pool) {
         defaultThreadPool = pool;
     }
+
     explicit ThreadPool(unsigned int threadNum);
 
     void resumeCoroutine(void *handle);
@@ -35,4 +37,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-#endif//RINGSWARM_TASKMANAGER_H
+#endif// RINGSWARM_TASKMANAGER_H

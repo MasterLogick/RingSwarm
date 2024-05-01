@@ -3,7 +3,9 @@
 
 #include "../crypto/AsymmetricalCrypto.h"
 #include "../crypto/Signature.h"
+
 #include "Id.h"
+
 #include <array>
 #include <cstdint>
 
@@ -16,4 +18,4 @@ public:
 };
 }// namespace RingSwarm::core
 
-#endif//RINGSWARM_PUBLICKEY_H
+#endif// RINGSWARM_PUBLICKEY_H

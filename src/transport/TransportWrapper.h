@@ -9,7 +9,8 @@ protected:
     std::unique_ptr<Transport> transport;
 
 public:
-    explicit TransportWrapper(std::unique_ptr<Transport> wrappedTransport) : transport(std::move(wrappedTransport)) {}
+    explicit TransportWrapper(std::unique_ptr<Transport> wrappedTransport)
+        : transport(std::move(wrappedTransport)) {}
 
     async::Coroutine<> rawRead(void *data, uint32_t size) override {
         return transport->rawRead(data, size);
@@ -27,4 +28,4 @@ public:
 };
 }// namespace RingSwarm::transport
 
-#endif//RINGSWARM_TRANSPORTWRAPPER_H
+#endif// RINGSWARM_TRANSPORTWRAPPER_H

@@ -11,4 +11,4 @@ std::vector<core::Id *> getAllStoredKeySwarms();
 
 void storeKeySwarm(core::KeySwarm *keySwarm);
 }// namespace RingSwarm::storage
-#endif//RINGSWARM_KEYSWARMSTORAGE_H
+#endif// RINGSWARM_KEYSWARMSTORAGE_H

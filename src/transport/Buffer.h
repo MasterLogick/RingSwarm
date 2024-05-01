@@ -4,7 +4,9 @@
 #include "../core/ChunkLink.h"
 #include "../core/Id.h"
 #include "../proto/ProtocolException.h"
+
 #include "DataSerialisationException.h"
+
 #include <concepts>
 #include <cstdint>
 #include <map>
@@ -15,6 +17,7 @@
 namespace RingSwarm::core {
 class Node;
 }
+
 namespace RingSwarm::transport {
 class Buffer {
     void writeData(const char *data, uint32_t len);
@@ -23,7 +26,7 @@ class Buffer {
 
     template<class T>
     static constexpr uint32_t calcSize(T)
-        requires std::unsigned_integral<T>
+    requires std::unsigned_integral<T>
     {
         return sizeof(T);
     }
@@ -43,7 +46,8 @@ class Buffer {
     static uint32_t calcSize(core::Node *n);
 
     static constexpr uint32_t calcSize(core::ChunkLink *) {
-        return 2 * calcSize((core::Id *) nullptr) + calcSize<uint64_t>(0) + calcSize((crypto::Signature *) nullptr);
+        return 2 * calcSize((core::Id *) nullptr) + calcSize<uint64_t>(0) +
+               calcSize((crypto::Signature *) nullptr);
     }
 
     static uint32_t calcSize(std::string &s) {
@@ -62,11 +66,12 @@ public:
 
     Buffer(Buffer &&buffer);
 
-    Buffer &operator=(Buffer &&buffer) noexcept ;
+    Buffer &operator=(Buffer &&buffer) noexcept;
 
     explicit Buffer(uint32_t len, uint32_t offset = 0);
 
-    explicit Buffer(uint8_t *ptr, uint32_t len) : data(ptr), offset(0), len(len) {}
+    explicit Buffer(uint8_t *ptr, uint32_t len)
+        : data(ptr), offset(0), len(len) {}
 
     explicit Buffer(std::vector<char> initValue);
 
@@ -93,9 +98,7 @@ public:
     template<class T>
     void write(std::vector<T> &vec) {
         write<uint32_t>(vec.size());
-        for (const auto &item: vec) {
-            write<T>(item);
-        }
+        for (const auto &item: vec) { write<T>(item); }
     }
 
     template<class T, class V>
@@ -125,9 +128,7 @@ public:
         uint32_t size = read<uint32_t>();
         std::vector<T> vec;
         vec.reserve(size);
-        for (int i = 0; i < size; ++i) {
-            vec.push_back(read<T>());
-        }
+        for (int i = 0; i < size; ++i) { vec.push_back(read<T>()); }
         return vec;
     }
 
@@ -143,7 +144,6 @@ public:
         return map;
     }
 
-
     void assertFullyUsed() {
         if (offset != len) {
             throw DataSerialisationException();
@@ -152,4 +152,4 @@ public:
 };
 }// namespace RingSwarm::transport
 
-#endif//RINGSWARM_BUFFER_H
+#endif// RINGSWARM_BUFFER_H

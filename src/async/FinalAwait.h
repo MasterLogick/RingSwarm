@@ -1,18 +1,17 @@
 #ifndef COROUTINES_FINALAWAIT_H
 #define COROUTINES_FINALAWAIT_H
 
+#include <boost/log/trivial.hpp>
+
 #include <coroutine>
 #include <iostream>
-
-#include <boost/log/trivial.hpp>
 
 namespace RingSwarm::async {
 class FinalAwait {
     std::coroutine_handle<> caller;
 
 public:
-    FinalAwait(std::coroutine_handle<> caller) : caller(caller) {
-    }
+    FinalAwait(std::coroutine_handle<> caller) : caller(caller) {}
 
     bool await_ready() noexcept {
         return false;
@@ -36,4 +35,4 @@ public:
 };
 }// namespace RingSwarm::async
 
-#endif//COROUTINES_FINALAWAIT_H
+#endif// COROUTINES_FINALAWAIT_H

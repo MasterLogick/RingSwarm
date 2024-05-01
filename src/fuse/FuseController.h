@@ -2,6 +2,7 @@
 #define RINGSWARM_FUSECONTROLLER_H
 
 #include "../core/Id.h"
+
 #include <string>
 
 namespace RingSwarm::fuse {
@@ -12,4 +13,4 @@ void mountRing(core::Id *keyId);
 void stopFuse();
 }// namespace RingSwarm::fuse
 
-#endif//RINGSWARM_FUSECONTROLLER_H
+#endif// RINGSWARM_FUSECONTROLLER_H

@@ -1,4 +1,5 @@
 #include "Thread.h"
+
 #include <pthread.h>
 
 namespace RingSwarm::core {

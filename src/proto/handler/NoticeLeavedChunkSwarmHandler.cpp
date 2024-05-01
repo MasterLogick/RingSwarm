@@ -3,17 +3,23 @@
 #include "../ServerHandler.h"
 
 #define MAX_RESPONSE_SIZE (0)
+
 namespace RingSwarm::proto {
-std::shared_ptr<async::Future<void>> ClientHandler::noticeLeavedChunkSwarm(core::Id *keyId, uint64_t chunkIndex) {
+std::shared_ptr<async::Future<void>>
+ClientHandler::noticeLeavedChunkSwarm(core::Id *keyId, uint64_t chunkIndex) {
     RequestBuffer req(40);
     req.write(keyId);
     req.write<uint64_t>(chunkIndex);
-    return transport->sendRequest(10, req, MAX_RESPONSE_SIZE)->then([](ResponseHeader h) {
-        //todo check results
-    });
+    return transport->sendRequest(10, req, MAX_RESPONSE_SIZE)
+        ->then([](ResponseHeader h) {
+        // todo check results
+        });
 }
 
-void ServerHandler::handleNoticeLeavedChunkSwarm(transport::Buffer &request, uint8_t tag) {
+void ServerHandler::handleNoticeLeavedChunkSwarm(
+    transport::Buffer &request,
+    uint8_t tag
+) {
     auto keyId = request.read<core::Id *>();
     auto chunkIndex = request.read<uint64_t>();
     auto chunkSwarm = storage::getHostedChunkSwarm(keyId, chunkIndex);

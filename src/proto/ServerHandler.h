@@ -3,8 +3,10 @@
 
 #include "../transport/Buffer.h"
 #include "../transport/Transport.h"
+
 #include "RequestHeader.h"
 #include "ServerResponseState.h"
+
 #include <map>
 #include <memory>
 #include <set>
@@ -35,58 +37,69 @@ class ServerHandler {
 
     async::Coroutine<> handleNoticeJoinedKeySwarm(ServerResponseState &request);
 
-    async::Coroutine<> handleNoticeJoinedChunkSwarm(ServerResponseState &request);
+    async::Coroutine<> handleNoticeJoinedChunkSwarm(ServerResponseState
+    &request);
 
     async::Coroutine<> handleGetKeySwarm(ServerResponseState &request);
 
     async::Coroutine<> handleGetChunkSwarm(ServerResponseState &request);
 
-    async::Coroutine<> handleNoticeLeavedChunkSwarm(ServerResponseState &request);
+    async::Coroutine<> handleNoticeLeavedChunkSwarm(ServerResponseState
+    &request);
 
-    async::Coroutine<> handleSubscribeOnChunkChange(ServerResponseState &request);
+    async::Coroutine<> handleSubscribeOnChunkChange(ServerResponseState
+    &request);
 
     async::Coroutine<> handleChunkChangeEvent(ServerResponseState &request);
 
-    async::Coroutine<> handleUnsubscribeOnChunkChange(ServerResponseState &request);*/
+    async::Coroutine<> handleUnsubscribeOnChunkChange(ServerResponseState
+    &request);*/
 
-    typedef async::Coroutine<> (ServerHandler::*RequestHandler)(ServerResponseState &);
+    typedef async::Coroutine<> (ServerHandler::*
+                                    RequestHandler)(ServerResponseState &);
 
     constexpr static RequestHandler Methods[] = {
-            &ServerHandler::stubHandler,// end connection handle
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
-            &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,// end connection handle
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
+        &ServerHandler::stubHandler,
             /*          &ServerHandler::handleGetKey,
-            &ServerHandler::handleGetNearestChunk,
-            &ServerHandler::handleGetChunkLink,
-            &ServerHandler::handleGetChunk,
-            &ServerHandler::handleDragIntoKeySwarm,
-            &ServerHandler::handleNoticeJoinedKeySwarm,
-            &ServerHandler::handleNoticeJoinedChunkSwarm,
-            &ServerHandler::handleGetKeySwarm,
-            &ServerHandler::handleGetChunkSwarm,
-            &ServerHandler::handleNoticeLeavedChunkSwarm,
-            &ServerHandler::handleSubscribeOnChunkChange,
-            &ServerHandler::handleChunkChangeEvent,
-            &ServerHandler::handleUnsubscribeOnChunkChange*/
+&ServerHandler::handleGetNearestChunk,
+&ServerHandler::handleGetChunkLink,
+&ServerHandler::handleGetChunk,
+&ServerHandler::handleDragIntoKeySwarm,
+&ServerHandler::handleNoticeJoinedKeySwarm,
+&ServerHandler::handleNoticeJoinedChunkSwarm,
+&ServerHandler::handleGetKeySwarm,
+&ServerHandler::handleGetChunkSwarm,
+&ServerHandler::handleNoticeLeavedChunkSwarm,
+&ServerHandler::handleSubscribeOnChunkChange,
+&ServerHandler::handleChunkChangeEvent,
+&ServerHandler::handleUnsubscribeOnChunkChange*/
     };
 
-    static_assert(sizeof(Methods) == sizeof(Methods[0]) * CommandId_COMMAND_COUNT, "command handlers count mismatch with command id count");
+    static_assert(
+        sizeof(Methods) == sizeof(Methods[0]) * CommandId_COMMAND_COUNT,
+        "command handlers count mismatch with command id count"
+    );
 
 public:
-    explicit ServerHandler(std::unique_ptr<transport::Transport> transport, core::Node &remote);
+    explicit ServerHandler(
+        std::unique_ptr<transport::Transport> transport,
+        core::Node &remote
+    );
     async::Coroutine<> listen();
 };
 }// namespace RingSwarm::proto
 
-#endif//RINGSWARM_SERVERHANDLER_H
+#endif// RINGSWARM_SERVERHANDLER_H

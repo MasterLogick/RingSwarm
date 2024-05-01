@@ -1,14 +1,23 @@
 #include "ClientTransport.h"
+
 #include "../Assert.h"
+
 #include "RequestHeader.h"
 #include "ServerHandler.h"
+
 #include <boost/log/trivial.hpp>
 
 namespace RingSwarm::proto {
-ClientTransport::ClientTransport(std::unique_ptr<transport::Transport> clientTransport)
+ClientTransport::ClientTransport(
+    std::unique_ptr<transport::Transport> clientTransport
+)
     : transport(std::move(clientTransport)) {}
 
-async::Coroutine<ResponseHeader> ClientTransport::sendRequest(CommandId commandId, RequestBuffer &req, uint32_t maxResponseSize) {
+async::Coroutine<ResponseHeader> ClientTransport::sendRequest(
+    CommandId commandId,
+    RequestBuffer &req,
+    uint32_t maxResponseSize
+) {
     req.assertFullyUsed();
     lock.lock();
     auto &requestState = reserveRequestState();
@@ -24,8 +33,10 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(CommandId commandI
             currentWaitForResponseCoroutine = waitForAnyResponse();
         }
         lock.unlock();
-        /*BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " << proto::ServerHandler::MethodNames[commandIndex]
-                           << " " << req.len - sizeof(RequestHeader) << " bytes. Tag: " << ((int) tag);*/
+        /*BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " <<
+           proto::ServerHandler::MethodNames[commandIndex]
+                           << " " << req.len - sizeof(RequestHeader) << " bytes.
+           Tag: " << ((int) tag);*/
         return std::noop_coroutine();
     });
     if (requestState.header.responseLen == 0) {
@@ -42,7 +53,11 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(CommandId commandI
     co_return rh;
 }
 
-async::Coroutine<transport::Buffer> ClientTransport::sendSmallRequest(CommandId commandId, RequestBuffer &req, uint32_t maxResponseSize) {
+async::Coroutine<transport::Buffer> ClientTransport::sendSmallRequest(
+    CommandId commandId,
+    RequestBuffer &req,
+    uint32_t maxResponseSize
+) {
     ResponseHeader rh = co_await sendRequest(commandId, req, maxResponseSize);
     auto *buff = new uint8_t[rh.responseLen];
     ~co_await rawRead(buff, rh.responseLen);
@@ -73,9 +88,11 @@ async::Coroutine<> ClientTransport::waitForAnyResponse() {
         lock.unlock();
         reqState.header = rh;
         unreadResponseLength = rh.responseLen;
-        async::Coroutine<ResponseHeader>::scheduleCoroutineResume(reqState.handle);
+        async::Coroutine<ResponseHeader>::scheduleCoroutineResume(
+            reqState.handle
+        );
     } else {
-        //todo handle case
+        // todo handle case
     }
     co_return;
 }
@@ -90,7 +107,7 @@ ClientRequestState &ClientTransport::reserveRequestState() {
         }
     }
     lock.unlock();
-    //todo handle case
+    // todo handle case
     return pendingRequests[0];
 }
 

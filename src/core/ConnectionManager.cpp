@@ -1,18 +1,28 @@
 #include "ConnectionManager.h"
+
 #include "../crypto/HashCrypto.h"
 #include "../transport/SecureOverlayTransport.h"
 
 namespace RingSwarm::core {
 std::map<core::Id *, proto::ClientHandler *, core::Id::Comparator> connections;
 
-std::shared_ptr<async::Future<proto::ClientHandler *>> getOrConnect(core::Node *node) {
+std::shared_ptr<async::Future<proto::ClientHandler *>>
+getOrConnect(core::Node *node) {
     if (connections.contains(node->id)) {
-        return async::Future<proto::ClientHandler *>::createResolved(connections[node->id]);
+        return async::Future<proto::ClientHandler *>::createResolved(
+            connections[node->id]
+        );
     }
     auto *transport = node->connectionInfo->openConnection();
-    return transport::SecureOverlayTransport::createClientSide(transport, node->publicKey)->then<proto::ClientHandler *>([node](auto *overlay) {
-        return (connections[node->id] = new proto::ClientHandler(overlay, node));
-    });
+    return transport::SecureOverlayTransport::createClientSide(
+               transport,
+               node->publicKey
+    )
+        ->then<proto::ClientHandler *>([node](auto *overlay) {
+            return (
+                connections[node->id] = new proto::ClientHandler(overlay, node)
+            );
+        });
 }
 
 proto::ClientHandler *getPossibleKeyHost(core::Id *keyId, uint8_t index) {
@@ -21,6 +31,7 @@ proto::ClientHandler *getPossibleKeyHost(core::Id *keyId, uint8_t index) {
         uint8_t nodeHash[32];
         uint8_t index;
     } __attribute__((packed)) host{};
+
     static_assert(sizeof(PossibleKeyHost) == 65);
     memcpy(host.keyHash, keyId->hash, 32);
     host.index = index;
@@ -39,10 +50,11 @@ proto::ClientHandler *getPossibleKeyHost(core::Id *keyId, uint8_t index) {
     return bestHost;
 }
 
-std::shared_ptr<async::Future<proto::ClientHandler *>> getOrConnectToOne(std::vector<core::Node *> &nodeList) {
+std::shared_ptr<async::Future<proto::ClientHandler *>>
+getOrConnectToOne(std::vector<core::Node *> &nodeList) {
     std::vector<core::Node *> copy(nodeList);
-    //todo shuffle
-    //todo
+    // todo shuffle
+    // todo
     for (const auto &item: copy) {
         try {
             auto client = core::getOrConnect(item);

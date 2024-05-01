@@ -1,5 +1,3 @@
 #include "ChunkSwarm.h"
 
-namespace RingSwarm::core {
-
-}
+namespace RingSwarm::core {}

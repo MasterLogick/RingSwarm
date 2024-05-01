@@ -14,8 +14,9 @@ protected:
     Coroutine<AwaitedRetTypes...> innerCoroutine;
 
 public:
-    explicit ChainedAwaitObjectBase(Coroutine<AwaitedRetTypes...> innerCoroutine) : innerCoroutine(std::move(innerCoroutine)) {
-    }
+    explicit ChainedAwaitObjectBase(Coroutine<AwaitedRetTypes...> innerCoroutine
+    )
+        : innerCoroutine(std::move(innerCoroutine)) {}
 
     bool await_ready() noexcept {
         return innerCoroutine.getHandle().done();
@@ -30,36 +31,66 @@ template<typename...>
 class ChainedAwaitObject;
 
 template<typename... AwaitedRetTypes, typename... RetTypes>
-class ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...> {
+class ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>
+    : public ChainedAwaitObjectBase<
+          Coroutine<AwaitedRetTypes...>,
+          RetTypes...> {
 public:
-    explicit ChainedAwaitObject(Coroutine<AwaitedRetTypes...> innerCoroutine) : ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(innerCoroutine)) {}
+    explicit ChainedAwaitObject(Coroutine<AwaitedRetTypes...> innerCoroutine)
+        : ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>(
+              std::move(innerCoroutine)
+          ) {}
 
-    AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...> await_resume() noexcept {
-        auto &promise = ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::innerCoroutine.getHandle().promise();
-        return AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...>(std::move(promise.moveValue()), promise.getAndClearExceptionPtr());
+    AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...>
+    await_resume() noexcept {
+        auto &promise =
+            ChainedAwaitObjectBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::
+                innerCoroutine.getHandle()
+                    .promise();
+        return AwaitResumeResult<Coroutine<AwaitedRetTypes...>, RetTypes...>(
+            std::move(promise.moveValue()),
+            promise.getAndClearExceptionPtr()
+        );
     }
 };
 
 template<class AwaitedRetType, class... RetTypes>
-class ChainedAwaitObject<Coroutine<AwaitedRetType>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...> {
+class ChainedAwaitObject<Coroutine<AwaitedRetType>, RetTypes...>
+    : public ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...> {
 public:
-    explicit ChainedAwaitObject(Coroutine<AwaitedRetType> innerCoroutine) : ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>(std::move(innerCoroutine)) {}
+    explicit ChainedAwaitObject(Coroutine<AwaitedRetType> innerCoroutine)
+        : ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>(
+              std::move(innerCoroutine)
+          ) {}
 
-    AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...> await_resume() noexcept {
-        auto &promise = ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::innerCoroutine.getHandle().promise();
-        return AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...>(std::move(promise.moveValue()), promise.getAndClearExceptionPtr());
+    AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...>
+    await_resume() noexcept {
+        auto &promise =
+            ChainedAwaitObjectBase<Coroutine<AwaitedRetType>, RetTypes...>::
+                innerCoroutine.getHandle()
+                    .promise();
+        return AwaitResumeResult<Coroutine<AwaitedRetType>, RetTypes...>(
+            std::move(promise.moveValue()),
+            promise.getAndClearExceptionPtr()
+        );
     }
 };
 
 template<class... RetTypes>
-class ChainedAwaitObject<Coroutine<>, RetTypes...> : public ChainedAwaitObjectBase<Coroutine<>, RetTypes...> {
+class ChainedAwaitObject<Coroutine<>, RetTypes...>
+    : public ChainedAwaitObjectBase<Coroutine<>, RetTypes...> {
 public:
     explicit ChainedAwaitObject(Coroutine<> innerCoroutine);
 
     AwaitResumeResult<Coroutine<>, RetTypes...> await_resume() noexcept {
-        auto &promise = ChainedAwaitObjectBase<Coroutine<>, RetTypes...>::innerCoroutine.getHandle().promise();
-        return AwaitResumeResult<Coroutine<>, RetTypes...>(promise.getAndClearExceptionPtr());
+        auto &promise =
+            ChainedAwaitObjectBase<Coroutine<>, RetTypes...>::innerCoroutine
+                .getHandle()
+                .promise();
+        return AwaitResumeResult<Coroutine<>, RetTypes...>(
+            promise.getAndClearExceptionPtr()
+        );
     }
 };
 }// namespace RingSwarm::async
-#endif//COROUTINES_CHAINEDChainedAwaitObject_H
+#endif// COROUTINES_CHAINEDChainedAwaitObject_H

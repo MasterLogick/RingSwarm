@@ -1,22 +1,30 @@
 #define FUSE_USE_VERSION 310
 
 #include "FuseController.h"
+
 #include "../Assert.h"
 #include "../client/ExternalKeyHandler.h"
 #include "../client/FileDownloader.h"
 #include "../core/Thread.h"
+
 #include "FuseException.h"
+
+#include <openssl/rand.h>
+
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <fuse_lowlevel.h>
-#include <openssl/rand.h>
 #include <poll.h>
 #include <thread>
 
 namespace RingSwarm::fuse {
 std::mutex filesLock;
-std::map<core::Id *, std::pair<fuse_ino_t, client::KeyHandler *>, core::Id::Comparator> files;
+std::map<
+    core::Id *,
+    std::pair<fuse_ino_t, client::KeyHandler *>,
+    core::Id::Comparator>
+    files;
 std::atomic_int64_t nextInode;
 fuse_session *session;
 std::ifstream file;
@@ -28,7 +36,11 @@ auto getFileByInode(fuse_ino_t inode) {
     });
 }
 
-void fillStats(client::KeyHandler *handler, fuse_ino_t inode, struct stat &stats) {
+void fillStats(
+    client::KeyHandler *handler,
+    fuse_ino_t inode,
+    struct stat &stats
+) {
     stats.st_ino = inode;
     stats.st_mode = S_IFREG | S_IRUSR;
     stats.st_nlink = 1;
@@ -51,8 +63,9 @@ void lookup(fuse_req_t req, fuse_ino_t parent, const char *name) {
             if (fuse_reply_err(req, ENOENT) != 0) {
                 BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_err err";
             }
-        } else if (!std::all_of(path.cbegin(), path.cend(),
-                                [](auto c) { return '0' <= c <= '9' || 'a' <= c <= 'f'; })) {
+        } else if (!std::all_of(path.cbegin(), path.cend(), [](auto c) {
+                       return '0' <= c <= '9' || 'a' <= c <= 'f';
+                   })) {
             if (fuse_reply_err(req, ENOENT) != 0) {
                 BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_err err";
             }
@@ -91,6 +104,7 @@ void getattr(fuse_req_t req, fuse_ino_t inode, fuse_file_info *) {
     BOOST_LOG_TRIVIAL(debug) << "FUSE getattr " << inode;
     if (inode == FUSE_ROOT_ID) {
         struct stat s {};
+
         memset(&s, 0, sizeof(struct stat));
         s.st_gid = getgid();
         s.st_uid = getuid();
@@ -105,6 +119,7 @@ void getattr(fuse_req_t req, fuse_ino_t inode, fuse_file_info *) {
         }
     } else {
         struct stat s {};
+
         memset(&s, 0, sizeof(struct stat));
         auto iter = getFileByInode(inode);
         fillStats(iter->second.second, inode, s);
@@ -140,35 +155,73 @@ void open(fuse_req_t req, fuse_ino_t inode, struct fuse_file_info *info) {
     }
 }
 
-void readBufferedStep(client::KeyHandler *handler, fuse_req_t req, char *buf, uint32_t buffOffset, off_t fileOffset,
-                      uint32_t remainderSize) {
-    handler->readData(remainderSize, fileOffset)->then([handler, req, buf, buffOffset, fileOffset, remainderSize](void *data, uint32_t len) {
-        memcpy(buf + buffOffset, data, std::min(len, remainderSize));
-        if (len < remainderSize) {
-            readBufferedStep(handler, req, buf, buffOffset + len, fileOffset + len, remainderSize - len);
-        } else {
-            fuse_reply_buf(req, buf, buffOffset + remainderSize);
-            delete[] buf;
-        }
-    });
+void readBufferedStep(
+    client::KeyHandler *handler,
+    fuse_req_t req,
+    char *buf,
+    uint32_t buffOffset,
+    off_t fileOffset,
+    uint32_t remainderSize
+) {
+    handler->readData(remainderSize, fileOffset)
+        ->then([handler, req, buf, buffOffset, fileOffset, remainderSize](
+                   void *data,
+                   uint32_t len
+               ) {
+            memcpy(buf + buffOffset, data, std::min(len, remainderSize));
+            if (len < remainderSize) {
+                readBufferedStep(
+                    handler,
+                    req,
+                    buf,
+                    buffOffset + len,
+                    fileOffset + len,
+                    remainderSize - len
+                );
+            } else {
+                fuse_reply_buf(req, buf, buffOffset + remainderSize);
+                delete[] buf;
+            }
+        });
 }
 
-void read(fuse_req_t req, fuse_ino_t inode, size_t size, off_t offset, struct fuse_file_info *info) {
-    BOOST_LOG_TRIVIAL(debug) << "FUSE read " << inode << " " << size << " " << offset;
+void read(
+    fuse_req_t req,
+    fuse_ino_t inode,
+    size_t size,
+    off_t offset,
+    struct fuse_file_info *info
+) {
+    BOOST_LOG_TRIVIAL(debug)
+        << "FUSE read " << inode << " " << size << " " << offset;
     auto *id = reinterpret_cast<core::Id *>(info->fh);
     auto &p = files[id];
     Assert(p.first == inode);
-    p.second->readData(size, offset)->then([handler = p.second, req, offset, size](void *data, uint32_t len) {
-        if (len < size) {
-            char *buf = new char[size];
-            memcpy(buf, data, len);
-            readBufferedStep(handler, req, buf, len, offset + len, size - len);
-        } else {
-            if (fuse_reply_buf(req, reinterpret_cast<const char *>(data), size) != 0) {
-                BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_buf err";
+    p.second->readData(size, offset)
+        ->then(
+            [handler = p.second, req, offset, size](void *data, uint32_t len) {
+                if (len < size) {
+                    char *buf = new char[size];
+                    memcpy(buf, data, len);
+                    readBufferedStep(
+                        handler,
+                        req,
+                        buf,
+                        len,
+                        offset + len,
+                        size - len
+                    );
+                } else {
+                    if (fuse_reply_buf(
+                            req,
+                            reinterpret_cast<const char *>(data),
+                            size
+                        ) != 0) {
+                        BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_buf err";
+                    }
+                }
             }
-        }
-    });
+        );
 }
 
 void opendir(fuse_req_t req, fuse_ino_t inode, fuse_file_info *info) {
@@ -185,14 +238,21 @@ void opendir(fuse_req_t req, fuse_ino_t inode, fuse_file_info *info) {
     }
 }
 
-void readdir(fuse_req_t req, fuse_ino_t inode, size_t size, off_t offset, struct fuse_file_info *info) {
-    BOOST_LOG_TRIVIAL(debug) << "FUSE readdir " << inode << " " << size << " " << offset;
+void readdir(
+    fuse_req_t req,
+    fuse_ino_t inode,
+    size_t size,
+    off_t offset,
+    struct fuse_file_info *info
+) {
+    BOOST_LOG_TRIVIAL(debug)
+        << "FUSE readdir " << inode << " " << size << " " << offset;
     Assert(inode == 1);
     size_t bufSize = 0;
     if (offset < FUSE_ROOT_ID) {
         bufSize += fuse_add_direntry(req, nullptr, 0, ".", nullptr, 0) +
                    fuse_add_direntry(req, nullptr, 0, "..", nullptr, 0);
-        //todo check size
+        // todo check size
     }
     std::lock_guard<std::mutex> l(filesLock);
 
@@ -200,7 +260,14 @@ void readdir(fuse_req_t req, fuse_ino_t inode, size_t size, off_t offset, struct
         if (offset >= item.second.first) {
             continue;
         }
-        size_t s = fuse_add_direntry(req, nullptr, 0, item.first->getHexRepresentation().c_str(), nullptr, 0);
+        size_t s = fuse_add_direntry(
+            req,
+            nullptr,
+            0,
+            item.first->getHexRepresentation().c_str(),
+            nullptr,
+            0
+        );
         if (bufSize + s > size) {
             break;
         }
@@ -210,19 +277,42 @@ void readdir(fuse_req_t req, fuse_ino_t inode, size_t size, off_t offset, struct
     size_t off = 0;
     if (offset < FUSE_ROOT_ID) {
         struct stat s {};
+
         s.st_ino = FUSE_ROOT_ID;
-        off += fuse_add_direntry(req, data + off, bufSize - off, ".", &s, FUSE_ROOT_ID);
-        off += fuse_add_direntry(req, data + off, bufSize - off, "..", &s, FUSE_ROOT_ID);
+        off += fuse_add_direntry(
+            req,
+            data + off,
+            bufSize - off,
+            ".",
+            &s,
+            FUSE_ROOT_ID
+        );
+        off += fuse_add_direntry(
+            req,
+            data + off,
+            bufSize - off,
+            "..",
+            &s,
+            FUSE_ROOT_ID
+        );
     }
+
     struct stat s {};
+
     memset(&s, 0, sizeof(struct stat));
     for (const auto &item: files) {
         if (offset >= item.second.first) {
             continue;
         }
         fillStats(item.second.second, item.second.first, s);
-        off += fuse_add_direntry(req, data + off, bufSize - off, item.first->getHexRepresentation().c_str(),
-                                 &s, item.second.first);
+        off += fuse_add_direntry(
+            req,
+            data + off,
+            bufSize - off,
+            item.first->getHexRepresentation().c_str(),
+            &s,
+            item.second.first
+        );
         if (off == bufSize) {
             break;
         }
@@ -254,7 +344,12 @@ void flush(fuse_req_t req, fuse_ino_t, struct fuse_file_info *) {
     }
 }
 
-void poll(fuse_req_t req, fuse_ino_t, struct fuse_file_info *, struct fuse_pollhandle *ph) {
+void poll(
+    fuse_req_t req,
+    fuse_ino_t,
+    struct fuse_file_info *,
+    struct fuse_pollhandle *ph
+) {
     if (fuse_reply_poll(req, POLLIN) != 0) {
         BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_poll err";
     }
@@ -268,10 +363,10 @@ void poll(fuse_req_t req, fuse_ino_t, struct fuse_file_info *, struct fuse_pollh
 
 void statfs(fuse_req_t req, fuse_ino_t inode) {
     struct statvfs stats {
-        4096, 4096, 111111111, 0, 0,
-                static_cast<fsfilcnt_t>(nextInode.load()), 0, 0,
-                fsid, ST_RDONLY, 255
+        4096, 4096, 111111111, 0, 0, static_cast<fsfilcnt_t>(nextInode.load()),
+            0, 0, fsid, ST_RDONLY, 255
     };
+
     if (fuse_reply_statfs(req, &stats) != 0) {
         BOOST_LOG_TRIVIAL(debug) << "FUSE fuse_reply_statfs err";
     }
@@ -279,55 +374,56 @@ void statfs(fuse_req_t req, fuse_ino_t inode) {
 
 void startFuse(std::string &mountPoint) {
     fuse_lowlevel_ops ops{
-            .init = init,
-            .destroy = destroy,
-            .lookup = lookup,
-            .forget = nullptr,
-            .getattr = getattr,
-            .setattr = nullptr,
-            .readlink = nullptr,
-            .mknod = nullptr,
-            .mkdir = nullptr,
-            .unlink = nullptr,
-            .rmdir = nullptr,
-            .symlink = nullptr,
-            .rename = nullptr,
-            .link = nullptr,
-            .open = open,
-            .read = read,
-            .write = nullptr,
-            .flush = flush,
-            .release = nullptr,
-            .fsync = nullptr,
-            .opendir = opendir,
-            .readdir = readdir,
-            .releasedir = releasedir,
-            .fsyncdir = nullptr,
-            .statfs = statfs,
-            .setxattr = nullptr,
-            .getxattr = getxattr,
-            .listxattr = nullptr,
-            .removexattr = nullptr,
-            .access = nullptr,
-            .create = nullptr,
-            .getlk = nullptr,
-            .setlk = nullptr,
-            .bmap = nullptr,
-            .ioctl = nullptr,
-            .poll = nullptr,
-            .write_buf = nullptr,
-            .retrieve_reply = nullptr,
-            .forget_multi = nullptr,
-            .flock = nullptr,
-            .fallocate = nullptr,
-            .readdirplus = nullptr,
-            .copy_file_range = nullptr,
-            .lseek = nullptr};
+        .init = init,
+        .destroy = destroy,
+        .lookup = lookup,
+        .forget = nullptr,
+        .getattr = getattr,
+        .setattr = nullptr,
+        .readlink = nullptr,
+        .mknod = nullptr,
+        .mkdir = nullptr,
+        .unlink = nullptr,
+        .rmdir = nullptr,
+        .symlink = nullptr,
+        .rename = nullptr,
+        .link = nullptr,
+        .open = open,
+        .read = read,
+        .write = nullptr,
+        .flush = flush,
+        .release = nullptr,
+        .fsync = nullptr,
+        .opendir = opendir,
+        .readdir = readdir,
+        .releasedir = releasedir,
+        .fsyncdir = nullptr,
+        .statfs = statfs,
+        .setxattr = nullptr,
+        .getxattr = getxattr,
+        .listxattr = nullptr,
+        .removexattr = nullptr,
+        .access = nullptr,
+        .create = nullptr,
+        .getlk = nullptr,
+        .setlk = nullptr,
+        .bmap = nullptr,
+        .ioctl = nullptr,
+        .poll = nullptr,
+        .write_buf = nullptr,
+        .retrieve_reply = nullptr,
+        .forget_multi = nullptr,
+        .flock = nullptr,
+        .fallocate = nullptr,
+        .readdirplus = nullptr,
+        .copy_file_range = nullptr,
+        .lseek = nullptr
+    };
     nextInode.store(FUSE_ROOT_ID + 1);
     char *d[] = {
-            strdup("RingSwarm"),
+        strdup("RingSwarm"),
             /*strdup("-oallow_other") /*,
-                     strdup("-d")*/
+         strdup("-d")*/
     };
     fuse_args args = FUSE_ARGS_INIT(sizeof(d) / sizeof(d[0]), d);
     session = fuse_session_new(&args, &ops, sizeof(fuse_lowlevel_ops), nullptr);
@@ -338,8 +434,9 @@ void startFuse(std::string &mountPoint) {
         fuse_session_destroy(session);
         throw FuseException();
     }
-    if (RAND_bytes(reinterpret_cast<unsigned char *>(&fsid), sizeof(fsid)) != 1) {
-        //todo throw exception
+    if (RAND_bytes(reinterpret_cast<unsigned char *>(&fsid), sizeof(fsid)) !=
+        1) {
+        // todo throw exception
     }
     file = std::ifstream("/home/user/Videos/2023-06-07 15-11-20.mp4");
     std::thread([] {
@@ -356,7 +453,10 @@ void startFuse(std::string &mountPoint) {
 
 void mountRing(core::Id *keyId) {
     std::lock_guard<std::mutex> l(filesLock);
-    files.emplace(keyId, std::make_pair(nextInode++, client::createKeyHandler(keyId)));
+    files.emplace(
+        keyId,
+        std::make_pair(nextInode++, client::createKeyHandler(keyId))
+    );
 }
 
 void stopFuse() {

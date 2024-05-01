@@ -1,4 +1,5 @@
 #include "KeySwarmStorage.h"
+
 #include "ChunkRingStorage.h"
 #include "ClonedEntityException.h"
 #include "KeyIndexedStorages.h"
@@ -9,15 +10,13 @@
 namespace RingSwarm::storage {
 KeyIndexedStorage<core::KeySwarm *> keySwarmStorage;
 
-const char *keySelect =
-        "select public_key\n"
-        "from keys\n"
-        "where key_id = :key_id;";
+const char *keySelect = "select public_key\n"
+                        "from keys\n"
+                        "where key_id = :key_id;";
 
-const char *keySwarmNodeSelect =
-        "select node_id, swarm_index\n"
-        "from key_swarm\n"
-        "where key_id = :key_id;";
+const char *keySwarmNodeSelect = "select node_id, swarm_index\n"
+                                 "from key_swarm\n"
+                                 "where key_id = :key_id;";
 
 core::KeySwarm *getKeySwarm(core::Id *keyId) {
     if (keySwarmStorage.contains(keyId)) {
@@ -26,8 +25,12 @@ core::KeySwarm *getKeySwarm(core::Id *keyId) {
     Statement keySelectStatement(dbConnection, keySelect);
     keySelectStatement.bindId(":key_id", keyId);
     if (keySelectStatement.nextRow()) {
-        auto *ks = new core::KeySwarm(keyId, keySelectStatement.getPublicKey(0), std::map<uint8_t, core::Node *>(),
-                                      getChunkRing(keyId));
+        auto *ks = new core::KeySwarm(
+            keyId,
+            keySelectStatement.getPublicKey(0),
+            std::map<uint8_t, core::Node *>(),
+            getChunkRing(keyId)
+        );
         Statement keySwarmNodeSelectStatement(dbConnection, keySwarmNodeSelect);
         keySwarmNodeSelectStatement.bindId(":key_id", keyId);
         while (keySwarmNodeSelectStatement.nextRow()) {
@@ -45,9 +48,8 @@ core::KeySwarm *getKeySwarm(core::Id *keyId) {
     return nullptr;
 }
 
-const char *allKeysSelect =
-        "select key_id\n"
-        "from keys;";
+const char *allKeysSelect = "select key_id\n"
+                            "from keys;";
 
 std::vector<core::Id *> getAllStoredKeySwarms() {
     Statement allKeysSelectStatement(dbConnection, allKeysSelect);
@@ -58,13 +60,11 @@ std::vector<core::Id *> getAllStoredKeySwarms() {
     return allKeys;
 }
 
-
-const char *keyInsert =
-        "insert into keys (key_id, public_key)\n"
-        "values (:key_id, :public_key);";
+const char *keyInsert = "insert into keys (key_id, public_key)\n"
+                        "values (:key_id, :public_key);";
 const char *keySwarmNodeInsert =
-        "insert into key_swarm (key_id, swarm_index, node_id)\n"
-        "values (:key_id, :swarm_index, :node_id)";
+    "insert into key_swarm (key_id, swarm_index, node_id)\n"
+    "values (:key_id, :swarm_index, :node_id)";
 
 void storeKeySwarm(core::KeySwarm *keySwarm) {
     if (keySwarmStorage.contains(keySwarm->keyId)) {

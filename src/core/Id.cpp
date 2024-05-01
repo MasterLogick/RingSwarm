@@ -1,5 +1,7 @@
 #include "Id.h"
+
 #include <boost/algorithm/hex.hpp>
+
 #include <cstring>
 
 namespace RingSwarm::core {

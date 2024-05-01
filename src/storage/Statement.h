@@ -3,6 +3,7 @@
 
 #include "../core/Id.h"
 #include "../crypto/AsymmetricalCrypto.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -10,6 +11,7 @@
 class sqlite3_stmt;
 
 class sqlite3;
+
 namespace RingSwarm::storage {
 class Statement {
     ::sqlite3_stmt *statement;
@@ -69,4 +71,4 @@ public:
 };
 }// namespace RingSwarm::storage
 
-#endif//RINGSWARM_STATEMENT_H
+#endif// RINGSWARM_STATEMENT_H

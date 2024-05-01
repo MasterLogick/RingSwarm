@@ -2,11 +2,13 @@
 #define RINGSWARM_PLAINSOCKETTRANSPORT_H
 
 #include "Transport.h"
+
 #include "uvw/tcp.h"
+#include <uvw/tcp.h>
+
 #include <atomic>
 #include <queue>
 #include <string>
-#include <uvw/tcp.h>
 
 namespace RingSwarm::transport {
 class PlainSocketTransport : public Transport {
@@ -26,7 +28,8 @@ class PlainSocketTransport : public Transport {
 public:
     PlainSocketTransport();
 
-    explicit PlainSocketTransport(const std::shared_ptr<uvw::tcp_handle> &handle);
+    explicit PlainSocketTransport(const std::shared_ptr<uvw::tcp_handle> &handle
+    );
 
     async::Coroutine<int> connect(std::string host, int port);
 
@@ -41,8 +44,9 @@ public:
 private:
     void setupHandler();
 
-    void raiseClosedTransportException(std::coroutine_handle<async::Promise<>> h);
+    void raiseClosedTransportException(std::coroutine_handle<async::Promise<>> h
+    );
 };
 }// namespace RingSwarm::transport
 
-#endif//RINGSWARM_PLAINSOCKETTRANSPORT_H
+#endif// RINGSWARM_PLAINSOCKETTRANSPORT_H

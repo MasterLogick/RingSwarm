@@ -1,4 +1,5 @@
 #include "ChunkRingStorage.h"
+
 #include "ClonedEntityException.h"
 #include "KeyIndexedStorages.h"
 #include "NodeStorage.h"
@@ -8,10 +9,9 @@
 namespace RingSwarm::storage {
 KeyIndexedStorage<core::ChunkRing *> chunkRingStorage;
 
-const char *chunkSwarmNodeSelect =
-        "select chunk_index, node_id\n"
-        "from chunk_swarm\n"
-        "where key_id = :key_id;";
+const char *chunkSwarmNodeSelect = "select chunk_index, node_id\n"
+                                   "from chunk_swarm\n"
+                                   "where key_id = :key_id;";
 
 core::ChunkRing *getChunkRing(core::Id *keyId) {
     if (chunkRingStorage.contains(keyId)) {
@@ -38,8 +38,8 @@ core::ChunkRing *getChunkRing(core::Id *keyId) {
 }
 
 const char *chunkSwarmNodeInsert =
-        "insert into chunk_swarm (key_id, chunk_index, node_id)\n"
-        "values (:key_id, :chunk_index, :node_id);";
+    "insert into chunk_swarm (key_id, chunk_index, node_id)\n"
+    "values (:key_id, :chunk_index, :node_id);";
 
 void storeChunkRing(core::Id *keyId, core::ChunkRing *ring) {
     if (chunkRingStorage.contains(keyId)) {

@@ -3,6 +3,7 @@
 
 #include "../core/KeyInfo.h"
 #include "../proto/ClientHandler.h"
+
 #include "KeyHandler.h"
 
 namespace RingSwarm::client {
@@ -17,9 +18,14 @@ class ExternalKeyHandler : public KeyHandler {
     std::map<uint64_t, uint8_t *> data;
 
 public:
-    ExternalKeyHandler(core::Id *keyId, core::PublicKey *key, proto::ClientHandler *possibleKeySwarmNode);
+    ExternalKeyHandler(
+        core::Id *keyId,
+        core::PublicKey *key,
+        proto::ClientHandler *possibleKeySwarmNode
+    );
 
-    std::shared_ptr<async::Future<void *, uint32_t>> readData(uint32_t len, uint64_t offset) override;
+    std::shared_ptr<async::Future<void *, uint32_t>>
+    readData(uint32_t len, uint64_t offset) override;
 
     uint64_t getDataSize() override;
 
@@ -27,4 +33,4 @@ public:
 };
 }// namespace RingSwarm::client
 
-#endif//RINGSWARM_EXTERNALKEYHANDLER_H
+#endif// RINGSWARM_EXTERNALKEYHANDLER_H

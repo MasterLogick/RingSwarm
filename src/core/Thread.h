@@ -7,4 +7,4 @@ namespace RingSwarm::core {
 void setThreadName(const char *name);
 }
 
-#endif//RINGSWARM_THREAD_H
+#endif// RINGSWARM_THREAD_H

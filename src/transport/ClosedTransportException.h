@@ -8,8 +8,9 @@ class ClosedTransportException : public TransportException {
 public:
     ClosedTransportException() = default;
 
-    explicit ClosedTransportException(std::string reason) : TransportException(std::move(reason)) {}
+    explicit ClosedTransportException(std::string reason)
+        : TransportException(std::move(reason)) {}
 };
 
 }// namespace RingSwarm::transport
-#endif//RINGSWARM_SRC_TRANSPORT_CLOSEDTRANSPORTEXCEPTION_H
+#endif// RINGSWARM_SRC_TRANSPORT_CLOSEDTRANSPORTEXCEPTION_H

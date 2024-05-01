@@ -3,7 +3,8 @@
 
 namespace RingSwarm::async {
 template<class... RetTypes>
-ChainedAwaitObject<Coroutine<>, RetTypes...>::ChainedAwaitObject(Coroutine<> c) : ChainedAwaitObjectBase<Coroutine<>, RetTypes...>(std::move(c)) {}
+ChainedAwaitObject<Coroutine<>, RetTypes...>::ChainedAwaitObject(Coroutine<> c)
+    : ChainedAwaitObjectBase<Coroutine<>, RetTypes...>(std::move(c)) {}
 }// namespace RingSwarm::async
 
-#endif//RINGSWARM_SRC_ASYNC_CHAINEDAWAITOBJECTIMPL_H
+#endif// RINGSWARM_SRC_ASYNC_CHAINEDAWAITOBJECTIMPL_H

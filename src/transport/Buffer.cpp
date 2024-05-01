@@ -1,7 +1,10 @@
 #include "Buffer.h"
+
 #include "../core/Node.h"
 #include "../crypto/HashCrypto.h"
+
 #include "DataSerialisationException.h"
+
 #include <cstring>
 #include <iostream>
 
@@ -77,7 +80,8 @@ void Buffer::write(crypto::Signature *sign) {
 }
 
 template<>
-std::shared_ptr<core::PublicKey> Buffer::read<std::shared_ptr<core::PublicKey>>() {
+std::shared_ptr<core::PublicKey>
+Buffer::read<std::shared_ptr<core::PublicKey>>() {
     auto key = std::make_shared<core::PublicKey>();
     readData(reinterpret_cast<char *>(key->data()), key->size());
     return key;
@@ -149,9 +153,11 @@ uint32_t Buffer::calcSize(core::Node *n) {
     return calcSize((core::PublicKey *) nullptr);
 }
 
-Buffer::Buffer(Buffer &&buffer) : data(buffer.data), offset(buffer.offset), len(buffer.len) {
+Buffer::Buffer(Buffer &&buffer)
+    : data(buffer.data), offset(buffer.offset), len(buffer.len) {
     buffer.data = nullptr;
 }
+
 Buffer &Buffer::operator=(Buffer &&buffer) noexcept {
     data = buffer.data;
     offset = buffer.offset;

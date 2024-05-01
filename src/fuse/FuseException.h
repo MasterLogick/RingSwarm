@@ -4,8 +4,7 @@
 #include "../core/RingSwarmException.h"
 
 namespace RingSwarm::fuse {
-class FuseException : public core::RingSwarmException {
-};
+class FuseException : public core::RingSwarmException {};
 }// namespace RingSwarm::fuse
 
-#endif//RINGSWARM_FUSEEXCEPTION_H
+#endif// RINGSWARM_FUSEEXCEPTION_H

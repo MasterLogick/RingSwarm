@@ -2,7 +2,9 @@
 #define RINGSWARM_NODE_H
 
 #include "../crypto/AsymmetricalCrypto.h"
+
 #include "Id.h"
+
 #include <memory>
 
 namespace RingSwarm::core {
@@ -12,7 +14,8 @@ struct Node {
 
     Node() = default;
 
-    Node(const std::shared_ptr<core::PublicKey> &publicKey) : id(publicKey->getId()), publicKey(publicKey) {}
+    Node(const std::shared_ptr<core::PublicKey> &publicKey)
+        : id(publicKey->getId()), publicKey(publicKey) {}
 
     int getSerializedSize();
 
@@ -22,4 +25,4 @@ struct Node {
 };
 }// namespace RingSwarm::core
 
-#endif//RINGSWARM_NODE_H
+#endif// RINGSWARM_NODE_H

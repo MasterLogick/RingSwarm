@@ -1,10 +1,15 @@
 #include "HashCrypto.h"
+
 #include "CryptoException.h"
+
 #include <openssl/evp.h>
 
 namespace RingSwarm::crypto {
 std::shared_ptr<core::Id> hashData(void *data, size_t size) {
-    std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> ctx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
+    std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> ctx(
+        EVP_MD_CTX_new(),
+        EVP_MD_CTX_free
+    );
     if (ctx == nullptr) {
         throw CryptoException();
     }
