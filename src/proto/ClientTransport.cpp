@@ -45,13 +45,13 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(CommandId commandI
 async::Coroutine<transport::Buffer> ClientTransport::sendSmallRequest(CommandId commandId, RequestBuffer &req, uint32_t maxResponseSize) {
     ResponseHeader rh = co_await sendRequest(commandId, req, maxResponseSize);
     auto *buff = new uint8_t[rh.responseLen];
-    co_await rawRead(buff, rh.responseLen);
+    ~co_await rawRead(buff, rh.responseLen);
     co_return transport::Buffer(buff, rh.responseLen);
 }
 
 async::Coroutine<> ClientTransport::rawRead(void *data, uint32_t size) {
     Assert(size <= unreadResponseLength, "read request exceeded response size");
-    co_await transport->rawRead(data, size);
+    ~co_await transport->rawRead(data, size);
     unreadResponseLength -= size;
     if (unreadResponseLength == 0) {
         lock.lock();

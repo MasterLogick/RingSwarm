@@ -8,10 +8,10 @@
 
 namespace RingSwarm::async {
 class FinalAwait {
-    void *nextCoro;
+    std::coroutine_handle<> caller;
 
 public:
-    FinalAwait(void *nextCoro) : nextCoro(nextCoro) {
+    FinalAwait(std::coroutine_handle<> caller) : caller(caller) {
     }
 
     bool await_ready() noexcept {
@@ -19,8 +19,8 @@ public:
     }
 
     std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) {
-        if (nextCoro != nullptr) {
-            return std::coroutine_handle<>::from_address(nextCoro);
+        if (caller != nullptr) {
+            return caller;
         } else {
             return std::noop_coroutine();
         }

@@ -12,6 +12,7 @@ template<typename... AwaitedRetTypes, typename... RetTypes>
 class AwaitResumeResultBase<Coroutine<AwaitedRetTypes...>, RetTypes...> {
 protected:
     std::exception_ptr exceptionPtr;
+    bool touched = false;
 
 public:
     explicit AwaitResumeResultBase(std::exception_ptr exceptionPtr) : exceptionPtr(std::move(exceptionPtr)) {
@@ -21,11 +22,19 @@ public:
 
     AwaitResumeResultBase(AwaitResumeResultBase<Coroutine<AwaitedRetTypes...>, RetTypes...> &&) = delete;
 
-    ~AwaitResumeResultBase() {
+    void touch() {
+        touched = true;
         if (exceptionPtr) {
-            //todo move somewhere outside of destructor
             std::rethrow_exception(exceptionPtr);
         }
+    }
+
+    void operator~() {
+        touch();
+    }
+
+    ~AwaitResumeResultBase() {
+        Assert(touched, "co_await return value must be touched before destruction");
     }
 };
 
@@ -42,10 +51,12 @@ public:
 
     template<std::size_t I>
     auto get() {
+        AwaitResumeResultBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::touch();
         return std::move(std::get<I>(retValues));
     }
 
     operator std::tuple<AwaitedRetTypes...>() {
+        AwaitResumeResultBase<Coroutine<AwaitedRetTypes...>, RetTypes...>::touch();
         return std::move(retValues);
     }
 };
@@ -59,6 +70,7 @@ public:
         : AwaitResumeResultBase<Coroutine<AwaitedRetType>, RetTypes...>(std::move(exceptionPtr)), retValue(std::move(retValue)) {}
 
     operator AwaitedRetType() {
+        AwaitResumeResultBase<Coroutine<AwaitedRetType>, RetTypes...>::touch();
         return std::move(retValue);
     }
 };

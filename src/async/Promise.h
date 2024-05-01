@@ -5,8 +5,17 @@
 namespace RingSwarm::async {
 template<class... RetTypes>
 class PromiseBase {
-    void *nextCoro = nullptr;
+    std::coroutine_handle<> callerCoroutine;
     std::exception_ptr exceptionPtr;
+
+    void handleUnhandledException(const std::exception_ptr& ptr) {
+        if (callerCoroutine == nullptr) {
+            std::rethrow_exception(ptr);
+        } else {
+            Assert(exceptionPtr == nullptr, "Double fault");
+            exceptionPtr = ptr;
+        }
+    }
 
 public:
     template<class... AwaitedRetTypes>
@@ -29,15 +38,15 @@ public:
     }
 
     FinalAwait final_suspend() noexcept {
-        return {nextCoro};
+        return {callerCoroutine};
     }
 
     void unhandled_exception() {
-        exceptionPtr = std::current_exception();
+        handleUnhandledException(std::current_exception());
     }
 
     void raiseException(auto ex) {
-        exceptionPtr = std::make_exception_ptr(ex);
+        handleUnhandledException(std::make_exception_ptr(ex));
     }
 
     std::exception_ptr getAndClearExceptionPtr() {
@@ -46,8 +55,8 @@ public:
         return d;
     }
 
-    void setNextCoro(void *coro) {
-        nextCoro = coro;
+    void setCallerCoroutine(std::coroutine_handle<> caller) {
+        callerCoroutine = caller;
     }
 
     ~PromiseBase() {

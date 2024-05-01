@@ -22,7 +22,7 @@ public:
     }
 
     void await_suspend(std::coroutine_handle<Promise<RetTypes...>> h) {
-        innerCoroutine.getHandle().promise().setNextCoro(h.address());
+        innerCoroutine.getHandle().promise().setCallerCoroutine(h);
     }
 };
 

@@ -14,6 +14,6 @@ async::Coroutine<> NodeContext::handleServerConnection(std::unique_ptr<transport
     auto [a, b] = co_await transport::SecureOverlayTransport::createServerSide(std::move(serverSideSocket));
     core::Node remote(b);
     proto::ServerHandler serverHandler(std::move(a), remote);
-    co_await serverHandler.listen();
+    ~co_await serverHandler.listen();
 }
 }// namespace RingSwarm::core

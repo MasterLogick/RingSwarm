@@ -30,7 +30,7 @@ void SecureOverlayTransport::close() {
 }
 
 async::Coroutine<> SecureOverlayTransport::rawRead(void *data, uint32_t size) {
-    co_await transport->rawRead(data, size);
+    ~co_await transport->rawRead(data, size);
     //    cypher->decode(data, data, size);
 }
 
