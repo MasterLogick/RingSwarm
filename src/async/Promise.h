@@ -21,7 +21,7 @@ class PromiseBase {
 public:
     template<class... AwaitedRetTypes>
     ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>
-    await_transform(Coroutine<AwaitedRetTypes...> h) {
+    await_transform(Coroutine<AwaitedRetTypes...> &&h) {
         return ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>(
             std::move(h)
         );
@@ -62,11 +62,26 @@ public:
     }
 
     void setCallerCoroutine(std::coroutine_handle<> caller) {
+        Assert(callerCoroutine == nullptr, "double join");
         callerCoroutine = caller;
+    }
+
+    void check() {
+        auto ptr = getAndClearExceptionPtr();
+        if (ptr) {
+            std::rethrow_exception(ptr);
+        }
     }
 
     ~PromiseBase() {
         Assert(!exceptionPtr, "unhandled exception on promise destroy");
+        void *addr =
+            std::coroutine_handle<PromiseBase<RetTypes...>>::from_promise(*this)
+                .address();
+        Assert(
+            !ThreadPool::getDefaultThreadPool()->isScheduled(addr),
+            "promise is scheduled on destroy"
+        );
     }
 };
 

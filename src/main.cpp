@@ -7,18 +7,24 @@
 using namespace RingSwarm;
 
 async::Coroutine<> test() {
-    transport::PlainSocketTransport client;
-    int conn = co_await client.connect("localhost", 12345);
-    if (conn != 0) {
-        co_return;
+    constexpr int n = 256;
+    transport::PlainSocketTransport client[n];
+    for (int i = 0; i < n; ++i) {
+        int conn = co_await client[i].connect("localhost", 12345);
+        if (conn != 0) {
+            co_return;
+        }
     }
-    proto::RequestHeader rh{
-        .requestLength = 0,
-        .method = RingSwarm::proto::CommandId_GetKey,
-        .tag = 1
-    };
-    client.rawWrite(&rh, sizeof(rh));
-
+    for (uint16_t i = 0; i < n; ++i) {
+        proto::RequestHeader rh{
+            .requestLength = 0,
+            .method = RingSwarm::proto::CommandId_GetKey,
+            .tag = i
+        };
+        client[i].rawWrite(&rh, sizeof(rh));
+    }
+    BOOST_LOG_TRIVIAL(trace) << "send data";
+//    co_await client.readBuffer(1);
 //    char c;
 //    co_await client.rawRead(&c, 1);
 //    BOOST_LOG_TRIVIAL(trace) << "Read data: " << c;

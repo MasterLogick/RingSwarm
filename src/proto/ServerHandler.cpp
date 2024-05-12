@@ -15,7 +15,7 @@ ServerHandler::ServerHandler(
     std::unique_ptr<transport::Transport> transport,
     core::Node &remote
 )
-    : transport(std::move(transport)), remote(remote) {}
+    : transport(std::move(transport)), remote(remote), listening(false) {}
 
 async::Coroutine<> ServerHandler::listen() {
     listening = true;
@@ -25,7 +25,7 @@ async::Coroutine<> ServerHandler::listen() {
             ~co_await transport->rawRead(&rh, sizeof(rh));
             lock.lock();
             for (const auto ref: finishedHandlers) {
-                ~co_await std::move(ref.get().handlerCoro);
+                ref.get().handlerCoro.getHandle().promise().check();
                 pendingResponses.erase(ref.get().requestHeader.tag);
             }
             if (rh.requestLength > MAX_REQUEST_LENGTH ||
@@ -48,6 +48,9 @@ async::Coroutine<> ServerHandler::listen() {
             );
         } catch (const transport::ClosedTransportException &e) { break; }
     }
+    for (const auto &item: pendingResponses) {
+        ~co_await (async::Coroutine<> &&) std::move(item.second.handlerCoro);
+    }
 }
 
 async::Coroutine<>
@@ -57,19 +60,16 @@ ServerHandler::handleRequest(ServerResponseState &serverRespState) {
     });
     auto cid = serverRespState.requestHeader.method;
     ~co_await (this->*ServerHandler::Methods[cid])(serverRespState);
-    co_await async::Coroutine<>::suspendThis([&](auto) {
-        lock.lock();
-        finishedHandlers.emplace_back(serverRespState);
-        lock.unlock();
-        return std::noop_coroutine();
-    });
+    lock.lock();
+    finishedHandlers.emplace_back(serverRespState);
+    lock.unlock();
 }
 
 async::Coroutine<>
 ServerHandler::stubHandler(ServerResponseState &serverRespState) {
     BOOST_LOG_TRIVIAL(trace)
-        << "stub handler#" << serverRespState.requestHeader.tag << "("
-        << (int) serverRespState.requestHeader.method << ") "
+        << "stub handler#m" << (int) serverRespState.requestHeader.method
+        << "(t" << serverRespState.requestHeader.tag << ") l"
         << serverRespState.requestHeader.requestLength;
     co_return;
 }

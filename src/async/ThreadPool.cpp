@@ -1,5 +1,6 @@
 #include "ThreadPool.h"
 
+#include "../Assert.h"
 #include "../core/Thread.h"
 
 #include <coroutine>
@@ -24,8 +25,13 @@ ThreadPool::ThreadPool(unsigned int threadNum) {
                     if (tasks.empty())
                         noTasksCondition.notify_all();
                 }
-                if (task)
+                if (task) {
+                    Assert(
+                        !std::coroutine_handle<>::from_address(task).done(),
+                        "Scheduled task is already done"
+                    );
                     std::coroutine_handle<>::from_address(task).resume();
+                }
             }
         });
     }
@@ -48,5 +54,15 @@ void ThreadPool::blockingStop() {
     stopFlag = true;
     for (int i = 0; i < pool.size(); ++i) { resumeCoroutine(nullptr); }
     for (auto &thr: pool) { thr.join(); }
+}
+
+bool ThreadPool::isScheduled(void *address) {
+    std::lock_guard<std::mutex> _(popLock);
+    for (const auto &item: tasks) {
+        if (address == item) {
+            return true;
+        }
+    }
+    return false;
 }
 }// namespace RingSwarm::async

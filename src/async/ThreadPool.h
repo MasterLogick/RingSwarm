@@ -34,6 +34,8 @@ public:
     void waitEmpty();
 
     void blockingStop();
+
+    bool isScheduled(void *address);
 };
 }// namespace RingSwarm::async
 
