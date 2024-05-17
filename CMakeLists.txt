@@ -172,6 +172,9 @@ add_executable(RingSwarm
         src/transport/TransportException.h
         src/transport/ClosedTransportException.h
         src/async/AwaitResumeResult.h
+        src/proto/shadow/PingHandler.cpp
+        src/proto/shadow/GetNodeHandler.cpp
+        src/proto/UnknownResponseException.h
 )
 
 if (WIN32)

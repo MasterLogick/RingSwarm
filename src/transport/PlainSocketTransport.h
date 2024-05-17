@@ -21,7 +21,7 @@ class PlainSocketTransport : public Transport {
     uvw::socket_address bindAddress;
     std::coroutine_handle<async::Promise<>> readPromiseHandle;
 #ifndef NDEBUG
-    std::mutex writeMutex;
+    std::atomic_flag writeFlag;
     std::atomic_flag readFlag;
 #endif
 
@@ -46,6 +46,8 @@ private:
 
     void raiseClosedTransportException(std::coroutine_handle<async::Promise<>> h
     );
+
+    void onClose();
 };
 }// namespace RingSwarm::transport
 

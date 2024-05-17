@@ -14,11 +14,10 @@ class ClientTransport {
     std::map<uint16_t, ClientRequestState> pendingRequests;
     std::mutex lock;
     uint32_t unreadResponseLength;
+    uint16_t unreadResponseTag;
     async::Coroutine<> currentWaitForResponseCoroutine;
 
     ClientRequestState &reserveRequestState();
-
-    void freeRequestState(uint16_t tag);
 
     async::Coroutine<> waitForAnyResponse();
 

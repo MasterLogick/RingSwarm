@@ -6,9 +6,10 @@
 namespace RingSwarm::proto {
 struct ResponseHeader {
     uint32_t responseLen;
-    uint8_t responseType;
     uint16_t tag;
-} __attribute__((packed));
+private:
+    [[maybe_unused]] uint16_t _padding;
+};
 }// namespace RingSwarm::proto
 
 #endif// RINGSWARM_RESPONSEHEADER_H

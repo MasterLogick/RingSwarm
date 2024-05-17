@@ -25,7 +25,7 @@ void SecureOverlayTransport::rawWrite(void *data, uint32_t len) {
         buffer.resize(len);
     }
     cypher->encode(buffer.data(), data, len);*/
-    transport->rawWrite(buffer.data(), len);
+    transport->rawWrite(data, len);
 }
 
 void SecureOverlayTransport::close() {

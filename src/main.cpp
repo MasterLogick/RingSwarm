@@ -1,27 +1,40 @@
 #include "async/EventLoop.h"
 #include "async/ThreadPool.h"
 #include "core/NodeContext.h"
+#include "proto/ClientTransport.h"
 #include "proto/RequestHeader.h"
 #include "transport/PlainSocketTransport.h"
 
 using namespace RingSwarm;
 
 async::Coroutine<> test() {
-    constexpr int n = 256;
-    transport::PlainSocketTransport client[n];
+    constexpr int n = 1;
+    std::unique_ptr<proto::ClientTransport> client[n];
     for (int i = 0; i < n; ++i) {
-        int conn = co_await client[i].connect("localhost", 12345);
+        auto tr = std::make_unique<transport::PlainSocketTransport>();
+        int conn = co_await tr->connect("localhost", 12345);
         if (conn != 0) {
             co_return;
         }
+        client[i] = std::make_unique<proto::ClientTransport>(std::move(tr));
     }
+
+    async::Coroutine<transport::Buffer> coros[n * 2];
     for (uint16_t i = 0; i < n; ++i) {
-        proto::RequestHeader rh{
-            .requestLength = 0,
-            .method = RingSwarm::proto::CommandId_GetKey,
-            .tag = i
-        };
-        client[i].rawWrite(&rh, sizeof(rh));
+        proto::RequestBuffer req(0);
+        coros[i * 2] = client[i]->sendSmallRequest(
+            RingSwarm::proto::CommandId_Ping,
+            req,
+            0
+        );
+        coros[i * 2 + 1] = client[i]->sendSmallRequest(
+            RingSwarm::proto::CommandId_Ping,
+            req,
+            0
+        );
+    }
+    for (const auto &item: coros) {
+        ~co_await (async::Coroutine<transport::Buffer> &&) std::move(item);
     }
     BOOST_LOG_TRIVIAL(trace) << "send data";
 //    co_await client.readBuffer(1);
@@ -58,6 +71,7 @@ int main(int argc, char **argv, char **envp) {
     while (!c.getHandle().done()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    c.getHandle().promise().check();
     async::ThreadPool::getDefaultThreadPool()->waitEmpty();
     async::EventLoop::getMainEventLoop()->stop();
     async::ThreadPool::getDefaultThreadPool()->blockingStop();

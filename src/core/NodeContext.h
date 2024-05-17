@@ -17,6 +17,7 @@ class NodeContext {
     );
 
 public:
+    ~NodeContext();
     int addServer(std::string serverSideSocket, int port);
 };
 }// namespace RingSwarm::core

@@ -25,67 +25,17 @@ class ServerHandler {
 
     async::Coroutine<> stubHandler(ServerResponseState &serverRespState);
 
-    /*    async::Coroutine<> handleGetKey(ServerResponseState &request);
+    async::Coroutine<> handlePing(ServerResponseState &serverRespState);
 
-    async::Coroutine<> handleGetNearestChunk(ServerResponseState &request);
-
-    async::Coroutine<> handleGetChunkLink(ServerResponseState &request);
-
-    async::Coroutine<> handleGetChunk(ServerResponseState &request);
-
-    async::Coroutine<> handleDragIntoKeySwarm(ServerResponseState &request);
-
-    async::Coroutine<> handleNoticeJoinedKeySwarm(ServerResponseState &request);
-
-    async::Coroutine<> handleNoticeJoinedChunkSwarm(ServerResponseState
-    &request);
-
-    async::Coroutine<> handleGetKeySwarm(ServerResponseState &request);
-
-    async::Coroutine<> handleGetChunkSwarm(ServerResponseState &request);
-
-    async::Coroutine<> handleNoticeLeavedChunkSwarm(ServerResponseState
-    &request);
-
-    async::Coroutine<> handleSubscribeOnChunkChange(ServerResponseState
-    &request);
-
-    async::Coroutine<> handleChunkChangeEvent(ServerResponseState &request);
-
-    async::Coroutine<> handleUnsubscribeOnChunkChange(ServerResponseState
-    &request);*/
+    async::Coroutine<> handleGetNode(ServerResponseState &serverRespState);
 
     typedef async::Coroutine<> (ServerHandler::*
                                     RequestHandler)(ServerResponseState &);
 
     constexpr static RequestHandler Methods[] = {
-        &ServerHandler::stubHandler,// end connection handle
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-        &ServerHandler::stubHandler,
-            /*          &ServerHandler::handleGetKey,
-&ServerHandler::handleGetNearestChunk,
-&ServerHandler::handleGetChunkLink,
-&ServerHandler::handleGetChunk,
-&ServerHandler::handleDragIntoKeySwarm,
-&ServerHandler::handleNoticeJoinedKeySwarm,
-&ServerHandler::handleNoticeJoinedChunkSwarm,
-&ServerHandler::handleGetKeySwarm,
-&ServerHandler::handleGetChunkSwarm,
-&ServerHandler::handleNoticeLeavedChunkSwarm,
-&ServerHandler::handleSubscribeOnChunkChange,
-&ServerHandler::handleChunkChangeEvent,
-&ServerHandler::handleUnsubscribeOnChunkChange*/
+        &ServerHandler::stubHandler, // end connection handle
+        &ServerHandler::handlePing,
+        &ServerHandler::handleGetNode,
     };
 
     static_assert(

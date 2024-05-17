@@ -30,4 +30,10 @@ async::Coroutine<> NodeContext::handleServerConnection(
     proto::ServerHandler serverHandler(std::move(a), remote);
     ~co_await serverHandler.listen();
 }
+
+NodeContext::~NodeContext() {
+    for (const auto &item: serverHandlers) {
+        item.getHandle().promise().check();
+    }
+}
 }// namespace RingSwarm::core

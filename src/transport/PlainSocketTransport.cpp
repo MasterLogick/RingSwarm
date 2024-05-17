@@ -124,7 +124,7 @@ void PlainSocketTransport::raiseClosedTransportException(
 
 void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
 #ifndef NDEBUG
-    Assert(writeMutex.try_lock(), "simultaneous write to tcp socket");
+    Assert(!writeFlag.test_and_set(), "simultaneous write to tcp socket");
 #endif
     /*BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |===> "
                                      <<
@@ -132,7 +132,7 @@ void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
     while (tcpHandler->try_write(static_cast<char *>(data), len) == UV_EAGAIN) {
     }
 #ifndef NDEBUG
-    writeMutex.unlock();
+    writeFlag.clear();
 #endif
 }
 
@@ -143,6 +143,7 @@ void PlainSocketTransport::close() {
 
 PlainSocketTransport::~PlainSocketTransport() {
     auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
+    onClose();
     tcpHandler->close();
 }
 
@@ -160,20 +161,12 @@ void PlainSocketTransport::setupHandler() {
     tcpHandler->on<uvw::close_event>([this](auto &ev, auto &handler) {
         BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket closed connection to "
                                  << peerAddress.ip << ":" << peerAddress.port;
-        if (readPromiseHandle) {
-            auto h = readPromiseHandle;
-            raiseClosedTransportException(readPromiseHandle);
-            async::Coroutine<>::scheduleCoroutineResume(h);
-        }
+        onClose();
     });
     tcpHandler->on<uvw::error_event>([this](auto &evt, auto &handler) {
         BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket " << peerAddress.ip << ":"
                                  << peerAddress.port << " error " << evt.name();
-        if (readPromiseHandle) {
-            auto h = readPromiseHandle;
-            raiseClosedTransportException(readPromiseHandle);
-            async::Coroutine<>::scheduleCoroutineResume(h);
-        }
+        onClose();
     });
     tcpHandler->on<uvw::data_event>([this](auto &event, auto &handler) {
         event.data.release();
@@ -190,10 +183,6 @@ void PlainSocketTransport::setupHandler() {
                 readBufferData = nullptr;
                 readBufferOffset = 0;
                 readBufferSize = 0;
-#ifndef NDEBUG
-                Assert(readFlag.test(), "read flag must be raised");
-                readFlag.clear();
-#endif
                 Assert(
                     readPromiseHandle,
                     "read promise handle must be set on data read finish"
@@ -201,9 +190,21 @@ void PlainSocketTransport::setupHandler() {
                 auto handle = readPromiseHandle;
                 readPromiseHandle = nullptr;
                 tcpHandler->stop();
+#ifndef NDEBUG
+                Assert(readFlag.test(), "read flag must be raised");
+                readFlag.clear();
+#endif
                 async::Coroutine<>::scheduleCoroutineResume(handle);
             }
         }
     });
+}
+
+void PlainSocketTransport::onClose() {
+    if (readPromiseHandle) {
+        auto h = readPromiseHandle;
+        raiseClosedTransportException(readPromiseHandle);
+        async::Coroutine<>::scheduleCoroutineResume(h);
+    }
 }
 }// namespace RingSwarm::transport
