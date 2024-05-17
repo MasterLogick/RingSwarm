@@ -8,6 +8,8 @@ template<class... RetTypes>
 class PromiseBase {
     std::coroutine_handle<> callerCoroutine;
     std::exception_ptr exceptionPtr;
+    bool mayBeChecked = false;
+    bool checked = false;
 
     void handleUnhandledException(const std::exception_ptr &ptr) {
         if (callerCoroutine == nullptr) {
@@ -44,20 +46,25 @@ public:
     }
 
     FinalAwait final_suspend() noexcept {
+        mayBeChecked = true;
         return {callerCoroutine};
     }
 
     void unhandled_exception() {
+        mayBeChecked = true;
         handleUnhandledException(std::current_exception());
     }
 
     void raiseException(auto ex) {
+        mayBeChecked = true;
         handleUnhandledException(std::make_exception_ptr(ex));
     }
 
     std::exception_ptr getAndClearExceptionPtr() {
         std::exception_ptr d = exceptionPtr;
         exceptionPtr = nullptr;
+        Assert(mayBeChecked, "check coroutine only after it exits");
+        checked = true;
         return d;
     }
 
@@ -78,9 +85,10 @@ public:
         void *addr =
             std::coroutine_handle<PromiseBase<RetTypes...>>::from_promise(*this)
                 .address();
+        Assert(checked, "coroutine must be checked before destruction");
         Assert(
             !ThreadPool::getDefaultThreadPool()->isScheduled(addr),
-            "promise is scheduled on destroy"
+            "promise is scheduled on destruction"
         );
     }
 };

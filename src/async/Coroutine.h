@@ -27,7 +27,7 @@ public:
         ThreadPool::getDefaultThreadPool()->resumeCoroutine(f.address());
     }
 
-    Coroutine() = default;
+    Coroutine() : Coroutine(std::coroutine_handle<Promise<RetTypes...>>()) {}
 
     explicit Coroutine(std::coroutine_handle<Promise<RetTypes...>> handle)
         : handle(std::move(handle)) {}
@@ -52,12 +52,21 @@ public:
 
     ~Coroutine() {
         if (handle != nullptr) {
+            Assert(handle.done(), "coroutine must be done");
             handle.destroy();
         }
     }
 
     const std::coroutine_handle<Promise<RetTypes...>> &getHandle() const {
         return handle;
+    }
+
+    constexpr bool operator==(std::nullptr_t) const {
+        return handle == nullptr;
+    }
+
+    explicit constexpr operator bool() const {
+        return handle != nullptr;
     }
 };
 }// namespace RingSwarm::async
