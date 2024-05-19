@@ -22,6 +22,11 @@ public:
         return SuspendThisCoroutineAwaitObject<RetTypes...>(std::move(f));
     }
 
+    static ResumeSuspendAwaitObject<RetTypes...>
+    resumeSuspended(Coroutine<RetTypes...> &&coroutine) {
+        return ResumeSuspendAwaitObject<RetTypes...>(std::move(coroutine));
+    }
+
     static void
     scheduleCoroutineResume(std::coroutine_handle<Promise<RetTypes...>> f) {
         ThreadPool::getDefaultThreadPool()->resumeCoroutine(f.address());

@@ -41,6 +41,20 @@ public:
         return std::move(h);
     }
 
+    template<class... AwaitedRetTypes>
+    ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>
+    await_transform(ResumeSuspendAwaitObject<AwaitedRetTypes...> h) {
+        Coroutine<AwaitedRetTypes...> coro = h.getCoroutine();
+        std::coroutine_handle<Promise<AwaitedRetTypes...>> handler =
+            coro.getHandle();
+        if (!handler.done()) {
+            handler.resume();
+        }
+        return ChainedAwaitObject<Coroutine<AwaitedRetTypes...>, RetTypes...>(
+            std::move(coro)
+        );
+    }
+
     std::suspend_never initial_suspend() noexcept {
         return {};
     }
