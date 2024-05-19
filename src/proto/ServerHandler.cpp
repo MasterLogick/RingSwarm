@@ -12,7 +12,7 @@
 
 namespace RingSwarm::proto {
 ServerHandler::ServerHandler(
-    std::unique_ptr<transport::Transport> transport,
+    std::shared_ptr<transport::Transport> transport,
     core::Node &remote
 )
     : transport(std::move(transport)), remote(remote), listening(false) {}
@@ -23,19 +23,21 @@ async::Coroutine<> ServerHandler::listen() {
         try {
             RequestHeader rh{};
             ~co_await transport->rawRead(&rh, sizeof(rh));
-            lock.lock();
+            handlersKeepingLock.lock();
             for (const auto ref: finishedHandlers) {
-                ref.get().handlerCoro.getHandle().promise().check();
+                ~co_await async::Coroutine<>::resumeSuspended(
+                    std::move(ref.get().handlerCoro)
+                );
                 pendingResponses.erase(ref.get().requestHeader.tag);
             }
             if (rh.requestLength > MAX_REQUEST_LENGTH ||
                 rh.method >= CommandId_COMMAND_COUNT || rh.method == 0 ||
                 pendingResponses.contains(rh.tag)) {
-                lock.unlock();
+                handlersKeepingLock.unlock();
                 // todo stop all handlers and exit
             }
             auto &serverRespState = pendingResponses[rh.tag];
-            lock.unlock();
+            handlersKeepingLock.unlock();
             serverRespState.requestBuffer = transport::Buffer(rh.requestLength);
             serverRespState.requestHeader = rh;
             ~co_await transport->rawRead(
@@ -46,10 +48,15 @@ async::Coroutine<> ServerHandler::listen() {
             async::Coroutine<>::scheduleCoroutineResume(
                 serverRespState.handlerCoro.getHandle()
             );
-        } catch (const transport::ClosedTransportException &e) { break; }
+        } catch (const transport::ClosedTransportException &e) {
+            // todo
+            break;
+        }
     }
-    for (const auto &item: pendingResponses) {
-        ~co_await (async::Coroutine<> &&) std::move(item.second.handlerCoro);
+    for (auto &item: pendingResponses) {
+        ~co_await async::Coroutine<>::resumeSuspended(
+            std::move(item.second.handlerCoro)
+        );
     }
 }
 
@@ -60,9 +67,24 @@ ServerHandler::handleRequest(ServerResponseState &serverRespState) {
     });
     auto cid = serverRespState.requestHeader.method;
     ~co_await (this->*ServerHandler::Methods[cid])(serverRespState);
-    lock.lock();
-    finishedHandlers.emplace_back(serverRespState);
-    lock.unlock();
+
+    writeLockWaitersLock.lock();
+    if (writeLockWaiters.empty()) {
+        writeLock = false;
+    } else {
+        async::Coroutine<>::scheduleCoroutineResume(writeLockWaiters.back());
+        writeLockWaiters.pop_back();
+    }
+    writeLockWaitersLock.unlock();
+
+    co_await async::Coroutine<>::suspendThis(
+        [this, &serverRespState](std::coroutine_handle<async::Promise<>> f) {
+            handlersKeepingLock.lock();
+            finishedHandlers.emplace_back(serverRespState);
+            handlersKeepingLock.unlock();
+            return std::noop_coroutine();
+        }
+    );
 }
 
 async::Coroutine<>
@@ -72,5 +94,22 @@ ServerHandler::stubHandler(ServerResponseState &serverRespState) {
         << "(t" << serverRespState.requestHeader.tag << ") l"
         << serverRespState.requestHeader.requestLength;
     co_return;
+}
+
+async::Coroutine<> ServerHandler::acquireWriteLock() {
+    auto handle = co_await async::Coroutine<>::getThisCoroutineHandle();
+    writeLockWaitersLock.lock();
+    if (!writeLock) {
+        writeLock = true;
+        writeLockWaitersLock.unlock();
+        co_return;
+    }
+    writeLockWaiters.push_back(handle);
+    co_await async::Coroutine<>::suspendThis(
+        [this](std::coroutine_handle<async::Promise<>> f) {
+            writeLockWaitersLock.unlock();
+            return std::noop_coroutine();
+        }
+    );
 }
 }// namespace RingSwarm::proto

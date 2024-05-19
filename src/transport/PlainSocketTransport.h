@@ -11,7 +11,9 @@
 #include <string>
 
 namespace RingSwarm::transport {
-class PlainSocketTransport : public Transport {
+class PlainSocketTransport
+    : public std::enable_shared_from_this<PlainSocketTransport>,
+      public Transport {
     std::shared_ptr<uvw::tcp_handle> tcpHandler;
     transport::Buffer pending;
     char *readBufferData;
@@ -25,11 +27,18 @@ class PlainSocketTransport : public Transport {
     std::atomic_flag readFlag;
 #endif
 
-public:
-    PlainSocketTransport();
+    struct Private {};
 
-    explicit PlainSocketTransport(const std::shared_ptr<uvw::tcp_handle> &handle
+public:
+    PlainSocketTransport(
+        const std::shared_ptr<uvw::tcp_handle> &handle,
+        Private
     );
+
+    static std::shared_ptr<PlainSocketTransport> Create();
+
+    static std::shared_ptr<PlainSocketTransport>
+    Create(const std::shared_ptr<uvw::tcp_handle> &handle);
 
     async::Coroutine<int> connect(std::string host, int port);
 

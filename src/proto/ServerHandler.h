@@ -16,9 +16,12 @@ namespace RingSwarm::proto {
 class ServerHandler {
     std::vector<std::reference_wrapper<ServerResponseState>> finishedHandlers;
     std::map<uint16_t, ServerResponseState> pendingResponses;
-    std::unique_ptr<transport::Transport> transport;
+    std::shared_ptr<transport::Transport> transport;
     core::Node &remote;
-    std::mutex lock;
+    std::mutex handlersKeepingLock;
+    bool writeLock = false;
+    std::vector<std::coroutine_handle<async::Promise<>>> writeLockWaiters;
+    std::mutex writeLockWaitersLock;
     bool listening;
 
     async::Coroutine<> handleRequest(ServerResponseState &serverRespState);
@@ -28,6 +31,8 @@ class ServerHandler {
     async::Coroutine<> handlePing(ServerResponseState &serverRespState);
 
     async::Coroutine<> handleGetNode(ServerResponseState &serverRespState);
+
+    async::Coroutine<> acquireWriteLock();
 
     typedef async::Coroutine<> (ServerHandler::*
                                     RequestHandler)(ServerResponseState &);
@@ -45,7 +50,7 @@ class ServerHandler {
 
 public:
     explicit ServerHandler(
-        std::unique_ptr<transport::Transport> transport,
+        std::shared_ptr<transport::Transport> transport,
         core::Node &remote
     );
     async::Coroutine<> listen();

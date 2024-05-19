@@ -10,7 +10,7 @@ struct RequestHeader {
     uint32_t requestLength;
     CommandId method;
     uint16_t tag;
-};
+} __attribute__((packed));
 }// namespace RingSwarm::proto
 
 #endif// RINGSWARM_REQUESTHEADER_H

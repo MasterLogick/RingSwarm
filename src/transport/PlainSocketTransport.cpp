@@ -13,20 +13,32 @@
 
 namespace RingSwarm::transport {
 
-PlainSocketTransport::PlainSocketTransport() {
-    auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
-    tcpHandler = async::EventLoop::getMainEventLoop()->createTcpSocket();
-    setupHandler();
-}
-
 PlainSocketTransport::PlainSocketTransport(
-    const std::shared_ptr<uvw::tcp_handle> &handle
+    const std::shared_ptr<uvw::tcp_handle> &handle,
+    Private
 )
     : tcpHandler(handle) {
     bindAddress = handle->sock();
     peerAddress = handle->peer();
+}
+
+std::shared_ptr<PlainSocketTransport> PlainSocketTransport::Create() {
     auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
-    setupHandler();
+    auto tcpHandler = async::EventLoop::getMainEventLoop()->createTcpSocket();
+    auto ptr = std::make_shared<PlainSocketTransport>(
+        std::move(tcpHandler),
+        Private()
+    );
+    ptr->setupHandler();
+    return std::move(ptr);
+}
+
+std::shared_ptr<PlainSocketTransport>
+PlainSocketTransport::Create(const std::shared_ptr<uvw::tcp_handle> &handle) {
+    auto ptr = std::make_shared<PlainSocketTransport>(handle, Private());
+    auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
+    ptr->setupHandler();
+    return std::move(ptr);
 }
 
 async::Coroutine<int>
@@ -95,13 +107,16 @@ async::Coroutine<> PlainSocketTransport::rawRead(void *data, uint32_t size) {
             readPromiseHandle = h;
             tcpHandler
                 ->read<[](const uvw::tcp_handle &handler, auto preferredSize) {
-                    auto *pst = *static_cast<PlainSocketTransport **>(
-                        handler.data().get()
-                    );
-                    return std::make_pair(
-                        pst->readBufferData + pst->readBufferOffset,
-                        pst->readBufferSize - pst->readBufferOffset
-                    );
+                    auto pst =
+                        handler.data<std::weak_ptr<PlainSocketTransport>>();
+                    if (auto sp = pst->lock()) {
+                        return std::make_pair(
+                            sp->readBufferData + sp->readBufferOffset,
+                            sp->readBufferSize - sp->readBufferOffset
+                        );
+                    } else {
+                        return std::make_pair<char *, unsigned int>(nullptr, 0);
+                    }
                 }>();
             return static_cast<std::coroutine_handle<>>(std::noop_coroutine());
         }
@@ -144,31 +159,44 @@ void PlainSocketTransport::close() {
 PlainSocketTransport::~PlainSocketTransport() {
     auto ell = async::EventLoop::getMainEventLoop()->acquireEventLoopLock();
     onClose();
-    tcpHandler->close();
 }
 
 void PlainSocketTransport::setupHandler() {
-    tcpHandler->data(std::make_shared<PlainSocketTransport *>(this));
-    tcpHandler->on<uvw::end_event>([this](auto &, auto &handler) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket closed connection from "
-                                 << peerAddress.ip << ":" << peerAddress.port;
-        if (readPromiseHandle) {
-            auto h = readPromiseHandle;
-            raiseClosedTransportException(readPromiseHandle);
-            async::Coroutine<>::scheduleCoroutineResume(h);
+    auto th = weak_from_this();
+    tcpHandler->data(
+        std::make_shared<std::weak_ptr<PlainSocketTransport>>(weak_from_this())
+    );
+    tcpHandler->on<uvw::end_event>([th](auto &, auto &handler) {
+        if (auto sp = th.lock()) {
+            BOOST_LOG_TRIVIAL(trace)
+                << "Plain tcp socket closed connection from "
+                << sp->peerAddress.ip << ":" << sp->peerAddress.port;
+            auto h = sp->readPromiseHandle;
+            if (h) {
+                sp->raiseClosedTransportException(h);
+                async::Coroutine<>::scheduleCoroutineResume(h);
+            }
         }
     });
-    tcpHandler->on<uvw::close_event>([this](auto &ev, auto &handler) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket closed connection to "
-                                 << peerAddress.ip << ":" << peerAddress.port;
-        onClose();
+    tcpHandler->on<uvw::close_event>([th](auto &ev, auto &handler) {
+        if (auto sp = th.lock()) {
+            BOOST_LOG_TRIVIAL(trace)
+                << "Plain tcp socket closed connection to "
+                << sp->peerAddress.ip << ":" << sp->peerAddress.port;
+            sp->onClose();
+        }
     });
-    tcpHandler->on<uvw::error_event>([this](auto &evt, auto &handler) {
-        BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket " << peerAddress.ip << ":"
-                                 << peerAddress.port << " error " << evt.name();
-        onClose();
+    tcpHandler->on<uvw::error_event>([th](auto &evt, auto &handler) {
+        if (auto sp = th.lock()) {
+            BOOST_LOG_TRIVIAL(trace)
+                << "Plain tcp socket " << sp->peerAddress.ip << ":"
+                << sp->peerAddress.port << " error " << evt.name();
+            BOOST_LOG_TRIVIAL(trace) << evt.what();
+            sp->onClose();
+        }
     });
-    tcpHandler->on<uvw::data_event>([this](auto &event, auto &handler) {
+    tcpHandler->on<uvw::data_event>([th, this](auto &event, auto &handler) {
+        Assert(!th.expired(), "transport must be still alive on read event");
         event.data.release();
         if (event.length == UV_ENOBUFS) {
             handler.stop();
@@ -206,5 +234,6 @@ void PlainSocketTransport::onClose() {
         raiseClosedTransportException(readPromiseHandle);
         async::Coroutine<>::scheduleCoroutineResume(h);
     }
+    tcpHandler->close();
 }
 }// namespace RingSwarm::transport

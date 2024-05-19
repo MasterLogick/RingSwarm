@@ -8,6 +8,7 @@ ServerHandler::handlePing(ServerResponseState &serverRespState) {
     auto *hdr = reinterpret_cast<ResponseHeader *>(resp.data);
     hdr->tag = serverRespState.requestHeader.tag;
     hdr->responseLen = 0;
+    ~co_await acquireWriteLock();
     transport->rawWrite(resp.data, resp.len);
     co_return;
 }

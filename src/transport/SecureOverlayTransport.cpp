@@ -38,14 +38,14 @@ async::Coroutine<> SecureOverlayTransport::rawRead(void *data, uint32_t size) {
 }
 
 SecureOverlayTransport::SecureOverlayTransport(
-    std::unique_ptr<Transport> transport,
+    std::shared_ptr<Transport> transport,
     std::unique_ptr<crypto::SymmetricCypher> cypher
 )
     : transport(std::move(transport)), cypher(std::move(cypher)) {}
 
-async::Coroutine<std::unique_ptr<SecureOverlayTransport>>
+async::Coroutine<std::shared_ptr<SecureOverlayTransport>>
 SecureOverlayTransport::createClientSide(
-    std::unique_ptr<Transport> transport,
+    std::shared_ptr<Transport> transport,
     core::PublicKey &remotePublicKey
 ) {
     /*std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>
@@ -80,9 +80,9 @@ SecureOverlayTransport::createClientSide(
 }
 
 async::Coroutine<
-    std::unique_ptr<SecureOverlayTransport>,
+    std::shared_ptr<SecureOverlayTransport>,
     std::shared_ptr<core::PublicKey>>
-SecureOverlayTransport::createServerSide(std::unique_ptr<Transport> transport) {
+SecureOverlayTransport::createServerSide(std::shared_ptr<Transport> transport) {
     /*core::PublicKey remotePublicKey;
     co_await transport->rawRead(remotePublicKey.data(), remotePublicKey.size());
     uint8_t iv[16];
@@ -94,7 +94,7 @@ SecureOverlayTransport::createServerSide(std::unique_ptr<Transport> transport) {
     std::make_unique<crypto::SymmetricCypher>(crypto::initDeriveKeyContext(),
     remotePublicKey, iv);*/
     co_return {
-        std::unique_ptr<SecureOverlayTransport>(
+        std::shared_ptr<SecureOverlayTransport>(
             new SecureOverlayTransport(std::move(transport), nullptr)
         ),
         std::make_shared<core::PublicKey>()

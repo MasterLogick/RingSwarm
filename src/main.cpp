@@ -1,22 +1,22 @@
 #include "async/EventLoop.h"
+#include "async/SyncCoroutineWaiter.h"
 #include "async/ThreadPool.h"
 #include "core/NodeContext.h"
 #include "proto/ClientTransport.h"
-#include "proto/RequestHeader.h"
 #include "transport/PlainSocketTransport.h"
 
 using namespace RingSwarm;
 
 async::Coroutine<> test() {
-    constexpr int n = 1;
-    std::unique_ptr<proto::ClientTransport> client[n];
+    constexpr int n = 4096;
+    std::shared_ptr<proto::ClientTransport> client[n];
     for (int i = 0; i < n; ++i) {
-        auto tr = std::make_unique<transport::PlainSocketTransport>();
+        auto tr = transport::PlainSocketTransport::Create();
         int conn = co_await tr->connect("localhost", 12345);
         if (conn != 0) {
             co_return;
         }
-        client[i] = std::make_unique<proto::ClientTransport>(std::move(tr));
+        client[i] = std::make_shared<proto::ClientTransport>(std::move(tr));
     }
 
     async::Coroutine<transport::Buffer> coros[n * 2];
@@ -52,26 +52,13 @@ int main(int argc, char **argv, char **envp) {
         return -1;
     }
 
-    core::NodeContext ctx;
-    ctx.addServer("0.0.0.0", 12345);
-
-    //    transport::PlainSocketServer server("0.0.0.0", 12345);
-    //    int err =
-//    server.listen([](std::unique_ptr<transport::PlainSocketTransport>
-//    sock) {
-    //        std::cout << "Connected!!!" << std::endl;
-    //        char c = '#';
-    //        sock->rawWrite(&c, 1);
-    //    });
-    //    if (err) {
-    //        BOOST_LOG_TRIVIAL(error) << "Server listen error: " << err;
-    //        return -1;
-    //    }
-    async::Coroutine<> c = test();
-    while (!c.getHandle().done()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    {
+        core::NodeContext ctx;
+        ctx.addServer("0.0.0.0", 12345);
+        async::Coroutine<> c = test();
+        async::SyncCoroutineWaiter<async::Coroutine<>> waiter;
+        waiter.wait(std::move(c));
     }
-    c.getHandle().promise().check();
     async::ThreadPool::getDefaultThreadPool()->waitEmpty();
     async::EventLoop::getMainEventLoop()->stop();
     async::ThreadPool::getDefaultThreadPool()->blockingStop();

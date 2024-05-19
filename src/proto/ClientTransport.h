@@ -10,7 +10,7 @@
 
 namespace RingSwarm::proto {
 class ClientTransport {
-    std::unique_ptr<transport::Transport> transport;
+    std::shared_ptr<transport::Transport> transport;
     std::map<uint16_t, ClientRequestState> pendingRequests;
     std::mutex lock;
     uint32_t unreadResponseLength;
@@ -23,7 +23,7 @@ class ClientTransport {
 
 public:
     explicit ClientTransport(
-        std::unique_ptr<transport::Transport> clientTransport
+        std::shared_ptr<transport::Transport> clientTransport
     );
 
     async::Coroutine<ResponseHeader> sendRequest(

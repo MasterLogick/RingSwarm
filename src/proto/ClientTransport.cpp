@@ -8,9 +8,11 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <utility>
+
 namespace RingSwarm::proto {
 ClientTransport::ClientTransport(
-    std::unique_ptr<transport::Transport> clientTransport
+    std::shared_ptr<transport::Transport> clientTransport
 )
     : transport(std::move(clientTransport)) {}
 
@@ -28,7 +30,6 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(
     header->tag = requestState.tag;
     co_await async::Coroutine<ResponseHeader>::suspendThis([&](auto h) {
         requestState.handle = h;
-        lock.lock();
         transport->rawWrite(req.data, req.len);
         if (pendingRequests.size() == 1) {
             Assert(
@@ -44,21 +45,19 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(
            Tag: " << ((int) tag);*/
         return std::noop_coroutine();
     });
-    auto &handle = currentWaitForResponseCoroutine.getHandle();
-    if (!handle.done()) {
-        handle.resume();
-    }
-    handle.promise().check();
+    lock.lock();
+    ~co_await async::Coroutine<>::resumeSuspended(
+        std::move(currentWaitForResponseCoroutine)
+    );
     if (requestState.header.responseLen == 0) {
-        lock.lock();
         pendingRequests.erase(requestState.tag);
         if (!pendingRequests.empty()) {
             currentWaitForResponseCoroutine = waitForAnyResponse();
         } else {
             currentWaitForResponseCoroutine = async::Coroutine<>();
         }
-        lock.unlock();
     }
+    lock.unlock();
     ResponseHeader rh = requestState.header;
     co_return rh;
 }
@@ -85,12 +84,10 @@ async::Coroutine<> ClientTransport::rawRead(void *data, uint32_t size) {
     ~co_await transport->rawRead(data, size);
     unreadResponseLength -= size;
     if (unreadResponseLength == 0) {
-        auto &handle = currentWaitForResponseCoroutine.getHandle();
-        if (!handle.done()) {
-            handle.resume();
-        }
-        handle.promise().check();
         lock.lock();
+        ~co_await async::Coroutine<>::resumeSuspended(
+            std::move(currentWaitForResponseCoroutine)
+        );
         pendingRequests.erase(unreadResponseTag);
         if (!pendingRequests.empty()) {
             currentWaitForResponseCoroutine = waitForAnyResponse();
@@ -125,7 +122,7 @@ async::Coroutine<> ClientTransport::waitForAnyResponse() {
 ClientRequestState &ClientTransport::reserveRequestState() {
     do {
         while (pendingRequests.size() == UINT16_MAX) {}
-        std::lock_guard<std::mutex> _(lock);
+        lock.lock();
         for (uint16_t i = 0; i < UINT16_MAX; ++i) {
             if (!pendingRequests.contains(i)) {
                 auto &a = pendingRequests[i];
@@ -133,6 +130,7 @@ ClientRequestState &ClientTransport::reserveRequestState() {
                 return a;
             }
         }
+        lock.unlock();
     } while (true);
 }
 }// namespace RingSwarm::proto

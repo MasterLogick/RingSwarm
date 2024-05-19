@@ -15,14 +15,14 @@ class PlainSocketTransport;
 
 class PlainSocketServer {
     std::shared_ptr<uvw::tcp_handle> serverHandler;
-    std::function<void(std::unique_ptr<PlainSocketTransport>)> listenHandler;
+    std::function<void(std::shared_ptr<PlainSocketTransport>)> listenHandler;
 
 public:
     PlainSocketServer(std::string host, int port);
     ~PlainSocketServer();
 
     int
-    listen(std::function<void(std::unique_ptr<PlainSocketTransport>)> handler);
+    listen(std::function<void(std::shared_ptr<PlainSocketTransport>)> handler);
 };
 }// namespace RingSwarm::transport
 

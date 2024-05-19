@@ -175,6 +175,9 @@ add_executable(RingSwarm
         src/proto/shadow/PingHandler.cpp
         src/proto/shadow/GetNodeHandler.cpp
         src/proto/UnknownResponseException.h
+        src/async/ResumeSuspendAwaitObject.h
+        src/async/SyncCoroutineWaiter.h
+        src/core/ServerHandlerContext.h
 )
 
 if (WIN32)

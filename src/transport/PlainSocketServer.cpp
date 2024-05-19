@@ -28,7 +28,7 @@ PlainSocketServer::PlainSocketServer(std::string host, int port) {
 }
 
 int PlainSocketServer::listen(
-    std::function<void(std::unique_ptr<PlainSocketTransport>)> handler
+    std::function<void(std::shared_ptr<PlainSocketTransport>)> handler
 ) {
     Assert(
         listenHandler == nullptr,
@@ -47,7 +47,7 @@ int PlainSocketServer::listen(
             BOOST_LOG_TRIVIAL(debug)
                 << "Plain tcp server accepted connection from " << peer.ip
                 << ":" << peer.port << " to " << sock.ip << ":" << sock.port;
-            listenHandler(std::make_unique<PlainSocketTransport>(socket));
+            listenHandler(PlainSocketTransport::Create(socket));
         }
     );
     int err = serverHandler->listen();

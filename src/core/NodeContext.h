@@ -3,18 +3,26 @@
 
 #include "../async/coroutine.h"
 #include "../transport/PlainSocketServer.h"
+#include "../transport/Transport.h"
 
 #include "Node.h"
+#include "ServerHandlerContext.h"
 
 namespace RingSwarm::core {
 class NodeContext {
     Node node;
-    std::vector<async::Coroutine<>> serverHandlers;
-    std::vector<std::unique_ptr<transport::PlainSocketServer>> servers;
+    std::list<ServerHandlerContext> serverHandlers;
+    std::list<ServerHandlerContext> finishedHandlers;
+    std::mutex serverHandlersMutex;
+    std::mutex finishedHandlersMutex;
+    std::vector<std::shared_ptr<transport::PlainSocketServer>> servers;
 
     async::Coroutine<> handleServerConnection(
-        std::unique_ptr<transport::PlainSocketTransport> serverSideSocket
+        std::shared_ptr<transport::Transport> serverSideSocket,
+        std::list<ServerHandlerContext>::iterator ref
     );
+
+    void cleanupFinishedHandlers();
 
 public:
     ~NodeContext();
