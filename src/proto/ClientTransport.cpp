@@ -6,7 +6,7 @@
 #include "ServerHandler.h"
 #include "UnknownResponseException.h"
 
-#include <boost/log/trivial.hpp>
+#include <glog/logging.h>
 
 #include <utility>
 
@@ -24,13 +24,16 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(
     req.assertFullyUsed();
     auto &requestState = reserveRequestState();
     requestState.maxResponseSize = maxResponseSize;
-    auto *header = reinterpret_cast<RequestHeader *>(req.data);
+    auto *header = req.getHeader();
     header->requestLength = req.len - sizeof(RequestHeader);
     header->method = commandId;
     header->tag = requestState.tag;
     co_await async::Coroutine<ResponseHeader>::suspendThis([&](auto h) {
         requestState.handle = h;
         transport->rawWrite(req.data, req.len);
+        VLOG(8) << "Sent request 0=> m: " << (int) header->method
+                << " t: " << (int) header->tag
+                << " l: " << (int) header->requestLength;
         if (pendingRequests.size() == 1) {
             Assert(
                 currentWaitForResponseCoroutine == nullptr,
@@ -39,10 +42,6 @@ async::Coroutine<ResponseHeader> ClientTransport::sendRequest(
             currentWaitForResponseCoroutine = waitForAnyResponse();
         }
         lock.unlock();
-        /*BOOST_LOG_TRIVIAL(trace) << "Sent request   |===> " <<
-           proto::ServerHandler::MethodNames[commandIndex]
-                           << " " << req.len - sizeof(RequestHeader) << " bytes.
-           Tag: " << ((int) tag);*/
         return std::noop_coroutine();
     });
     lock.lock();

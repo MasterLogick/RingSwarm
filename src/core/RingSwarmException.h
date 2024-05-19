@@ -1,8 +1,6 @@
 #ifndef RINGSWARM_RINGSWARMEXCEPTION_H
 #define RINGSWARM_RINGSWARMEXCEPTION_H
 
-#include <boost/stacktrace.hpp>
-
 #include <exception>
 #include <iostream>
 

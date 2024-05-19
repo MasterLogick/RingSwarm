@@ -1,6 +1,7 @@
 #ifndef RINGSWARM_SYMMETRICALCRYPHER_H
 #define RINGSWARM_SYMMETRICALCRYPHER_H
 
+#include "../core/PublicKey.h"
 #include "../transport/Transport.h"
 
 #include <openssl/evp.h>

@@ -1,7 +1,5 @@
 #include "Id.h"
 
-#include <boost/algorithm/hex.hpp>
-
 #include <cstring>
 
 namespace RingSwarm::core {
@@ -42,7 +40,7 @@ char hexCharToInt(char c) {
 
 std::shared_ptr<Id> Id::fromHexRepresentation(const char *hex) {
     std::shared_ptr<Id> id;
-    boost::algorithm::unhex(hex, id->hash);
+//    unhex(hex, id->hash);
     return id;
 }
 

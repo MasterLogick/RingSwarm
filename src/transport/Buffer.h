@@ -1,8 +1,8 @@
 #ifndef RINGSWARM_BUFFER_H
 #define RINGSWARM_BUFFER_H
 
-#include "../core/ChunkLink.h"
 #include "../core/Id.h"
+#include "../core/PublicKey.h"
 #include "../proto/ProtocolException.h"
 
 #include "DataSerialisationException.h"
@@ -35,20 +35,11 @@ class Buffer {
         return 32;
     }
 
-    static constexpr uint32_t calcSize(crypto::Signature *) {
-        return 72;
-    }
-
     static constexpr uint32_t calcSize(core::PublicKey *) {
         return 33;
     }
 
     static uint32_t calcSize(core::Node *n);
-
-    static constexpr uint32_t calcSize(core::ChunkLink *) {
-        return 2 * calcSize((core::Id *) nullptr) + calcSize<uint64_t>(0) +
-               calcSize((crypto::Signature *) nullptr);
-    }
 
     static uint32_t calcSize(std::string &s) {
         return calcSize<uint32_t>(0) + s.size();

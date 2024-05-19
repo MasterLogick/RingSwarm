@@ -1,7 +1,7 @@
 #ifndef COROUTINES_FINALAWAIT_H
 #define COROUTINES_FINALAWAIT_H
 
-#include <boost/log/trivial.hpp>
+#include <glog/logging.h>
 
 #include <coroutine>
 #include <iostream>
@@ -26,10 +26,10 @@ public:
     }
 
     void await_resume() noexcept {
-        BOOST_LOG_TRIVIAL(error) << "===========PANIC===========";
-        BOOST_LOG_TRIVIAL(error) << "Called unreachable function";
-        BOOST_LOG_TRIVIAL(error) << "FinalAwait::await_resume();";
-        BOOST_LOG_TRIVIAL(error) << "===========PANIC===========";
+        LOG(ERROR) << "===========PANIC===========";
+        LOG(ERROR) << "Called unreachable function";
+        LOG(ERROR) << "FinalAwait::await_resume();";
+        LOG(ERROR) << "===========PANIC===========";
         std::abort();
     }
 };

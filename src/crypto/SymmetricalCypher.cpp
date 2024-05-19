@@ -1,10 +1,7 @@
 #include "SymmetricalCypher.h"
 
-#include "AsymmetricalCrypto.h"
 #include "CryptoException.h"
 
-#include <boost/algorithm/hex.hpp>
-#include <boost/log/trivial.hpp>
 #include <openssl/core_names.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -69,11 +66,6 @@ SymmetricCypher::SymmetricCypher(
         std::cout << ERR_error_string(ERR_get_error(), nullptr) << std::endl;
         throw CryptoException();
     }
-    BOOST_LOG_TRIVIAL(trace)
-        << "Shared secret: "
-        << boost::algorithm::hex(
-               std::string(reinterpret_cast<const char *>(secret), secretSize)
-           );
     cipher.reset(EVP_CIPHER_CTX_new());
     decipher.reset(EVP_CIPHER_CTX_new());
     if (EVP_EncryptInit(cipher.get(), EVP_aes_256_ctr(), secret, iv) != 1) {

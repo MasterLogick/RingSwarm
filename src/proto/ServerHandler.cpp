@@ -6,7 +6,7 @@
 #include "RequestHeader.h"
 #include "TooLargeMessageException.h"
 
-#include <boost/log/trivial.hpp>
+#include <glog/logging.h>
 
 #define MAX_REQUEST_LENGTH (1024 * 1024)
 
@@ -89,10 +89,9 @@ ServerHandler::handleRequest(ServerResponseState &serverRespState) {
 
 async::Coroutine<>
 ServerHandler::stubHandler(ServerResponseState &serverRespState) {
-    BOOST_LOG_TRIVIAL(trace)
-        << "stub handler#m" << (int) serverRespState.requestHeader.method
-        << "(t" << serverRespState.requestHeader.tag << ") l"
-        << serverRespState.requestHeader.requestLength;
+    VLOG(7) << "stub handler#m" << (int) serverRespState.requestHeader.method
+            << "(t" << serverRespState.requestHeader.tag << ") l"
+            << serverRespState.requestHeader.requestLength;
     co_return;
 }
 

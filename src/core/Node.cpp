@@ -1,7 +1,5 @@
 #include "Node.h"
 
-#include "../crypto/AsymmetricalCrypto.h"
-
 namespace RingSwarm::core {
 int Node::getSerializedSize() {
     return publicKey->size();

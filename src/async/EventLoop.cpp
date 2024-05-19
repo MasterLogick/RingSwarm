@@ -5,7 +5,6 @@
 
 #include "EventLoopLock.h"
 
-#include <boost/log/trivial.hpp>
 #include <uvw/pipe.h>
 #include <uvw/tcp.h>
 

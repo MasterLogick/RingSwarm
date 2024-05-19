@@ -1,7 +1,6 @@
 #ifndef RINGSWARM_PUBLICKEY_H
 #define RINGSWARM_PUBLICKEY_H
 
-#include "../crypto/AsymmetricalCrypto.h"
 #include "../crypto/Signature.h"
 
 #include "Id.h"

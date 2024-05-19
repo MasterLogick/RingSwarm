@@ -46,7 +46,7 @@ EmptyLineBeforeAccessModifier: Always
 FixNamespaceComments: true
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^((<|")(uvw|openssl|boost|sqlite3)/)'
+  - Regex: '^((<|")(uvw|openssl|glog|sqlite3)/)'
     Priority: 3
   - Regex: '<.*>'
     Priority: 4

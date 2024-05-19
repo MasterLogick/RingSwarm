@@ -106,25 +106,6 @@ void Buffer::write(core::Node *node) {
 }
 
 template<>
-core::ChunkLink *Buffer::read<core::ChunkLink *>() {
-    auto keyId = read<std::shared_ptr<core::Id>>();
-    auto chunkIndex = read<uint64_t>();
-    auto dataHash = read<std::shared_ptr<core::Id>>();
-    auto dataSize = read<uint64_t>();
-    auto sign = read<crypto::Signature *>();
-    return new core::ChunkLink(keyId, chunkIndex, dataHash, dataSize, sign);
-}
-
-template<>
-void Buffer::write(core::ChunkLink *link) {
-    write(link->keyId);
-    write<uint64_t>(link->chunkIndex);
-    write(link->dataHash);
-    write<uint64_t>(link->dataSize);
-    write(link->sign);
-}
-
-template<>
 std::string Buffer::read<std::string>() {
     auto size = read<uint32_t>();
     if (len - offset < size) {

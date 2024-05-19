@@ -5,8 +5,7 @@
 
 #include "ClosedTransportException.h"
 
-#include <boost/algorithm/hex.hpp>
-#include <boost/log/trivial.hpp>
+#include <glog/logging.h>
 #include <uvw/dns.h>
 
 #include <memory>
@@ -50,8 +49,7 @@ PlainSocketTransport::connect(std::string host, int port) {
 
     auto [success, resp] = req->addr_info_sync(host, std::to_string(port));
     if (!success) {
-        BOOST_LOG_TRIVIAL(trace)
-            << "Could not resolve address " << host << ":" << port;
+        VLOG(1) << "Could not resolve address " << host << ":" << port;
         co_return -1;
     }
     {
@@ -59,10 +57,9 @@ PlainSocketTransport::connect(std::string host, int port) {
         tcpHandler->on<uvw::connect_event>([&handle, this](auto a, auto &b) {
             peerAddress = b.peer();
             bindAddress = b.sock();
-            BOOST_LOG_TRIVIAL(debug)
-                << "Plain tcp socket connected to " << peerAddress.ip << ":"
-                << peerAddress.port << " from " << bindAddress.ip << ":"
-                << bindAddress.port;
+            VLOG(3) << "Plain tcp socket connected to " << peerAddress.ip << ":"
+                    << peerAddress.port << " from " << bindAddress.ip << ":"
+                    << bindAddress.port;
             async::Coroutine<int>::scheduleCoroutineResume(handle);
         });
         tcpHandler->on<uvw::error_event>([&handle, &err](auto a, auto &b) {
@@ -71,8 +68,8 @@ PlainSocketTransport::connect(std::string host, int port) {
         });
         err = tcpHandler->connect(*resp->ai_addr);
         if (err != 0) {
-            BOOST_LOG_TRIVIAL(trace) << "Plain tcp socket could not connect to "
-                                     << host << ":" << port;
+            VLOG(3) << "Plain tcp socket could not connect to " << host << ":"
+                    << port;
         }
     }
     co_await async::Coroutine<int>::suspendThis(
@@ -141,9 +138,6 @@ void PlainSocketTransport::rawWrite(void *data, uint32_t len) {
 #ifndef NDEBUG
     Assert(!writeFlag.test_and_set(), "simultaneous write to tcp socket");
 #endif
-    /*BOOST_LOG_TRIVIAL(trace) << "Plain tcp sock |===> "
-                                     <<
-       boost::algorithm::hex(std::string(static_cast<char *>(data), len));*/
     while (tcpHandler->try_write(static_cast<char *>(data), len) == UV_EAGAIN) {
     }
 #ifndef NDEBUG
@@ -168,9 +162,8 @@ void PlainSocketTransport::setupHandler() {
     );
     tcpHandler->on<uvw::end_event>([th](auto &, auto &handler) {
         if (auto sp = th.lock()) {
-            BOOST_LOG_TRIVIAL(trace)
-                << "Plain tcp socket closed connection from "
-                << sp->peerAddress.ip << ":" << sp->peerAddress.port;
+            VLOG(3) << "Plain tcp socket closed connection from "
+                    << sp->peerAddress.ip << ":" << sp->peerAddress.port;
             auto h = sp->readPromiseHandle;
             if (h) {
                 sp->raiseClosedTransportException(h);
@@ -180,18 +173,16 @@ void PlainSocketTransport::setupHandler() {
     });
     tcpHandler->on<uvw::close_event>([th](auto &ev, auto &handler) {
         if (auto sp = th.lock()) {
-            BOOST_LOG_TRIVIAL(trace)
-                << "Plain tcp socket closed connection to "
-                << sp->peerAddress.ip << ":" << sp->peerAddress.port;
+            VLOG(3) << "Plain tcp socket closed connection to "
+                    << sp->peerAddress.ip << ":" << sp->peerAddress.port;
             sp->onClose();
         }
     });
     tcpHandler->on<uvw::error_event>([th](auto &evt, auto &handler) {
         if (auto sp = th.lock()) {
-            BOOST_LOG_TRIVIAL(trace)
-                << "Plain tcp socket " << sp->peerAddress.ip << ":"
-                << sp->peerAddress.port << " error " << evt.name();
-            BOOST_LOG_TRIVIAL(trace) << evt.what();
+            VLOG(1) << "Plain tcp socket " << sp->peerAddress.ip << ":"
+                    << sp->peerAddress.port << " error " << evt.name();
+            VLOG(1) << evt.what();
             sp->onClose();
         }
     });

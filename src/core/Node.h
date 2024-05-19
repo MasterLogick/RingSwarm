@@ -1,9 +1,8 @@
 #ifndef RINGSWARM_NODE_H
 #define RINGSWARM_NODE_H
 
-#include "../crypto/AsymmetricalCrypto.h"
-
 #include "Id.h"
+#include "PublicKey.h"
 
 #include <memory>
 

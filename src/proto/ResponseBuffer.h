@@ -1,7 +1,6 @@
 #ifndef RINGSWARM_RESPONSEBUFFER_H
 #define RINGSWARM_RESPONSEBUFFER_H
 
-#include "../core/ChunkSwarm.h"
 #include "../transport/Buffer.h"
 
 #include "ResponseHeader.h"

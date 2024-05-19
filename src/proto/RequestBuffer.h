@@ -10,6 +10,10 @@ class RequestBuffer : public transport::Buffer {
 public:
     RequestBuffer(uint32_t len)
         : Buffer(len + sizeof(RequestHeader), sizeof(RequestHeader)) {}
+
+    RequestHeader *getHeader() {
+        return reinterpret_cast<RequestHeader *>(data);
+    }
 };
 }// namespace RingSwarm::proto
 

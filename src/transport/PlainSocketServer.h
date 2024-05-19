@@ -3,7 +3,6 @@
 
 #include "../async/coroutine.h"
 
-#include <boost/asio/awaitable.hpp>
 #include <uvw/tcp.h>
 
 #include <string>

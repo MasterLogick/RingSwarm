@@ -2,13 +2,8 @@
 
 #include "../crypto/SymmetricalCypher.h"
 
-#include <boost/algorithm/hex.hpp>
-
 namespace RingSwarm::transport {
 void SecureOverlayTransport::rawWrite(void *data, uint32_t len) {
-    /*BOOST_LOG_TRIVIAL(trace) << "Secure overlay |===> "
-                                 <<
-       boost::algorithm::hex(std::string(static_cast<char *>(data), len));*/
     /*if (buffer.size() < len) {
         if (64 * 1024 < len) {
             char *dataCopy = static_cast<char *>(data);
